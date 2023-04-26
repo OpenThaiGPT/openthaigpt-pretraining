@@ -7,7 +7,7 @@ on:
       - "tests/model/**/*.py"
 
     branches:
-      - "new/pytest-ci"
+      - "main"
 
 jobs:
   pytest_and_coverage:
