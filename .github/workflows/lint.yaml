@@ -12,32 +12,33 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ '3.9' ]  # requires python<=3.9
+    
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip' # caching pip dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip' # caching pip dependencies
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run Black
-      run: |
-        black --check .
+      - name: Run Black
+        run: |
+          black --check .
 
-    - name: Run Flake8
-      run: |
-        flake8
+      - name: Run Flake8
+        run: |
+          flake8
 
-    - name: Run Mypy
-      run: |
-        mypy ./src/model/openthaigpt_pretraining_model
-        mypy ./src/data/openthaigpt_pretraining_data
-        mypy ./src/evaluation/openthaigpt_pretraining_evaluation
-        mypy ./src/core/openthaigpt_pretraining
+      - name: Run Mypy
+        run: |
+          mypy ./src/model/openthaigpt_pretraining_model
+          mypy ./src/data/openthaigpt_pretraining_data
+          mypy ./src/evaluation/openthaigpt_pretraining_evaluation
+          mypy ./src/core/openthaigpt_pretraining
