@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='openthaigpt_pretraining_data',
-    version='0.1',
-    packages=['openthaigpt_pretraining_data'],
+    name="openthaigpt_pretraining_data",
+    version="0.1",
+    packages=["openthaigpt_pretraining_data"],
 )

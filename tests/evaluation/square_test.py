@@ -1,4 +1,7 @@
-from openthaigpt_pretraining_evaluation.example import SQUARE_TEST_CASES, CUBE_TEST_CASES
+from openthaigpt_pretraining_evaluation.example import (
+    SQUARE_TEST_CASES,
+    CUBE_TEST_CASES,
+)
 
 
 def test_square():
