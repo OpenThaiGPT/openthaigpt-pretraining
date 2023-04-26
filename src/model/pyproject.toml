@@ -5,7 +5,7 @@ requires = [
 ]
 
 [project]
-name = "openthaigpt_pretraining"
+name = "openthaigpt_pretraining_model"
 version = "0.1.0"
 description = "OpenThaiGPT Pretraining Task."
 readme = "README.md"

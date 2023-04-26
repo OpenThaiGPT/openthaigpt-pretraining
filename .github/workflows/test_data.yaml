@@ -1,0 +1,43 @@
+name: pytest and coverage report for Data
+
+on:
+  pull_request:
+    paths:
+      - "src/data/**/*.py"
+      - "tests/data/**/*.py"
+
+    branches:
+      - "main"
+
+jobs:
+  pytest_and_coverage:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ '3.9' ]  # requires python<=3.9
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e src/core
+          pip install -e src/data
+
+      - name: Generate HTML coverage report
+        run: |
+          pytest --cov-report xml --cov=src/data tests/data/
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          flags: unittests
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
