@@ -1,1 +1,4 @@
 pytest-cov
+pre-commit
+black
+pep8-naming
