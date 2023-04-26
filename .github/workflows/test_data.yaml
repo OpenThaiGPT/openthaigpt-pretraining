@@ -17,7 +17,7 @@ on:
       - "main"
 
 jobs:
-  pytest_and_coverage:
+  pytest_and_coverage_data:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
