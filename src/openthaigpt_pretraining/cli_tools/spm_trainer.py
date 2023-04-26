@@ -2,6 +2,7 @@ import os
 import argparse
 import regex as re
 from tqdm import tqdm
+from multiprocessing import Pool
 
 import sentencepiece as spm
 import pandas as pd
@@ -27,7 +28,6 @@ def prepare_datasets(texts: str) -> dict:
 
     return {'text_processed': preapared_texts}
 
-
 class DataSetColumnIterator:
     def __init__(self, dataset, column_name: str):
         self.dataset = iter(dataset)
@@ -43,8 +43,9 @@ def train_tokenizer(
         vocab_size: int,
         num_docs: int,
         is_slurm: bool,
-        num_proc: int
-):
+        num_proc: int,
+        chunk_size: int,
+    ):
     if not is_slurm:
         text_dataset = load_dataset(
             "oscar",
@@ -71,10 +72,32 @@ def train_tokenizer(
         remove_columns=['text', 'id'],  # this is must b/c we will return different number of rows
     )
 
+    # Split the dataset into chunks for processing
+    text_processed_dataset = text_processed_dataset.shard(num_shards=num_proc, index=0)
+
+    # Define a function that trains the tokenizer on a chunk of the dataset
+    def train_chunk(chunk):
+        if len(chunk) > 0:
+            spm.SentencePieceTrainer.train(
+                sentence_iterator=iter(DataSetColumnIterator(chunk, 'text_processed')),
+                model_prefix=output_path,
+                vocab_size=vocab_size,
+                user_defined_symbols=['<mask>'],
+                num_threads=1,
+                input_sentence_size=chunk_size,
+            )
+
+    # Create a pool of processes to train the tokenizer in parallel
+    with Pool(num_proc) as pool:
+        # Train the tokenizer on each chunk of the dataset in parallel
+        pool.map(train_chunk, text_processed_dataset)
+
+    # Merge the trained models
     spm.SentencePieceTrainer.train(
-        sentence_iterator=iter(DataSetColumnIterator(text_processed_dataset, 'text_processed')),
+        input=output_path + '.{}',
         model_prefix=output_path,
         vocab_size=vocab_size,
         user_defined_symbols=['<mask>'],
-        num_threads=num_proc
+        num_threads=num_proc,
+        input_sentence_size=chunk_size,
     )
