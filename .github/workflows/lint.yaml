@@ -2,8 +2,8 @@ name: Linting and Formatting
 
 on:
   push:
-    branches:
-      - "new/formater"
+    pull_request:
+      - "main"
 
 jobs:
   lint_and_format:
