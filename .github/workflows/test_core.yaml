@@ -1,0 +1,38 @@
+name: pytest and coverage report for Core
+
+on:
+  push:
+    paths:
+      - "src/core/**/*.py"
+      - "tests/core/**/*.py"
+
+    branches:
+      - "new/pytest-ci"
+
+jobs:
+  pytest_and_coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e src/core
+
+      - name: Run pytest with coverage
+        run: |
+          pytest --cov=src/core tests/core/
+
+      - name: Generate HTML coverage report
+        run: |
+          pytest --cov-report html --cov=src/core tests/core/
+
+      # - name: Upload coverage report to Codecov
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     flags: unittests
+      #     file: ./coverage.xml
+      #     token: ${{ secrets.CODECOV_TOKEN }}

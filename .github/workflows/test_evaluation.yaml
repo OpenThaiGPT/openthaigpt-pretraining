@@ -1,0 +1,38 @@
+name: pytest and coverage report for Evaluation
+
+on:
+  push:
+    paths:
+      - "src/evaluation/**/*.py"
+      - "tests/evaluation/**/*.py"
+
+    branches:
+      - "new/pytest-ci"
+
+jobs:
+  pytest_and_coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e src/evaluation
+
+      - name: Run pytest with coverage
+        run: |
+          pytest --cov=src/evaluation tests/evaluation/
+
+      - name: Generate HTML coverage report
+        run: |
+          pytest --cov-report html --cov=src/evaluation tests/evaluation/
+
+      # - name: Upload coverage report to Codecov
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     flags: unittests
+      #     file: ./coverage.xml
+      #     token: ${{ secrets.CODECOV_TOKEN }}
