@@ -3,8 +3,7 @@ name: Linting and Formatting
 on:
   push:
     branches:
-      - main
-      - new-formatter
+      - "new/formatter"
 
 jobs:
   lint_and_format:
