@@ -38,7 +38,7 @@ jobs:
 
     - name: Run Mypy
       run: |
-        mypy ./src/model/openthaigpt_pretraining_model &&
-        mypy ./src/data/openthaigpt_pretraining_data &&
-        mypy ./src/evaluation/openthaigpt_pretraining_evaluation &&
+        mypy ./src/model/openthaigpt_pretraining_model
+        mypy ./src/data/openthaigpt_pretraining_data
+        mypy ./src/evaluation/openthaigpt_pretraining_evaluation
         mypy ./src/core/openthaigpt_pretraining
