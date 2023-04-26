@@ -1,13 +1,13 @@
 name: pytest and coverage report for Data
 
 on:
-  push:
+  pull_request:
     paths:
       - "src/data/**/*.py"
       - "tests/data/**/*.py"
 
     branches:
-      - "new/pytest-ci"
+      - "main"
 
 jobs:
   pytest_and_coverage:
