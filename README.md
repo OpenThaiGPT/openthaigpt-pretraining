@@ -4,6 +4,7 @@
 
 ### Install Core Depedencies
 ```bash
+pip install -r requirements.txt
 pip install -e ./src/core
 ```
 
