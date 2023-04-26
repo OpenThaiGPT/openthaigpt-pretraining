@@ -17,5 +17,5 @@ def test_llama_efficient_attention_parity():
     x = 202
     assert model1.predict(x) == model2.predict(x)
 
-    x = 1
+    x = 8
     assert model1.predict(x) == model2.predict(x)
