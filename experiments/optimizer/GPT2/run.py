@@ -14,7 +14,7 @@ import random
 from tqdm import tqdm
 
 from datasets import load_dataset
-from transformers import GPT2TokenizerFast , AutoConfig
+from transformers import GPT2TokenizerFast, AutoConfig
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel, GPT2Attention
 from typing import Tuple, Optional, Callable
 
@@ -22,24 +22,28 @@ import torch
 from torch.optim.optimizer import Optimizer
 
 
-
 _attn_orig = GPT2Attention._attn
 
+
 def seed_everything(seed):
-  torch.manual_seed(seed)
-  torch.cuda.manual_seed(seed)
-  torch.cuda.manual_seed_all(seed)
-  torch.backends.cudnn.deterministic = True
-  torch.backends.cudnn.benchmark = False
-  np.random.seed(seed)
-  random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
 
 # functions
+
 
 def exists(val):
     return val is not None
 
+
 # update functions
+
 
 def update_fn(p, grad, exp_avg, lr, wd, beta1, beta2):
     # stepweight decay
@@ -48,14 +52,16 @@ def update_fn(p, grad, exp_avg, lr, wd, beta1, beta2):
 
     # weight update
 
-    update = exp_avg.clone().mul_(beta1).add(grad, alpha = 1 - beta1).sign_()
-    p.add_(update, alpha = -lr)
+    update = exp_avg.clone().mul_(beta1).add(grad, alpha=1 - beta1).sign_()
+    p.add_(update, alpha=-lr)
 
     # decay the momentum running average coefficient
 
-    exp_avg.mul_(beta2).add_(grad, alpha = 1 - beta2)
+    exp_avg.mul_(beta2).add_(grad, alpha=1 - beta2)
+
 
 # class
+
 
 class Lion(Optimizer):
     def __init__(
@@ -64,60 +70,45 @@ class Lion(Optimizer):
         lr: float = 1e-4,
         betas: Tuple[float, float] = (0.9, 0.99),
         weight_decay: float = 0.0,
-        use_triton: bool = False
     ):
-        assert lr > 0.
-        assert all([0. <= beta <= 1. for beta in betas])
+        assert lr > 0.0
+        assert all([0.0 <= beta <= 1.0 for beta in betas])
 
-        defaults = dict(
-            lr = lr,
-            betas = betas,
-            weight_decay = weight_decay
-        )
+        defaults = dict(lr=lr, betas=betas, weight_decay=weight_decay)
 
         super().__init__(params, defaults)
-
-        self.update_fn = update_fn
 
         # if use_triton:
         #     from lion_pytorch.triton import update_fn as triton_update_fn
         #     self.update_fn = triton_update_fn
 
     @torch.no_grad()
-    def step(
-        self,
-        closure: Optional[Callable] = None
-    ):
-
+    def step(self, closure: Optional[Callable] = None):
         loss = None
         if exists(closure):
             with torch.enable_grad():
                 loss = closure()
 
         for group in self.param_groups:
-            for p in filter(lambda p: exists(p.grad), group['params']):
-
-                grad, lr, wd, beta1, beta2, state = p.grad, group['lr'], group['weight_decay'], *group['betas'], self.state[p]
+            for p in filter(lambda p: exists(p.grad), group["params"]):
+                grad, lr, wd, beta1, beta2, state = (
+                    p.grad,
+                    group["lr"],
+                    group["weight_decay"],
+                    *group["betas"],
+                    self.state[p],
+                )
 
                 # init state - exponential moving average of gradient values
 
                 if len(state) == 0:
-                    state['exp_avg'] = torch.zeros_like(p)
+                    state["exp_avg"] = torch.zeros_like(p)
 
-                exp_avg = state['exp_avg']
+                exp_avg = state["exp_avg"]
 
-                self.update_fn(
-                    p,
-                    grad,
-                    exp_avg,
-                    lr,
-                    wd,
-                    beta1,
-                    beta2
-                )
+                self.update_fn(p, grad, exp_avg, lr, wd, beta1, beta2)
 
         return loss
-    
 
 
 # patch GPT2Attention to use flash_sdp, disable it when doing the inference
@@ -144,25 +135,26 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
 def closest_power_of_2(x):
     return 2 ** (x - 1).bit_length()
 
+
 @torch.no_grad()
-def do_eval(model , loader_val , grad):
-  #model.eval()
-  val_loss = 0.0
-  c_1 = 0
-  #prog1 = tqdm(self.loader_val)
-  for i1, batch1 in enumerate(loader_val):
+def do_eval(model, loader_val, grad):
+    # model.eval()
+    val_loss = 0.0
+    c_1 = 0
+    # prog1 = tqdm(self.loader_val)
+    for i1, batch1 in enumerate(loader_val):
         batch1 = batch1.cuda()
         with torch.autocast(device_type="cuda", enabled=True):
-            loss1 = model(batch1, labels=batch1).loss 
-            loss1 = loss1 /grad
+            loss1 = model(batch1, labels=batch1).loss
+            # loss1 = loss1 /grad
             val_loss = float(val_loss) + float(loss1.item())
         c_1 += 1
-  print(f"loss_val : {(val_loss / c_1):.3f}")
-  #model.train()       
-  return val_loss / c_1
-  
-def make_model(pretrained_name, max_tokens, tokenizer , use_flash):
+    print(f"loss_val : {(val_loss / c_1):.3f}")
+    # model.train()
+    return val_loss / c_1
 
+
+def make_model(pretrained_name, max_tokens, tokenizer, use_flash):
     config = AutoConfig.from_pretrained(
         pretrained_name,
         vocab_size=len(tokenizer),
@@ -170,9 +162,9 @@ def make_model(pretrained_name, max_tokens, tokenizer , use_flash):
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
         pad_token_id=tokenizer.pad_token_id,
-       optimize_cuda_cache=True
+        optimize_cuda_cache=True,
     )
-    #model = GPT2LMHeadModel.from_pretrained(pretrained_name).cuda()
+    # model = GPT2LMHeadModel.from_pretrained(pretrained_name).cuda()
     model = GPT2LMHeadModel(config).cuda()
     GPT2Attention._attn = _attn_orig
     if use_flash:
@@ -211,51 +203,91 @@ def make_model(pretrained_name, max_tokens, tokenizer , use_flash):
     #         .cuda()
     #     )
     if torch.cuda.device_count() > 1:
-            print("Let's use", torch.cuda.device_count(), "GPUs!")
-            model = nn.DataParallel(model)
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model)
     return model
 
 
 class DatasetWrapper(IterableDataset):
-    def __init__(self, max_tokens=256):
-        self.tokenizer = GPT2TokenizerFast.from_pretrained("flax-community/gpt2-base-thai" , bos_token='<|startoftext|>', eos_token='<|endoftext|>', pad_token='<|pad|>')
+    def __init__(self, mode, max_tokens=256):
+        self.model_name = "flax-community/gpt2-base-thai"
+        self.bos_token = "<|startoftext|>"
+        self.eos_token = "<|endoftext|>"
+        self.pad_token = "<|pad|>"
+        self.tokenizer = GPT2TokenizerFast.from_pretrained(
+            self.model_name,
+            bos_token=self.bos_token,
+            eos_token=self.eos_token,
+            pad_token=self.pad_token,
+        )
+        self.mode = mode
         self.max_tokens = max_tokens
+        self.data_train = load_dataset(
+            "mc4", languages=["th"], streaming=True, split="train"  # optional
+        ).shuffle(buffer_size=10_000)
+
+        self.data_validate = load_dataset(
+            "mc4", languages=["th"], streaming=True, split="validation"  # optional
+        )
 
     def __iter__(self):
         buffer = []
-        for sample in load_dataset("mc4",
-                       languages=["th"], 
-                        streaming=True, # optional
-                        split="train").shuffle(buffer_size=10_000):
-            buffer += self.tokenizer( sample["text"] + '<|endoftext|>')["input_ids"]
-            #buffer += [self.tokenizer.eos_token_id]
-            #print(self.tokenizer.decode(buffer))
+        iter_dataset = self.data_train
+        if self.mode == "val":
+            iter_dataset = self.data_validate
+
+        for sample in iter_dataset:
+            buffer += self.tokenizer(sample["text"] + self.eos_token)["input_ids"]
             while len(buffer) > self.max_tokens:
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]
 
-class DatasetWrapper_val(IterableDataset):
-    def __init__(self, max_tokens=256):
-        self.tokenizer = GPT2TokenizerFast.from_pretrained("flax-community/gpt2-base-thai" , bos_token='<|startoftext|>', eos_token='<|endoftext|>', pad_token='<|pad|>')
-        self.max_tokens = max_tokens
 
-    def __iter__(self):
-        buffer = []
-        for sample in load_dataset("mc4",
-                       languages=["th"], 
-                        streaming=True, # optional
-                        split="validation"):
-            buffer += self.tokenizer( sample["text"] + '<|endoftext|>')["input_ids"]
-            #buffer += [self.tokenizer.eos_token_id]
-            #print(self.tokenizer.decode(buffer))
-            while len(buffer) > self.max_tokens:
-                yield torch.tensor(buffer[: self.max_tokens])
-                buffer = buffer[self.max_tokens :]
+# class DatasetWrapper_val(IterableDataset):
+#     def __init__(self, max_tokens=256):
+#         self.model_name = "flax-community/gpt2-base-thai"
+#         self.bos_token = "<|startoftext|>"
+#         self.eos_token = "<|endoftext|>"
+#         self.pad_token = "<|pad|>"
+#         self.tokenizer = GPT2TokenizerFast.from_pretrained(
+#             self.model_name,
+#             bos_token=self.bos_token,
+#             eos_token=self.eos_token,
+#             pad_token=self.pad_token,
+#         )
+#         self.max_tokens = max_tokens
+#         self.data_validate = load_dataset(
+#             "mc4", languages=["th"], streaming=True, split="validation"  # optional
+#         )
+
+#     def __iter__(self):
+#         buffer = []
+#         for sample in self.data_validate:
+#             buffer += self.tokenizer(sample["text"] + self.eos_token)["input_ids"]
+#             # buffer += [self.tokenizer.eos_token_id]
+#             # print(self.tokenizer.decode(buffer))
+#             while len(buffer) > self.max_tokens:
+#                 yield torch.tensor(buffer[: self.max_tokens])
+#                 buffer = buffer[self.max_tokens :]
 
 
 class Trainer:
-    def __init__(self, optimizer ,seed  , batch_size  , context_length , max_steps ,
-                      eval_steps ,  warmup_steps , model_name  , weight_decay  , grad , lr ,do_sample , use_flash ):
+    def __init__(
+        self,
+        optimizer,
+        seed,
+        batch_size,
+        context_length,
+        max_steps,
+        eval_steps,
+        warmup_steps,
+        model_name,
+        weight_decay,
+        grad,
+        lr,
+        do_sample,
+        use_flash,
+    ):
         self.max_tokens = context_length
         self.grad = grad
         self.step = 0
@@ -264,8 +296,8 @@ class Trainer:
         self.warmup_steps = warmup_steps
         self.eval_steps = eval_steps
         self.do_sample = do_sample
-        self.dataset = DatasetWrapper(self.max_tokens)
-        self.dataset_val = DatasetWrapper_val(self.max_tokens)
+        self.dataset = DatasetWrapper("train", self.max_tokens)
+        self.dataset_val = DatasetWrapper("val", self.max_tokens)
         self.use_flash = use_flash
 
         self.tokenizer = self.dataset.tokenizer
@@ -275,18 +307,21 @@ class Trainer:
             num_workers=2,
         )
 
-        self.loader_val = DataLoader(
-            self.dataset_val,
-            batch_size=batch_size
-        )
+        self.loader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
         self.scaler = torch.cuda.amp.GradScaler()
-        self.model = model = make_model(model_name, self.max_tokens , self.tokenizer , self.use_flash)
-       
-        if optimizer =="lion":
+        self.model = model = make_model(
+            model_name, self.max_tokens, self.tokenizer, self.use_flash
+        )
+
+        if optimizer == "lion":
             print("Use lion optimizer")
-            self.opt = Lion(model.parameters(), lr=lr, weight_decay=weight_decay,)
-        else:
+            self.opt = Lion(
+                model.parameters(),
+                lr=lr,
+                weight_decay=weight_decay,
+            )
+        elif optimizer == "adamw":
             print("Use AdamW optimizer")
             self.opt = optim.AdamW(
                 params=model.parameters(),
@@ -295,6 +330,8 @@ class Trainer:
                 betas=(0.9, 0.95),
                 fused=True,
             )
+        else:
+            raise NotImplementedError("only support lion or AdamW")
         self.model = torch.compile(model)
 
     def train_step(self, batch):
@@ -304,20 +341,21 @@ class Trainer:
             loss = loss / self.grad
         self.scaler.scale(loss).backward()
         return loss
-    
+
     def val_step(self):
         self.model.eval()
         prog = tqdm(self.loader_val)
         for i, batch in enumerate(prog):
             batch = batch.cuda()
             with torch.autocast(device_type="cuda", enabled=True):
-                  loss = self.model(batch, labels=batch).loss
-                  loss = loss / self.grad
-                  
+                loss = self.model(batch, labels=batch).loss
+                loss = loss / self.grad
+
             prog.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
 
         return loss
+
     def generate_samples(self, n_samples=8):
         GPT2Attention._attn = _attn_orig  # back to faster but more memory consuming
         model = self.model
@@ -333,9 +371,9 @@ class Trainer:
         t1 = time.time()
         t = [self.tokenizer.decode(z) for z in y]
         for u in range(len(t)):
-          print("samples = ",t[u])
+            print("samples = ", t[u])
         # t = "<hr>".join(f"<p>{c}</p>" for c in t)
-        #html = WANDB_STYLE + t
+        # html = WANDB_STYLE + t
         # wandb.log({"samples": wandb.Html(html)}, step=self.step)
         print(f"Generated in {t1-t0:.3f}s")
         if self.use_flash:
@@ -353,8 +391,6 @@ class Trainer:
         for i, batch in enumerate(prog):
             self.step = i + 1
 
-            
-
             loss = self.train_step(batch)
             prog.set_description(f"loss: {loss.item():.3f}")
             # wandb.log(
@@ -369,45 +405,66 @@ class Trainer:
                 self.scaler.step(self.opt)
                 self.scaler.update()
                 self.opt.zero_grad()
-            
+
             if i % self.eval_steps == 0 and i != 0:
-                print("Step =" ,self.step)
-                #loss_val = self.val_step()
+                print("Step =", self.step)
+                # loss_val = self.val_step()
                 self.model.eval()
-                val_loss = do_eval(self.model , self.loader_val , self.grad)
+                val_loss = do_eval(self.model, self.loader_val, self.grad)
                 self.model.train()
-                #print(f"loss_val: {loss1.item():.3f}")
+                # print(f"loss_val: {loss1.item():.3f}")
                 if self.do_sample:
                     self.generate_samples(6)
 
             self.grad = max(1, closest_power_of_2(i + 1) // 32)
             if self.step > self.max_steps:
-               break
+                break
 
-if __name__ == '__main__':
-    
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--optimizer", type=str, default="AdamW")
-    parser.add_argument("--seed", type=int, default=42 , help="{13|21|42|87|100}")
-    parser.add_argument("--batch_size", type=int, default=20 )
-    parser.add_argument("--context_length", type=int, default=256 ,help="seq" )
-    parser.add_argument("--lr", type=float, default=5e-4 ,help="lr" )
-    parser.add_argument("--max_steps", type=int, default=800 ,help="max steps" )
-    parser.add_argument("--eval_steps", type=int, default=400 ,help="eval steps" )
-    parser.add_argument("--warmup_steps", type=int, default=20 ,help="warmup steps" )
+    parser.add_argument("--optimizer", type=str, default="adamw")
+    parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
+    parser.add_argument("--batch_size", type=int, default=20)
+    parser.add_argument("--context_length", type=int, default=256, help="seq")
+    parser.add_argument("--lr", type=float, default=5e-4, help="lr")
+    parser.add_argument("--max_steps", type=int, default=800, help="max steps")
+    parser.add_argument("--eval_steps", type=int, default=400, help="eval steps")
+    parser.add_argument("--warmup_steps", type=int, default=20, help="warmup steps")
     parser.add_argument("--use_flash", default=False, action="store_true")
-    parser.add_argument("--model_name", type=str, default="gpt2" , help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl}")
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="gpt2",
+        help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl}",
+    )
     parser.add_argument("--do_sample", default=False, action="store_true")
-    parser.add_argument("--weight_decay", type=float, default=1e-1 ,help="weight decay" )
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=4 ,help="gradient_accumulation_steps" )
+    parser.add_argument("--weight_decay", type=float, default=1e-1, help="weight decay")
+    parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        default=4,
+        help="gradient_accumulation_steps",
+    )
     # parser.add_argument("--output_dir", type=str, default="./gpt2-test" ,help="output dir" )
-    
+
     args = parser.parse_args()
     print(args)
-    
+
     seed_everything(args.seed)
-    trainer = Trainer(optimizer = args.optimizer , seed = args.seed , batch_size = args.batch_size , context_length = args.context_length, max_steps = args.max_steps,
-                      eval_steps = args.eval_steps,  warmup_steps=args.warmup_steps , model_name = args.model_name , 
-                      weight_decay = args.weight_decay , grad = args.gradient_accumulation_steps, lr = args.lr 
-                      , do_sample = args.do_sample, use_flash = args.use_flash)
+    trainer = Trainer(
+        optimizer=args.optimizer,
+        seed=args.seed,
+        batch_size=args.batch_size,
+        context_length=args.context_length,
+        max_steps=args.max_steps,
+        eval_steps=args.eval_steps,
+        warmup_steps=args.warmup_steps,
+        model_name=args.model_name,
+        weight_decay=args.weight_decay,
+        grad=args.gradient_accumulation_steps,
+        lr=args.lr,
+        do_sample=args.do_sample,
+        use_flash=args.use_flash,
+    )
     trainer.train()
