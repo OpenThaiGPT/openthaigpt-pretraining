@@ -120,10 +120,10 @@ class Attention(nn.Module):
 
         self.cache_k = torch.zeros(
             (args.max_batch_size, args.max_seq_len, self.n_local_heads, self.head_dim)
-        ).cuda()
+        )
         self.cache_v = torch.zeros(
             (args.max_batch_size, args.max_seq_len, self.n_local_heads, self.head_dim)
-        ).cuda()
+        )
 
         if not (args.attention_mode == 'origin' or args.attention_mode == 'pytorch' or args.attention_mode == 'xformer'):
             raise KeyError('attention mode must be "origin", "pytorch" or "xformer"')
