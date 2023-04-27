@@ -14,4 +14,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
+    'transformers>=4.28.1',
+    'sentencepiece>=0.1.98'
 ]
