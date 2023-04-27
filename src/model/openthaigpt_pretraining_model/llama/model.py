@@ -3,7 +3,7 @@ class ExampleModel:
         pass
 
     def predict(self, x: int) -> int:
-        return x ** 3
+        return x**3
 
 
 class ExampleModelModified:
