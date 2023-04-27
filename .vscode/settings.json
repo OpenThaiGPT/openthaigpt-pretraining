@@ -1,9 +1,9 @@
 {
   "python.analysis.extraPaths": [
-    "./src",
-    "./src/evaluation",
-    "./src/core",
-    "./src/data",
-    "./src/model"
+      "./src",
+      "./src/evaluation",
+      "./src/core",
+      "./src/data",
+      "./src/model"
   ]
 }

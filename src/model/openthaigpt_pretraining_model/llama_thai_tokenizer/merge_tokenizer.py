@@ -3,13 +3,13 @@ from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
 import os
 
-llama_tokenizer_dir = "tokenizer.model"
-thai_sp_model_file = "sentencepiece.bpe.model"
+LLAMA_TOKENIZER_DIR = "tokenizer.model"
+THAI_SP_MODEL_DIR = "sentencepiece.bpe.model"
 
 
-llama_tokenizer = LlamaTokenizer.from_pretrained(llama_tokenizer_dir)
+llama_tokenizer = LlamaTokenizer.from_pretrained(LLAMA_TOKENIZER_DIR)
 thai_sp_model = spm.SentencePieceProcessor()
-thai_sp_model.Load(thai_sp_model_file)
+thai_sp_model.Load(THAI_SP_MODEL_DIR)
 
 llama_spm = sp_pb2_model.ModelProto()
 llama_spm.ParseFromString(llama_tokenizer.sp_model.serialized_model_proto())
