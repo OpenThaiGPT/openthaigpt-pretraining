@@ -1,0 +1,20 @@
+[build-system]
+requires = [
+    "setuptools>=40.8.0",
+    "wheel"
+]
+
+[project]
+name = "openthaigpt_pretraining"
+version = "0.1.0"
+description = "OpenThaiGPT Pretraining Task."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    'numpy>=1.18.1',
+    'pandas>=1.0.0',
+    'scikit-learn>=0.22.2'  # Just an Example
+]

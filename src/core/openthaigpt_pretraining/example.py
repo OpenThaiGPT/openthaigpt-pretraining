@@ -13,13 +13,3 @@ CUBE_TEST_CASES = [
     {"x": 4, "y": 64},
     {"x": 5, "y": 125},
 ]
-
-
-def test_square():
-    for test_case in SQUARE_TEST_CASES:
-        assert test_case["x"] ** 2 == test_case["y"]
-
-
-def test_cube():
-    for test_case in CUBE_TEST_CASES:
-        assert test_case["x"] ** 3 == test_case["y"]
