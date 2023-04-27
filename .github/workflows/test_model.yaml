@@ -8,21 +8,28 @@ on:
 
     branches:
       - "main"
+  push:
+    paths:
+      - "src/core/**/*.py"
+      - "tests/core/**/*.py"
+
+    branches:
+      - "main"
 
 jobs:
-  pytest_and_coverage:
+  pytest_and_coverage_model:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ '3.9' ]  # requires python<=3.9
+        os: [ubuntu-latest]
+        python-version: ["3.9"] # requires python<=3.9
 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' # caching pip dependencies
+          cache: "pip" # caching pip dependencies
 
       - name: Install dependencies
         run: |

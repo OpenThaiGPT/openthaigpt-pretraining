@@ -5,6 +5,7 @@
 ### Install Core Depedencies
 ```bash
 pip install -r requirements.txt
+pre-commit install
 pip install -e ./src/core
 ```
 
