@@ -1,14 +1,14 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
-# This software may be used and distributed according to the terms of the GNU General Public License version 3.
+# This software may be used and distributed according to the terms of the GNU General Public License version 3. # noqa: E501
 
-# This code copy from https://github.com/facebookresearch/llama/blob/main/llama/generation.py
+# This code copy from https://github.com/facebookresearch/llama/blob/main/llama/generation.py # noqa: E501
 
 from typing import List
 
 import torch
 
 from llama.tokenizer import Tokenizer
-from llama.llama_model import Transformer
+from llama.model import Transformer
 
 
 class LLaMA:
