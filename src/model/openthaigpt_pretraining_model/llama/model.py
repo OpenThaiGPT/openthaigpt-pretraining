@@ -15,6 +15,22 @@ from torch.nn.functional import scaled_dot_product_attention as torch_attention
 from xformers.components.attention.core import scaled_dot_product_attention as xformer_attention
 
 
+class ExampleModel:
+    def __init__(self):
+        pass
+
+    def predict(self, x: int) -> int:
+        return x**3
+
+
+class ExampleModelModified:
+    def __init__(self):
+        pass
+
+    def predict(self, x: int) -> int:
+        return x * x * x
+
+
 @dataclass
 class ModelArgs:
     dim: int = 512

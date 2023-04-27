@@ -1,5 +1,4 @@
-from openthaigpt_pretraining_model.llama.model import ModelArgs, Transformer
-import numpy as np
+from openthaigpt_pretraining_model.llama.model import ModelArgs, Transformer, ExampleModel, ExampleModelModified
 import torch
 
 
@@ -13,6 +12,26 @@ LLAMA_TEST_CASES = [
 ]
 
 
+def test_llama_efficient_attention_parity():
+    model1 = ExampleModel()
+    model2 = ExampleModelModified()
+
+    x = 5
+    assert model1.predict(x) == model2.predict(x)
+
+    x = 0
+    assert model1.predict(x) == model2.predict(x)
+
+    x = -3
+    assert model1.predict(x) == model2.predict(x)
+
+    x = 202
+    assert model1.predict(x) == model2.predict(x)
+
+    x = 1
+    assert model1.predict(x) == model2.predict(x)
+
+
 def test_llama_efficient_for_torch():
     base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode='origin')
     torch_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode='pytorch')
@@ -20,8 +39,10 @@ def test_llama_efficient_for_torch():
     base_model = Transformer(base_args)
     torch_model = Transformer(torch_args)
 
+    torch_model.load_state_dict(base_model.state_dict())
+
     for test_case in LLAMA_TEST_CASES:
-        np.testing.assert_almost_equal(base_model(test_case), torch_model(test_case), decimal=6)
+        assert torch.all(torch.abs(base_model(test_case, 0) - torch_model(test_case, 0)) <= 1e-6)
 
 
 def test_llama_efficient_for_xformer():
@@ -31,5 +52,7 @@ def test_llama_efficient_for_xformer():
     base_model = Transformer(base_args)
     xformer_model = Transformer(xformer_args)
 
+    xformer_model.load_state_dict(base_model.state_dict())
+
     for test_case in LLAMA_TEST_CASES:
-        np.testing.assert_almost_equal(base_model(test_case), xformer_model(test_case), decimal=6)
+        assert torch.all(torch.abs(base_model(test_case, 0) - xformer_model(test_case, 0)) <= 1e-6)
