@@ -1,4 +1,4 @@
-from transformers import LlamaTokenizer  # type: ignore
+from transformers import LlamaTokenizer
 
 llama_tokenizer_dir = (
     "/root/openthaigpt-pretraining/src/model/"
