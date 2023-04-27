@@ -15,5 +15,5 @@ classifiers = [
 ]
 dependencies = [
     'xformers>=0.0.18',
-    'git+https://github.com/facebookresearch/llama.git'
+    'torch==2.0.0+cu118'
 ]
