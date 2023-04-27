@@ -1,6 +1,6 @@
-from transformers import LlamaTokenizer  # type : ignore
-from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model  # type : ignore
-import sentencepiece as spm  # type : ignore
+from transformers import LlamaTokenizer  # type: ignore
+from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model  # type: ignore
+import sentencepiece as spm  # type: ignore
 import os
 
 LLAMA_TOKENIZER_DIR = "tokenizer.model"
