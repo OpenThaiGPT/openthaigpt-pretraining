@@ -9,3 +9,6 @@ def test_square():
 def test_cube():
     for test_case in CUBE_TEST_CASES:
         assert test_case["x"] ** 3 == test_case["y"]
+
+
+# sawadee krub pom
