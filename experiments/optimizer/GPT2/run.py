@@ -1,5 +1,5 @@
 import time
-from contextlib import suppress
+
 import argparse
 import torch
 import torch.nn as nn
@@ -7,8 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cuda as cuda
 from torch.utils.data import DataLoader, IterableDataset
-import os
-import torch
+
 import numpy as np
 import random
 from tqdm import tqdm
@@ -17,8 +16,6 @@ from datasets import load_dataset
 from transformers import GPT2TokenizerFast, AutoConfig
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel, GPT2Attention
 from typing import Tuple, Optional, Callable
-
-import torch
 from torch.optim.optimizer import Optimizer
 
 
@@ -72,9 +69,9 @@ class Lion(Optimizer):
         weight_decay: float = 0.0,
     ):
         assert lr > 0.0
-        assert all([0.0 <= beta <= 1.0 for beta in betas])
+        # assert all([0.0 <= beta <= 1.0 for beta in betas])
 
-        defaults = dict(lr=lr, betas=betas, weight_decay=weight_decay)
+        defaults = {lr: lr, betas: betas, weight_decay: weight_decay}
 
         super().__init__(params, defaults)
 
@@ -412,7 +409,7 @@ class Trainer:
                 self.model.eval()
                 val_loss = do_eval(self.model, self.loader_val, self.grad)
                 self.model.train()
-                # print(f"loss_val: {loss1.item():.3f}")
+                print(f"loss_val: {val_loss.item():.3f}")
                 if self.do_sample:
                     self.generate_samples(6)
 
@@ -444,9 +441,8 @@ if __name__ == "__main__":
         "--gradient_accumulation_steps",
         type=int,
         default=4,
-        help="gradient_accumulation_steps",
+        help="gradient acc",
     )
-    # parser.add_argument("--output_dir", type=str, default="./gpt2-test" ,help="output dir" )
 
     args = parser.parse_args()
     print(args)
