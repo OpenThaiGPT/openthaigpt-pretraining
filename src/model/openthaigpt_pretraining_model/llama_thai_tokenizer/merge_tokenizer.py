@@ -3,8 +3,8 @@ from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
 import os
 
-LLAMA_TOKENIZER_DIR = "tokenizer.model"
-THAI_SP_MODEL_DIR = "sentencepiece.bpe.model"
+LLAMA_TOKENIZER_DIR = "llama_tokenizer.model"
+THAI_SP_MODEL_DIR = "thai_sentencepiece.bpe.model"
 
 
 llama_tokenizer = LlamaTokenizer.from_pretrained(LLAMA_TOKENIZER_DIR)
