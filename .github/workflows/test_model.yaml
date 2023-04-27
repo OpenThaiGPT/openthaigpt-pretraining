@@ -38,6 +38,10 @@ jobs:
           pip install -e src/core
           pip install -e src/model
 
+      - name: Run Mypy
+        run: |
+          mypy ./src/model/openthaigpt_pretraining_model
+
       - name: Generate HTML coverage report
         run: |
           pytest --cov-report xml --cov=src/model tests/model/
