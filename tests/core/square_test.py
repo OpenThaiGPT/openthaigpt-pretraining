@@ -11,4 +11,4 @@ def test_cube():
         assert test_case["x"] ** 3 == test_case["y"]
 
 
-# sawadee krub pom
+# sawadee krub pom:)
