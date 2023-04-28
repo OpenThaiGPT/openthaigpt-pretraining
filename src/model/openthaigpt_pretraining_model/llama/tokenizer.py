@@ -1,1 +1,1 @@
-from origin_llama.tokenizer import Tokenizer  # noqa: F401 # type: ignore
+from llama.tokenizer import Tokenizer  # type: ignore  # noqa: F401

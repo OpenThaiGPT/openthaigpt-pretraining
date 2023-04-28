@@ -1,1 +1,1 @@
-from origin_llama.generation import LLaMA  # noqa: F401 # type: ignore
+from llama.generation import LLaMA  # type: ignore # noqa: F401
