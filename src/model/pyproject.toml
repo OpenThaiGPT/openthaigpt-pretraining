@@ -15,5 +15,6 @@ classifiers = [
 ]
 dependencies = [
     'xformers>=0.0.18',
-    'llama@git+https://github.com/facebookresearch/llama.git'
+    'llama@git+https://github.com/facebookresearch/llama.git',
+    'sentencepiece>=0.1.98
 ]
