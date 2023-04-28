@@ -14,6 +14,11 @@ from xformers.components.attention.core import (
 from llama.model import RMSNorm, apply_rotary_emb, precompute_freqs_cis  # type: ignore
 
 
+ORIGIN_ATTENTION_MODE = "origin"
+PYTORCH_ATTENTION_MODE = "pytorch"
+XFORMER_ATTENTION_MODE = "xformer"
+
+
 @dataclass
 class ModelArgs:
     dim: int = 512
@@ -103,11 +108,11 @@ class Attention(nn.Module):
         keys = keys.transpose(1, 2)
         values = values.transpose(1, 2)
 
-        if self.mode == "pytorch":
+        if self.mode == PYTORCH_ATTENTION_MODE:
             output = torch_attention(xq, keys, values, mask)
-        elif self.mode == "xformer":
+        elif self.mode == XFORMER_ATTENTION_MODE:
             output = xformer_attention(xq, keys, values, mask)
-        elif self.mode == "origin":
+        elif self.mode == ORIGIN_ATTENTION_MODE:
             scores = torch.matmul(xq, keys.transpose(2, 3)) / math.sqrt(self.head_dim)
             if mask is not None:
                 scores = scores + mask  # (bs, n_local_heads, slen, cache_len + slen)
