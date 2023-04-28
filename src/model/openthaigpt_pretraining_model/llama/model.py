@@ -71,11 +71,13 @@ class Attention(nn.Module):
         )
 
         if not (
-            args.attention_mode == "origin"
-            or args.attention_mode == "pytorch"
-            or args.attention_mode == "xformer"
+            args.attention_mode == PYTORCH_ATTENTION_MODE
+            or args.attention_mode == XFORMER_ATTENTION_MODE
+            or args.attention_mode == ORIGIN_ATTENTION_MODE
         ):
-            raise KeyError('attention mode must be "origin", "pytorch" or "xformer"')
+            raise KeyError(
+                f'attention mode must be "{ORIGIN_ATTENTION_MODE}", "{XFORMER_ATTENTION_MODE}" or "{PYTORCH_ATTENTION_MODE}"'  # noqa: E501
+            )
 
         self.mode = args.attention_mode
 
