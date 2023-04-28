@@ -1,4 +1,10 @@
-from openthaigpt_pretraining_model.llama.model import ModelArgs, Transformer
+from openthaigpt_pretraining_model.llama.model import (
+    ModelArgs,
+    Transformer,
+    ORIGIN_ATTENTION_MODE,
+    PYTORCH_ATTENTION_MODE,
+    XFORMER_ATTENTION_MODE,
+)
 import torch
 
 
@@ -13,8 +19,8 @@ LLAMA_TEST_CASES = [
 
 
 def test_llama_efficient_for_torch():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode="origin")
-    torch_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode="pytorch")
+    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    torch_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=PYTORCH_ATTENTION_MODE)
 
     base_model = Transformer(base_args)
     torch_model = Transformer(torch_args)
@@ -28,8 +34,10 @@ def test_llama_efficient_for_torch():
 
 
 def test_llama_efficient_for_xformer():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode="origin")
-    xformer_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode="xformer")
+    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    xformer_args = ModelArgs(
+        vocab_size=VOCAB_SIZE, attention_mode=XFORMER_ATTENTION_MODE
+    )
 
     base_model = Transformer(base_args)
     xformer_model = Transformer(xformer_args)

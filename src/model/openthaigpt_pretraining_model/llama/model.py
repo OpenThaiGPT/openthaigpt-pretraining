@@ -31,7 +31,7 @@ class ModelArgs:
     max_batch_size: int = 32
     max_seq_len: int = 2048
 
-    attention_mode: str = "origin"  # pytorch, xformer
+    attention_mode: str = ORIGIN_ATTENTION_MODE  # pytorch, xformer
 
 
 class Attention(nn.Module):
