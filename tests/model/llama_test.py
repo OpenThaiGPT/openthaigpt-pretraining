@@ -1,4 +1,4 @@
-from openthaigpt_pretraining_model.llamas.model import ModelArgs, Transformer
+from openthaigpt_pretraining_model.llama.model import ModelArgs, Transformer
 import torch
 
 
