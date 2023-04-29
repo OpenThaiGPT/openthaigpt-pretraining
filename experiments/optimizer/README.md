@@ -54,5 +54,5 @@ We should measure how 1,2,3 are impacted by increasing model parameters count. I
 4. torch version 2 (**Importance)
 ## Script
 ```
-python run.py --optimizer "AdamW"  --use_flash --model_name "gpt2"
+python run.py --optimizer "adamw"  --use_flash --model_name "gpt2"
 ```

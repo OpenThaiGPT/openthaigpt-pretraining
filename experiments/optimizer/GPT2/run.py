@@ -18,7 +18,17 @@ from typing import Tuple, Optional, Callable
 from torch.optim.optimizer import Optimizer
 
 from model import make_model, _attn_wrapper, _attn_orig
-from constants import MODEL_NAME, BOS_TOKEN, EOS_TOKEN, PAD_TOKEN, DATASET_NAME
+from constants import (
+    MODEL_NAME,
+    BOS_TOKEN,
+    EOS_TOKEN,
+    PAD_TOKEN,
+    DATASET_NAME,
+    CUDA,
+    SPLIT_VAL,
+    SPLIT_TRAIN,
+    LANGUAGE_DATASET,
+)
 
 
 # _attn_orig = GPT2Attention._attn
@@ -101,12 +111,12 @@ def closest_power_of_2(x):
 
 
 @torch.no_grad()
-def do_eval(model, loader_val, grad):
+def do_eval(model, loader_val):
     val_loss = 0.0
     c_1 = 0
     for i1, batch1 in enumerate(loader_val):
         batch1 = batch1.cuda()
-        with torch.autocast(device_type="cuda", enabled=True):
+        with torch.autocast(device_type=CUDA, enabled=True):
             loss1 = model(batch1, labels=batch1).loss
             val_loss = float(val_loss) + float(loss1.item())
         c_1 += 1
@@ -132,16 +142,16 @@ class DatasetWrapper(IterableDataset):
         if mode == "val":
             self.data_set = load_dataset(
                 DATASET_NAME,
-                languages=["th"],
+                languages=[LANGUAGE_DATASET],
                 streaming=True,
-                split="validation",  # optional
+                split=SPLIT_VAL,  # optional
             )
         elif mode == "train":
             self.data_set = load_dataset(
                 DATASET_NAME,
-                languages=["th"],
+                languages=[LANGUAGE_DATASET],
                 streaming=True,
-                split="train",  # optional
+                split=SPLIT_TRAIN,  # optional
             ).shuffle(buffer_size=10_000)
         else:
             raise NotImplementedError("only support Train,Val")
@@ -222,7 +232,7 @@ class Trainer:
 
     def train_step(self, batch):
         batch = batch.cuda()
-        with torch.autocast(device_type="cuda", enabled=True):
+        with torch.autocast(device_type=CUDA, enabled=True):
             loss = self.model(batch, labels=batch).loss
             loss = loss / self.grad
         self.scaler.scale(loss).backward()
@@ -233,7 +243,7 @@ class Trainer:
         prog = tqdm(self.loader_val)
         for i, batch in enumerate(prog):
             batch = batch.cuda()
-            with torch.autocast(device_type="cuda", enabled=True):
+            with torch.autocast(device_type=CUDA, enabled=True):
                 loss = self.model(batch, labels=batch).loss
                 loss = loss / self.grad
 
@@ -281,7 +291,7 @@ class Trainer:
                 print("Step =", self.step)
                 # loss_val = self.val_step()
                 self.model.eval()
-                val_loss = do_eval(self.model, self.loader_val, self.grad)
+                val_loss = do_eval(self.model, self.loader_val)
                 self.model.train()
                 print(f"loss_val: {val_loss.item():.3f}")
                 if self.do_sample:
