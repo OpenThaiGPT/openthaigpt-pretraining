@@ -2,10 +2,8 @@ import time
 
 import argparse
 import torch
-import torch.nn as nn
+
 import torch.optim as optim
-import torch.nn.functional as F
-import torch.backends.cuda as cuda
 from torch.utils.data import DataLoader, IterableDataset
 
 import numpy as np
@@ -13,15 +11,17 @@ import random
 from tqdm import tqdm
 
 from datasets import load_dataset
-from transformers import GPT2TokenizerFast, AutoConfig
-from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel, GPT2Attention
+from transformers import GPT2TokenizerFast
+from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
+
 from typing import Tuple, Optional, Callable
 from torch.optim.optimizer import Optimizer
 
+from model import make_model, _attn_wrapper, _attn_orig
+from constants import model_name, bos_token, eos_token, pad_token
 
-_attn_orig = GPT2Attention._attn
 
-
+# _attn_orig = GPT2Attention._attn
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -40,20 +40,14 @@ def exists(val):
 
 
 # update functions
-
-
 def update_fn(p, grad, exp_avg, lr, wd, beta1, beta2):
     # stepweight decay
-
     p.data.mul_(1 - lr * wd)
-
     # weight update
-
     update = exp_avg.clone().mul_(beta1).add(grad, alpha=1 - beta1).sign_()
     p.add_(update, alpha=-lr)
 
     # decay the momentum running average coefficient
-
     exp_avg.mul_(beta2).add_(grad, alpha=1 - beta2)
 
 
@@ -69,15 +63,9 @@ class Lion(Optimizer):
         weight_decay: float = 0.0,
     ):
         assert lr > 0.0
-        # assert all([0.0 <= beta <= 1.0 for beta in betas])
-
         defaults = {lr: lr, betas: betas, weight_decay: weight_decay}
 
         super().__init__(params, defaults)
-
-        # if use_triton:
-        #     from lion_pytorch.triton import update_fn as triton_update_fn
-        #     self.update_fn = triton_update_fn
 
     @torch.no_grad()
     def step(self, closure: Optional[Callable] = None):
@@ -108,109 +96,30 @@ class Lion(Optimizer):
         return loss
 
 
-# patch GPT2Attention to use flash_sdp, disable it when doing the inference
-def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
-    if head_mask is not None:
-        raise NotImplementedError("head_mask is not implemented for flash_sdp")
-    is_causal = attention_mask is None
-    with cuda.sdp_kernel(
-        enable_flash=True,
-        enable_math=False,
-        enable_mem_efficient=False,
-    ):
-        attn_out = F.scaled_dot_product_attention(
-            query=query.half(),
-            key=key.half(),
-            value=value.half(),
-            is_causal=is_causal,
-            attn_mask=attention_mask,
-            dropout_p=self.attn_dropout.p,
-        ).float()
-    return attn_out, None
-
-
 def closest_power_of_2(x):
     return 2 ** (x - 1).bit_length()
 
 
 @torch.no_grad()
 def do_eval(model, loader_val, grad):
-    # model.eval()
     val_loss = 0.0
     c_1 = 0
-    # prog1 = tqdm(self.loader_val)
     for i1, batch1 in enumerate(loader_val):
         batch1 = batch1.cuda()
         with torch.autocast(device_type="cuda", enabled=True):
             loss1 = model(batch1, labels=batch1).loss
-            # loss1 = loss1 /grad
             val_loss = float(val_loss) + float(loss1.item())
         c_1 += 1
     print(f"loss_val : {(val_loss / c_1):.3f}")
-    # model.train()
     return val_loss / c_1
-
-
-def make_model(pretrained_name, max_tokens, tokenizer, use_flash):
-    config = AutoConfig.from_pretrained(
-        pretrained_name,
-        vocab_size=len(tokenizer),
-        n_ctx=max_tokens,
-        bos_token_id=tokenizer.bos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-        pad_token_id=tokenizer.pad_token_id,
-        optimize_cuda_cache=True,
-    )
-    # model = GPT2LMHeadModel.from_pretrained(pretrained_name).cuda()
-    model = GPT2LMHeadModel(config).cuda()
-    GPT2Attention._attn = _attn_orig
-    if use_flash:
-        print("Use Flash Attention")
-        GPT2Attention._attn = _attn_wrapper
-
-    # model.config.update(
-    #     dict(
-    #         n_ctx=max_tokens,
-    #         #n_positions=max_tokens,
-    #         vocab_size=len(tokenizer),
-    #         bos_token_id=tokenizer.bos_token_id,
-    #          eos_token_id=tokenizer.eos_token_id,
-    #           pad_token_id=tokenizer.pad_token_id,
-    #          optimize_cuda_cache=True
-    #     )
-    # )
-    model.resize_token_embeddings(len(tokenizer))
-
-    model_size = sum(t.numel() for t in model.parameters())
-    print(f"GPT-2 size: {model_size/1000**2:.1f}M parameters")
-
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"GPT-2 size requires_grad: {model_size/1000**2:.1f}M parameters")
-    # # patch model embeddings
-    # emb = model.transformer.wpe.weight.data
-    # wpe = nn.Embedding(max_tokens, emb.shape[1])
-    # wpe.weight.data = emb.repeat(max_tokens // emb.shape[0], 1)
-    # model.transformer.wpe = wpe
-
-    # # also increase mask size
-    # for block in model.transformer.h:
-    #     block.attn.bias.data = (
-    #         torch.tril(torch.ones((max_tokens, max_tokens), dtype=torch.bool))
-    #         .view(1, 1, max_tokens, max_tokens)
-    #         .cuda()
-    #     )
-    if torch.cuda.device_count() > 1:
-        print("Let's use", torch.cuda.device_count(), "GPUs!")
-        model = nn.DataParallel(model)
-    return model
 
 
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, max_tokens=256):
-        self.model_name = "flax-community/gpt2-base-thai"
-        self.bos_token = "<|startoftext|>"
-        self.eos_token = "<|endoftext|>"
-        self.pad_token = "<|pad|>"
+        self.model_name = model_name
+        self.bos_token = bos_token
+        self.eos_token = eos_token
+        self.pad_token = pad_token
         self.tokenizer = GPT2TokenizerFast.from_pretrained(
             self.model_name,
             bos_token=self.bos_token,
@@ -219,53 +128,27 @@ class DatasetWrapper(IterableDataset):
         )
         self.mode = mode
         self.max_tokens = max_tokens
-        self.data_train = load_dataset(
-            "mc4", languages=["th"], streaming=True, split="train"  # optional
-        ).shuffle(buffer_size=10_000)
 
-        self.data_validate = load_dataset(
-            "mc4", languages=["th"], streaming=True, split="validation"  # optional
-        )
+        if mode == "val":
+            self.data_set = load_dataset(
+                "mc4", languages=["th"], streaming=True, split="validation"  # optional
+            )
+        elif mode == "train":
+            self.data_set = load_dataset(
+                "mc4", languages=["th"], streaming=True, split="train"  # optional
+            ).shuffle(buffer_size=10_000)
+        else:
+            raise NotImplementedError("only support Train,Val")
 
     def __iter__(self):
         buffer = []
-        iter_dataset = self.data_train
-        if self.mode == "val":
-            iter_dataset = self.data_validate
+        iter_dataset = self.data_set
 
         for sample in iter_dataset:
             buffer += self.tokenizer(sample["text"] + self.eos_token)["input_ids"]
             while len(buffer) > self.max_tokens:
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]
-
-
-# class DatasetWrapper_val(IterableDataset):
-#     def __init__(self, max_tokens=256):
-#         self.model_name = "flax-community/gpt2-base-thai"
-#         self.bos_token = "<|startoftext|>"
-#         self.eos_token = "<|endoftext|>"
-#         self.pad_token = "<|pad|>"
-#         self.tokenizer = GPT2TokenizerFast.from_pretrained(
-#             self.model_name,
-#             bos_token=self.bos_token,
-#             eos_token=self.eos_token,
-#             pad_token=self.pad_token,
-#         )
-#         self.max_tokens = max_tokens
-#         self.data_validate = load_dataset(
-#             "mc4", languages=["th"], streaming=True, split="validation"  # optional
-#         )
-
-#     def __iter__(self):
-#         buffer = []
-#         for sample in self.data_validate:
-#             buffer += self.tokenizer(sample["text"] + self.eos_token)["input_ids"]
-#             # buffer += [self.tokenizer.eos_token_id]
-#             # print(self.tokenizer.decode(buffer))
-#             while len(buffer) > self.max_tokens:
-#                 yield torch.tensor(buffer[: self.max_tokens])
-#                 buffer = buffer[self.max_tokens :]
 
 
 class Trainer:
@@ -369,19 +252,11 @@ class Trainer:
         t = [self.tokenizer.decode(z) for z in y]
         for u in range(len(t)):
             print("samples = ", t[u])
-        # t = "<hr>".join(f"<p>{c}</p>" for c in t)
-        # html = WANDB_STYLE + t
-        # wandb.log({"samples": wandb.Html(html)}, step=self.step)
         print(f"Generated in {t1-t0:.3f}s")
         if self.use_flash:
             GPT2Attention._attn = _attn_wrapper
 
     def train(self):
-        # wandb.init(
-        #     project="long-gptx",
-        #     entity="_",
-        # )
-
         prog = tqdm(self.loader)
         self.opt.zero_grad()
 
@@ -390,13 +265,6 @@ class Trainer:
 
             loss = self.train_step(batch)
             prog.set_description(f"loss: {loss.item():.3f}")
-            # wandb.log(
-            #     {
-            #         "loss": loss.item(),
-            #         "grad": self.grad,
-            #     },
-            #     step=i,
-            # )
 
             if i % self.grad == 0:
                 self.scaler.step(self.opt)
