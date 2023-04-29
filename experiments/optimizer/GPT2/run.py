@@ -18,7 +18,7 @@ from typing import Tuple, Optional, Callable
 from torch.optim.optimizer import Optimizer
 
 from model import make_model, _attn_wrapper, _attn_orig
-from constants import model_name, bos_token, eos_token, pad_token
+from constants import MODEL_NAME, BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
 
 
 # _attn_orig = GPT2Attention._attn
@@ -116,10 +116,10 @@ def do_eval(model, loader_val, grad):
 
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, max_tokens=256):
-        self.model_name = model_name
-        self.bos_token = bos_token
-        self.eos_token = eos_token
-        self.pad_token = pad_token
+        self.model_name = MODEL_NAME
+        self.bos_token = BOS_TOKEN
+        self.eos_token = EOS_TOKEN
+        self.pad_token = PAD_TOKEN
         self.tokenizer = GPT2TokenizerFast.from_pretrained(
             self.model_name,
             bos_token=self.bos_token,
