@@ -18,7 +18,7 @@ from typing import Tuple, Optional, Callable
 from torch.optim.optimizer import Optimizer
 
 from model import make_model, _attn_wrapper, _attn_orig
-from constants import MODEL_NAME, BOS_TOKEN, EOS_TOKEN, PAD_TOKEN
+from constants import MODEL_NAME, BOS_TOKEN, EOS_TOKEN, PAD_TOKEN, DATASET_NAME
 
 
 # _attn_orig = GPT2Attention._attn
@@ -131,11 +131,17 @@ class DatasetWrapper(IterableDataset):
 
         if mode == "val":
             self.data_set = load_dataset(
-                "mc4", languages=["th"], streaming=True, split="validation"  # optional
+                DATASET_NAME,
+                languages=["th"],
+                streaming=True,
+                split="validation",  # optional
             )
         elif mode == "train":
             self.data_set = load_dataset(
-                "mc4", languages=["th"], streaming=True, split="train"  # optional
+                DATASET_NAME,
+                languages=["th"],
+                streaming=True,
+                split="train",  # optional
             ).shuffle(buffer_size=10_000)
         else:
             raise NotImplementedError("only support Train,Val")
