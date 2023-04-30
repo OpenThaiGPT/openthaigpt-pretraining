@@ -31,10 +31,15 @@ def test_llama_efficient_for_torch():
 
     torch_model.load_state_dict(base_model.state_dict())
 
-    for test_case in LLAMA_TEST_CASES:
-        assert torch.all(
-            torch.abs(base_model(test_case, 0) - torch_model(test_case, 0)) <= 1e-6
-        )
+    with torch.no_grad():
+        for test_case in LLAMA_TEST_CASES:
+            assert torch.all(
+                torch.abs(
+                    base_model(test_case.to(device), 0)
+                    - torch_model(test_case.to(device), 0)
+                )
+                <= 1e-6
+            )
 
 
 def test_llama_efficient_for_xformer():
@@ -47,11 +52,15 @@ def test_llama_efficient_for_xformer():
     xformer_model = Transformer(xformer_args).to(device)
 
     xformer_model.load_state_dict(base_model.state_dict())
-
-    for test_case in LLAMA_TEST_CASES:
-        assert torch.all(
-            torch.abs(base_model(test_case, 0) - xformer_model(test_case, 0)) <= 1e-6
-        )
+    with torch.no_grad():
+        for test_case in LLAMA_TEST_CASES:
+            assert torch.all(
+                torch.abs(
+                    base_model(test_case.to(device), 0)
+                    - xformer_model(test_case.to(device), 0)
+                )
+                <= 1e-6
+            )
 
 
 def test_key_error():
