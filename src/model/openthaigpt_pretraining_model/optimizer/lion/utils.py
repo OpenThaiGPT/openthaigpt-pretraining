@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 import time
 
 import torch
@@ -21,12 +22,12 @@ from openthaigpt_pretraining_model.nanoGPT.model import (
     _attn_orig,
 )
 from openthaigpt_pretraining_model.optimizer.lion.constants import (
+    DTYPE_CHOICE,
     MODEL_NAME,
     BOS_TOKEN,
     EOS_TOKEN,
     PAD_TOKEN,
     DATASET_NAME,
-    CUDA,
     SPLIT_VAL,
     SPLIT_TRAIN,
     LANGUAGE_DATASET,
@@ -49,17 +50,36 @@ def closest_power_of_2(x):
 
 
 @torch.no_grad()
-def do_eval(model, loader_val):
+def do_eval(model, loader_val, ctx):
     val_loss = 0.0
     c_1 = 0
     for i1, batch1 in enumerate(loader_val):
         batch1 = batch1.cuda()
-        with torch.autocast(device_type=CUDA, enabled=True):
+        with ctx:
             loss1 = model(batch1, labels=batch1).loss
             val_loss = float(val_loss) + float(loss1.item())
         c_1 += 1
     print(f"loss_val : {(val_loss / c_1):.3f}")
     return val_loss / c_1
+
+
+def get_torch_context(dtype: str):
+    device_type = (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )  # for later use in torch.autocast
+
+    if dtype not in DTYPE_CHOICE.keys():
+        raise NotImplementedError(
+            f"dtype: {dtype} is not available. Only supports bfloat16|float32|float16"
+        )
+
+    ptdtype = DTYPE_CHOICE[dtype]
+    ctx = (
+        nullcontext()
+        if device_type == "cpu"
+        else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
+    )
+    return ctx
 
 
 class DatasetWrapper(IterableDataset):
@@ -122,6 +142,7 @@ class Trainer:
         do_sample,
         use_flash,
         use_checkpointing,
+        dtype: str,
     ):
         self.max_tokens = context_length
         self.grad = grad
@@ -145,7 +166,8 @@ class Trainer:
 
         self.loader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
-        self.scaler = torch.cuda.amp.GradScaler()
+        self.ctx = get_torch_context(dtype)
+        self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
         self.model = model = make_model(
             model_name,
             self.max_tokens,
@@ -176,7 +198,7 @@ class Trainer:
 
     def train_step(self, batch):
         batch = batch.cuda()
-        with torch.autocast(device_type=CUDA, enabled=True):
+        with self.ctx:
             loss = self.model(batch, labels=batch).loss
             loss = loss / self.grad
         self.scaler.scale(loss).backward()
@@ -187,7 +209,7 @@ class Trainer:
         prog = tqdm(self.loader_val)
         for i, batch in enumerate(prog):
             batch = batch.cuda()
-            with torch.autocast(device_type=CUDA, enabled=True):
+            with self.ctx:
                 loss = self.model(batch, labels=batch).loss
                 loss = loss / self.grad
 
@@ -235,7 +257,7 @@ class Trainer:
                 print("Step =", self.step)
                 # loss_val = self.val_step()
                 self.model.eval()
-                val_loss = do_eval(self.model, self.loader_val)
+                val_loss = do_eval(self.model, self.loader_val, self.ctx)
                 self.model.train()
                 print(f"loss_val: {val_loss.item():.3f}")
                 if self.do_sample:
