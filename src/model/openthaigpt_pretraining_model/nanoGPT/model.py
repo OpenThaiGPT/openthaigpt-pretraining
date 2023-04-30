@@ -31,7 +31,7 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
     return attn_out, None
 
 
-def make_model(pretrained_name, max_tokens, tokenizer, use_flash):
+def make_model(pretrained_name, max_tokens, tokenizer, use_flash, use_checkpointing):
     config = AutoConfig.from_pretrained(
         pretrained_name,
         vocab_size=len(tokenizer),
@@ -48,6 +48,9 @@ def make_model(pretrained_name, max_tokens, tokenizer, use_flash):
         GPT2Attention._attn = _attn_wrapper
 
     model.resize_token_embeddings(len(tokenizer))
+
+    if use_checkpointing:
+        model.gradient_checkpointing_enable()
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"GPT-2 size: {model_size/1000**2:.1f}M parameters")

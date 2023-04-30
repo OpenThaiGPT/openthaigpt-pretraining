@@ -1,6 +1,5 @@
 import time
 
-import argparse
 import torch
 
 import torch.optim as optim
@@ -21,7 +20,7 @@ from openthaigpt_pretraining_model.nanoGPT.model import (
     _attn_wrapper,
     _attn_orig,
 )
-from openthaigpt_pretraining_model.nanoGPT.constants import (
+from openthaigpt_pretraining_model.optimizer.lion.constants import (
     MODEL_NAME,
     BOS_TOKEN,
     EOS_TOKEN,
@@ -122,6 +121,7 @@ class Trainer:
         lr,
         do_sample,
         use_flash,
+        use_checkpointing,
     ):
         self.max_tokens = context_length
         self.grad = grad
@@ -134,6 +134,7 @@ class Trainer:
         self.dataset = DatasetWrapper("train", self.max_tokens)
         self.dataset_val = DatasetWrapper("val", self.max_tokens)
         self.use_flash = use_flash
+        self.use_checkpointing = use_checkpointing
 
         self.tokenizer = self.dataset.tokenizer
         self.loader = DataLoader(
@@ -146,7 +147,11 @@ class Trainer:
 
         self.scaler = torch.cuda.amp.GradScaler()
         self.model = model = make_model(
-            model_name, self.max_tokens, self.tokenizer, self.use_flash
+            model_name,
+            self.max_tokens,
+            self.tokenizer,
+            self.use_flash,
+            self.use_checkpointing,
         )
 
         if optimizer == "lion":
@@ -239,51 +244,3 @@ class Trainer:
             self.grad = max(1, closest_power_of_2(i + 1) // 32)
             if self.step > self.max_steps:
                 break
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--optimizer", type=str, default="adamw")
-    parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
-    parser.add_argument("--batch_size", type=int, default=20)
-    parser.add_argument("--context_length", type=int, default=256, help="seq")
-    parser.add_argument("--lr", type=float, default=5e-4, help="lr")
-    parser.add_argument("--max_steps", type=int, default=800, help="max steps")
-    parser.add_argument("--eval_steps", type=int, default=400, help="eval steps")
-    parser.add_argument("--warmup_steps", type=int, default=20, help="warmup steps")
-    parser.add_argument("--use_flash", default=False, action="store_true")
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        default="gpt2",
-        help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl}",
-    )
-    parser.add_argument("--do_sample", default=False, action="store_true")
-    parser.add_argument("--weight_decay", type=float, default=1e-1, help="weight decay")
-    parser.add_argument(
-        "--gradient_accumulation_steps",
-        type=int,
-        default=4,
-        help="gradient acc",
-    )
-
-    args = parser.parse_args()
-    print(args)
-
-    seed_everything(args.seed)
-    trainer = Trainer(
-        optimizer=args.optimizer,
-        seed=args.seed,
-        batch_size=args.batch_size,
-        context_length=args.context_length,
-        max_steps=args.max_steps,
-        eval_steps=args.eval_steps,
-        warmup_steps=args.warmup_steps,
-        model_name=args.model_name,
-        weight_decay=args.weight_decay,
-        grad=args.gradient_accumulation_steps,
-        lr=args.lr,
-        do_sample=args.do_sample,
-        use_flash=args.use_flash,
-    )
-    trainer.train()
