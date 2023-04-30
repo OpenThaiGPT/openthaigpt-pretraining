@@ -4,7 +4,7 @@ import math
 
 import torch
 from torch import nn
-import torch.nn.functional as F  # noqa: N812
+import torch.nn.functional as F
 
 import xformers.ops as xops
 
@@ -69,8 +69,8 @@ class Attention(nn.Module):
 
         if not (
             args.attention_mode == ORIGIN_ATTENTION_MODE
-            or args.attention_mode == PYTORCH_ATTENTION_MODE
-            or args.attention_mode == XFORMER_ATTENTION_MODE
+            or args.attention_mode == PYTORCH_ATTENTION_MODE  # noqa: W503
+            or args.attention_mode == XFORMER_ATTENTION_MODE  # noqa: W503
         ):
             raise KeyError(
                 f'attention mode must be "{ORIGIN_ATTENTION_MODE}", "{XFORMER_ATTENTION_MODE}" or "{PYTORCH_ATTENTION_MODE}"'  # noqa: E501

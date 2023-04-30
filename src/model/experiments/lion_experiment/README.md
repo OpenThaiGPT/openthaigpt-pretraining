@@ -47,7 +47,12 @@ We should measure how 1,2,3 are impacted by increasing model parameters count. I
 ## Concerns
 1. We are not sure which optimiers's hyperameters will affect convergence speed. Please refer to the well-experimented hyperparamters for now.
 
+## Install
+1. transformers
+2. datasets
+3. zstandard
+4. torch version 2 (**Importance)
 ## Script
 ```
-python ....
+python run.py --optimizer "adamw"  --use_flash --model_name "gpt2"
 ```
