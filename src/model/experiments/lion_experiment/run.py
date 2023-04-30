@@ -1,5 +1,10 @@
 import argparse
 from openthaigpt_pretraining_model.optimizer.lion.utils import seed_everything, Trainer
+import os
+
+# https://github.com/d8ahazard/sd_dreambooth_extension/pull/1186#issuecomment-1518694203
+if os.name == "posix":
+    os.environ["TORCHDYNAMO_DISABLE"] = "1"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
