@@ -53,7 +53,7 @@ In this table, we have different configurations of the cerebras/Cerebras-GPT-2.7
 
 ### Hardware
 
-We run all experiments on Huaweii Cloud Elastic Cloud Server p3s.4xlarge.8 (A100 40GB \* 1, 16vCPUs, 128GB Ram) for 1.30 minutes each.
+We run all experiments on Huaweii Cloud Elastic Cloud Server p3s.4xlarge.8 (A100 40GB \* 1, 16vCPUs, 128GB Ram) for 1.30 minutes each. All experimens are run in bf16 datatype.
 
 ## Convergence Experiment (#2) (WIP)
 
@@ -83,7 +83,7 @@ Tokenizers:
 ## Experiment steps
 
 1. Intilize GPT2 model weight from scratch, and resize token embedding to align with selected tokenizer.
-2. Train from scratch with 4 \* A100 GPUs for 1 hours with selected optimizer.
+2. Train from scratch with 4 \* A100 GPUs for 1 hours with selected optimizer (TBD).
 3. Change optimizer and do 1,2 again
 4. Repeat 1-3 again but change the optimizer
 5. Analyze perplexity of the optimizer choice
