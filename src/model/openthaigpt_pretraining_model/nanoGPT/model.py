@@ -49,6 +49,7 @@ def make_model(pretrained_name, max_tokens, tokenizer, use_flash, use_checkpoint
 
     model.resize_token_embeddings(len(tokenizer))
 
+    # https://www.kaggle.com/code/vad13irt/optimization-approaches-for-transformers
     if use_checkpointing:
         model.gradient_checkpointing_enable()
 
