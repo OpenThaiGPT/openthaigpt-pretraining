@@ -6,10 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F  # noqa: N812
 
-from torch.nn.functional import scaled_dot_product_attention as torch_attention
-from xformers.components.attention.core import (
-    scaled_dot_product_attention as xformer_attention,
-)
+import xformers.ops as xops
 
 from llama.model import RMSNorm, apply_rotary_emb, precompute_freqs_cis  # type: ignore
 
@@ -71,9 +68,9 @@ class Attention(nn.Module):
         )
 
         if not (
-            args.attention_mode == PYTORCH_ATTENTION_MODE
+            args.attention_mode == ORIGIN_ATTENTION_MODE
+            or args.attention_mode == PYTORCH_ATTENTION_MODE
             or args.attention_mode == XFORMER_ATTENTION_MODE
-            or args.attention_mode == ORIGIN_ATTENTION_MODE
         ):
             raise KeyError(
                 f'attention mode must be "{ORIGIN_ATTENTION_MODE}", "{XFORMER_ATTENTION_MODE}" or "{PYTORCH_ATTENTION_MODE}"'  # noqa: E501
@@ -106,22 +103,28 @@ class Attention(nn.Module):
         keys = self.cache_k[:bsz, : start_pos + seqlen]
         values = self.cache_v[:bsz, : start_pos + seqlen]
 
-        xq = xq.transpose(1, 2)
-        keys = keys.transpose(1, 2)
-        values = values.transpose(1, 2)
-
-        if self.mode == PYTORCH_ATTENTION_MODE:
-            output = torch_attention(xq, keys, values, mask)
-        elif self.mode == XFORMER_ATTENTION_MODE:
-            output = xformer_attention(xq, keys, values, mask)
-        elif self.mode == ORIGIN_ATTENTION_MODE:
+        if self.mode == ORIGIN_ATTENTION_MODE or x.device == torch.device("cpu"):
+            xq = xq.transpose(1, 2)
+            keys = keys.transpose(1, 2)
+            values = values.transpose(1, 2)
             scores = torch.matmul(xq, keys.transpose(2, 3)) / math.sqrt(self.head_dim)
             if mask is not None:
                 scores = scores + mask  # (bs, n_local_heads, slen, cache_len + slen)
             scores = F.softmax(scores.float(), dim=-1).type_as(xq)
             output = torch.matmul(scores, values)  # (bs, n_local_heads, slen, head_dim)
+            output = output.transpose(1, 2)
+        elif self.mode == PYTORCH_ATTENTION_MODE:
+            xq = xq.transpose(1, 2)
+            keys = keys.transpose(1, 2)
+            values = values.transpose(1, 2)
+            output = F.scaled_dot_product_attention(xq, keys, values, mask)
+            output = output.transpose(1, 2)
+        elif self.mode == XFORMER_ATTENTION_MODE:
+            output = xops.memory_efficient_attention(
+                xq, keys, values, attn_bias=xops.LowerTriangularMask()
+            )
 
-        output = output.transpose(1, 2).contiguous().view(bsz, seqlen, -1)
+        output = output.contiguous().view(bsz, seqlen, -1)
 
         return self.wo(output)
 
