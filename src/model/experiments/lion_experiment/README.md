@@ -1,58 +1,93 @@
 # Optimizer Experimet
 
-We should experiment which optimizer is best when training GPT LLM
-
+We should experiment which optimizer is best when training Thai GPT LLM
 
 ## Things to consider
+
 1. Memory Usage of the Optimizer
-2. Model convergence speed 
+2. Model convergence speed
 3. Stability of the loss
 4. **Scalibility when increasing model parameters count**
 
-### Scalibility
-We should measure how 1,2,3 are impacted by increasing model parameters count. If increasing model paramters diminish the saving by 1,2,3 then our proposed method should not be used in large scale pretraning.
+## Memory Experiment (#1)
 
-## Optimizers
+We want to measure how optimizer choices impact hardware utilization of casual language model pretraining
+
+### Experiment Models
+
+- [gpt2-xl](https://huggingface.co/gpt2-xl)
+- [cerebras/Cerebras-GPT-2.7B](https://huggingface.co/cerebras/Cerebras-GPT-2.7B)
+
+### Optimizer Choices
+
 - AdamW
-- (Lion)[https://twitter.com/ArYoMo/status/1633949392934772738]
-- 
+- [Lion](https://twitter.com/ArYoMo/status/1633949392934772738)
+- [8-bit Adam](https://www.kaggle.com/code/nbroad/8-bit-adam-optimization) (WIP)
 
+### Results
 
-## Model
-- Model: [gpt2](https://huggingface.co/gpt2)
-    - [gpt2-base](https://huggingface.co/gpt2)
-    - [gpt2-medium](https://huggingface.co/gpt2-medium)
-    - [gpt2-large](https://huggingface.co/gpt2-large)
-    - [gpt2-xl](https://huggingface.co/gpt2-xl)
-- Tokenizer: [gpt2-base-thai](https://huggingface.co/flax-community/gpt2-base-thai)
+#### GPT2-XL (1.5B)
 
+| Model   | Batch Size | Sequence Length | Checkpoint | Flash Attention | Optimizer | VRAM used   | Iteration Speed |
+| ------- | ---------- | --------------- | ---------- | --------------- | --------- | ----------- | --------------- |
+| GPT2-XL | 4          | 256             |            |                 | AdamW     | 37.9 GB     | 4.99it/s        |
+| GPT2-XL | 4          | 256             | &#10004;   |                 | AdamW     | 30.9 GB     | 3.76it/s        |
+| GPT2-XL | 4          | 256             |            | &#10004;        | AdamW     | 36.6 GB     | 5.80it/s        |
+| GPT2-XL | 4          | 256             |            |                 | Lion      | 33.3 GB     | 5.16it/s        |
+| GPT2-XL | 4          | 256             | &#10004;   | &#10004;        | Lion      | 28.8 GB     | 4.40it/s        |
+| GPT2-XL | 4          | 256             | &#10004;   | &#10004;        | Lion      | **24.3 GB** | 4.57it/s        |
+
+In this table, we have different configurations of the GPT2-XL model with varying options such as checkpoint, flash attention, and lion, along with their corresponding batch sizes, sequence lengths, and model to measure total sizes and iteration speeds.
+
+#### cerebras/Cerebras-GPT-2.7B
+
+| Model                      | Flash Attention | Activation Checkpointing | Optimizer | Max Batch Size |
+| -------------------------- | --------------- | ------------------------ | --------- | -------------- |
+| cerebras/Cerebras-GPT-2.7B | &#10004;        | &#10004;                 | AdamW     | OOM            |
+| cerebras/Cerebras-GPT-2.7B | &#10004;        | &#10004;                 | Lion      | 32             |
+| cerebras/Cerebras-GPT-2.7B | &#10004;        |                          | Lion      | 8              |
+| cerebras/Cerebras-GPT-2.7B |                 | &#10004;                 | Lion      | 8              |
+| cerebras/Cerebras-GPT-2.7B |                 |                          | Lion      | 2              |
+
+In this table, we have different configurations of the cerebras/Cerebras-GPT-2.7B model with varying options such as flash attention, activation checkpointing, and optimizer (Lion or AdamW) to measure max batch size.
+
+### Hardware
+
+We run all experiments on Huaweii Cloud Elastic Cloud Server p3s.4xlarge.8 (A100 40GB \* 1, 16vCPUs, 128GB Ram) for 1.30 minutes each.
+
+## Convergence Experiment (#2) (WIP)
+
+We want to measure how optimizer choices impact convergence when pretraining LLM
+
+### Experiment Models
+
+Models:
+
+- [gpt2-xl](https://huggingface.co/gpt2-xl)
+- [cerebras/Cerebras-GPT-2.7B](https://huggingface.co/cerebras/Cerebras-GPT-2.7B)
+
+Tokenizers:
+
+- Tokenizer: [gpt2-base-thai](https://huggingface.co/flax-community/gpt2-base-thai) (TBD)
+
+### Optimizer Choices
+
+- AdamW
+- [Lion](https://twitter.com/ArYoMo/status/1633949392934772738)
+- [8-bit Adam](https://www.kaggle.com/code/nbroad/8-bit-adam-optimization) (WIP)
 
 ## Datasets:
+
 - [mC4, Thai subset](https://huggingface.co/datasets/mc4)
 
 ## Experiment steps
-1. Intilize GPT2 model weight from scratch, and resize token embedding to align with gpt2-base-thai tokenizer.
-2. Train from scratch with 4 * A100 GPUs for 1 hours with AdamW optimizer.
+
+1. Intilize GPT2 model weight from scratch, and resize token embedding to align with selected tokenizer.
+2. Train from scratch with 4 \* A100 GPUs for 1 hours with selected optimizer.
 3. Change optimizer and do 1,2 again
-4. Measure all loss on WanDB
-5. Repeat 1-4 again but change to other size of GPT2
-
-## Depedencies
-- Start with Kaggle CPU only
-- Always use Pytorch 2.0 compile and Flash Attention [[1]](https://www.reddit.com/r/MachineLearning/comments/11tmpc5/d_pytorch_20_native_flash_attention_32k_context/) [[2]](https://gist.github.com/NaxAlpha/1c36eaddd03ed102d24372493264694c). Make sure not to patch model embedding like the tutorial do. However we need to resize token embedding to align with gpt2-base-thai instead.
-- When testing experiment, switch accelarator to `T4 x 2` to test multiGPU training
-- Export enviroment.yml with command `conda env export > environment.yml`
-
+4. Repeat 1-3 again but change the optimizer
+5. Analyze perplexity of the optimizer choice
 
 ## Concerns
-1. We are not sure which optimiers's hyperameters will affect convergence speed. Please refer to the well-experimented hyperparamters for now.
 
-## Install
-1. transformers
-2. datasets
-3. zstandard
-4. torch version 2 (**Importance)
-## Script
-```
-python run.py --optimizer "adamw"  --use_flash --model_name "gpt2"
-```
+1. We are not sure which optimiers's hyperameters will affect convergence speed. Please refer to the well-experimented hyperparamters for now.
