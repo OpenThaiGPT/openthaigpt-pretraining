@@ -1,5 +1,8 @@
 import argparse
-from openthaigpt_pretraining_model.optimizer.lion.utils import seed_everything, Trainer
+from openthaigpt_pretraining_model.optimizer.lion.utils import (
+    seed_everything,
+    Trainer,
+)
 import os
 
 # https://github.com/d8ahazard/sd_dreambooth_extension/pull/1186#issuecomment-1518694203
@@ -22,7 +25,7 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         default="gpt2",
-        help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl}",
+        help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl,cerebras/Cerebras-GPT-2.7B}",
     )
     parser.add_argument("--do_sample", default=False, action="store_true")
     parser.add_argument("--weight_decay", type=float, default=1e-1, help="weight decay")
@@ -31,6 +34,12 @@ if __name__ == "__main__":
         type=int,
         default=4,
         help="gradient acc",
+    )
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="bfloat16",
+        help="{bfloat16|float32|float16}",
     )
 
     args = parser.parse_args()
@@ -52,5 +61,6 @@ if __name__ == "__main__":
         do_sample=args.do_sample,
         use_flash=args.use_flash,
         use_checkpointing=args.use_checkpointing,
+        dtype=args.dtype,
     )
     trainer.train()
