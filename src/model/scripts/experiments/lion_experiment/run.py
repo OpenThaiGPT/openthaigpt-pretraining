@@ -1,5 +1,5 @@
 import argparse
-from openthaigpt_pretraining_model.optimizer.lion.utils import (
+from openthaigpt_pretraining_model.optimizers.lion.utils import (
     seed_everything,
     Trainer,
 )
