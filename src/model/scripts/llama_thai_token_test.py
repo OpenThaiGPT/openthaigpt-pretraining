@@ -1,17 +1,12 @@
 from transformers import LlamaTokenizer
 import time
-
-llama_tokenizer_dir = (
-    "/root/openthaigpt-pretraining/src/model/"
-    "openthaigpt_pretraining_model/llama_thai_tokenizer/llama_tokenizer"
-)
-EngTh_llama_dir = (
-    "/root/openthaigpt-pretraining/src/model/"
-    "openthaigpt_pretraining_model/llama_thai_tokenizer/merged_tokenizer"
+from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
+    LLAMA_TOKENIZER_DIR,
+    ENGTHAI_LLAMA_TOKENIZER_DIR,
 )
 
-llama_tokenizer = LlamaTokenizer.from_pretrained(llama_tokenizer_dir)
-EngTh_llama_tokenizer = LlamaTokenizer.from_pretrained(EngTh_llama_dir)
+llama_tokenizer = LlamaTokenizer.from_pretrained(LLAMA_TOKENIZER_DIR)
+EngTh_llama_tokenizer = LlamaTokenizer.from_pretrained(ENGTHAI_LLAMA_TOKENIZER_DIR)
 
 text = "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
 start = time.time()
@@ -24,4 +19,4 @@ print(
 )
 t2 = time.time() - start2
 
-print(f"time llama tokenizer:{t1}\ntime english-thai: {t2}\ntime diff:{t1 - t2}")
+print(f"EngOnly time: {t1}\nEngThai time: {t2}\ntime diff:{t1 - t2}")
