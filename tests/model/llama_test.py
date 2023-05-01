@@ -1,4 +1,4 @@
-from openthaigpt_pretraining_model.llama.model import (
+from openthaigpt_pretraining_model.models.llama.model import (
     ModelArgs,
     Transformer,
     ORIGIN_ATTENTION_MODE,

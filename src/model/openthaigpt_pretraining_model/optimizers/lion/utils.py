@@ -16,12 +16,12 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
 from lion_pytorch import Lion
 
-from openthaigpt_pretraining_model.nanoGPT.model import (
+from ...models.nanoGPT.model import (
     make_model,
     _attn_wrapper,
     _attn_orig,
 )
-from openthaigpt_pretraining_model.optimizer.lion.constants import (
+from .constants import (
     DTYPE_CHOICE,
     MODEL_NAME,
     BOS_TOKEN,
@@ -34,7 +34,6 @@ from openthaigpt_pretraining_model.optimizer.lion.constants import (
 )
 
 
-# _attn_orig = GPT2Attention._attn
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -84,15 +83,11 @@ def get_torch_context(dtype: str):
 
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, max_tokens=256):
-        self.model_name = MODEL_NAME
-        self.bos_token = BOS_TOKEN
-        self.eos_token = EOS_TOKEN
-        self.pad_token = PAD_TOKEN
         self.tokenizer = GPT2TokenizerFast.from_pretrained(
-            self.model_name,
-            bos_token=self.bos_token,
-            eos_token=self.eos_token,
-            pad_token=self.pad_token,
+            MODEL_NAME,
+            bos_token=BOS_TOKEN,
+            eos_token=EOS_TOKEN,
+            pad_token=PAD_TOKEN,
         )
         self.mode = mode
         self.max_tokens = max_tokens
@@ -119,7 +114,7 @@ class DatasetWrapper(IterableDataset):
         iter_dataset = self.data_set
 
         for sample in iter_dataset:
-            buffer += self.tokenizer(sample["text"] + self.eos_token)["input_ids"]
+            buffer += self.tokenizer(sample["text"] + EOS_TOKEN)["input_ids"]
             while len(buffer) > self.max_tokens:
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]
