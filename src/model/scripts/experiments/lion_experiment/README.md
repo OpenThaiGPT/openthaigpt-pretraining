@@ -34,7 +34,7 @@ We want to measure how optimizer choices impact hardware utilization of casual l
 | GPT2-XL | 4          | 256             | &#10004;   |                 | AdamW     | 30.9 GB     | 3.76it/s        |
 | GPT2-XL | 4          | 256             |            | &#10004;        | AdamW     | 36.6 GB     | 5.80it/s        |
 | GPT2-XL | 4          | 256             |            |                 | Lion      | 33.3 GB     | 5.16it/s        |
-| GPT2-XL | 4          | 256             | &#10004;   |                 | Lion      | 28.8 GB     | 4.40it/s        |
+| GPT2-XL | 4          | 256             | &#10004;   | &#10004;        | AdamW     | 28.8 GB     | 4.40it/s        |
 | GPT2-XL | 4          | 256             | &#10004;   | &#10004;        | Lion      | **24.3 GB** | 4.57it/s        |
 
 In this table, we have different configurations of the GPT2-XL model with varying options such as checkpoint, flash attention, and lion, along with their corresponding batch sizes, sequence lengths, and model to measure total sizes and iteration speeds.
