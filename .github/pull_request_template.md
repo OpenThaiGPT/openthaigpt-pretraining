@@ -14,3 +14,4 @@ Close #
 - [ ] Constants name should be ALL_CAPITAL, function name should be snake_case, and class name should be CamelCase
 - [ ] complex function/algorithm should have [Docstring](https://peps.python.org/pep-0257/)
 - [ ] 1 PR should not have more than 200 lines changes (Exception for test files). If more than that please open multiple PRs
+- [ ] At least PR reviewer must come from the task's team (model, eval, data)
