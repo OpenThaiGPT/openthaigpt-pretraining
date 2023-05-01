@@ -2,7 +2,7 @@ from transformers import LlamaTokenizer
 from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
 import os
-from constants import (
+from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
     LLAMA_TOKENIZER_DIR,
     THAI_SP_MODEL_DIR,
     OUTPUT_SP_DIR,
