@@ -1,7 +1,5 @@
 from openthaigpt_pretraining_model.llama.model import ExampleModel, ExampleModelModified
 
-# Test
-
 
 def test_llama_efficient_attention_parity():
     model1 = ExampleModel()

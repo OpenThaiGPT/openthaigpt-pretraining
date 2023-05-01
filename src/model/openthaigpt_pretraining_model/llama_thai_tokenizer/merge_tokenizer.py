@@ -2,14 +2,11 @@ from transformers import LlamaTokenizer
 from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
 import os
-
-LLAMA_TOKENIZER_DIR = (
-    "/root/openthaigpt-pretraining/src/model/openthaigpt_pretraining_model/"
-    "llama_thai_tokenizer/llama_tokenizer.model"
-)
-THAI_SP_MODEL_DIR = (
-    "/root/openthaigpt-pretraining/src/model/openthaigpt_pretraining_model/"
-    "llama_thai_tokenizer/thai_sentencepiece.bpe.model"
+from constants import (
+    LLAMA_TOKENIZER_DIR,
+    THAI_SP_MODEL_DIR,
+    OUTPUT_SP_DIR,
+    OUTPUT_HF_DIR,
 )
 
 
@@ -41,10 +38,9 @@ llama_spm.pieces.extend(merged_pieces)
 llama_spm_tokens2 = {p.piece for p in llama_spm.pieces}
 print(f"After: {len(llama_spm_tokens2)}")
 
-output_sp_dir = "merged_tokenizer_sp"
-output_hf_dir = "merged_tokenizer_hf"
-os.makedirs(output_sp_dir, exist_ok=True)
-with open(output_sp_dir + "/english_thai_llama.model", "wb") as f:
+SAVE_TOKENIZER_NAME = "english_thai_llama.model"
+os.makedirs(OUTPUT_SP_DIR, exist_ok=True)
+with open(OUTPUT_SP_DIR + "/" + SAVE_TOKENIZER_NAME, "wb") as f:
     f.write(llama_spm.SerializeToString())
-tokenizer = LlamaTokenizer(vocab_file=output_sp_dir + "/english_thai_llama.model")
-tokenizer.save_pretrained(output_hf_dir)
+tokenizer = LlamaTokenizer(vocab_file=OUTPUT_SP_DIR + "/" + SAVE_TOKENIZER_NAME)
+tokenizer.save_pretrained(OUTPUT_HF_DIR)
