@@ -13,7 +13,7 @@ class GPTJToken:
     def encode(self, x: str) -> str:
         return self.tokenizer.encode(x)
 
-    def decode(self, x: Union[int, List[int]]) -> Union[int, List[int]]:
+    def decode(self, x: Union[int, List[int]]) -> str:
         if isinstance(x, int):
             return self.tokenizer.decode(x)
         else:
@@ -30,7 +30,7 @@ class MergedToken:
     def encode(self, x: str) -> str:
         return self.tokenizer.encode(x)
 
-    def decode(self, x: Union[int, List[int]]) -> Union[int, List[int]]:
+    def decode(self, x: Union[int, List[int]]) -> str:
         if isinstance(x, int):
             return self.tokenizer.decode(x)
         else:
