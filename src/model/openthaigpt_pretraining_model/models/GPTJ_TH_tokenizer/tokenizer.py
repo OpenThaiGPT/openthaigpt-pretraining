@@ -1,10 +1,10 @@
 from transformers import PreTrainedTokenizerFast
-from constants import GPTJ_TOKENIZER_DIR, OUTPUT_TOKENIZER_DIR
+from constants import GPTJ_TOKEN_DIR, NEW_TOKEN_DIR
 
 
 class GPTJToken:
     def __init__(self):
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=GPTJ_TOKENIZER_DIR)
+        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=GPTJ_TOKEN_DIR)
 
     def tokenize(self, x: str) -> str:
         return self.tokenizer.tokenize(x)
@@ -18,7 +18,7 @@ class GPTJToken:
 
 class MergedToken:
     def __init__(self):
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=OUTPUT_TOKENIZER_DIR)
+        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=NEW_TOKEN_DIR)
 
     def tokenize(self, x: str) -> str:
         return self.tokenizer.tokenize(x)
@@ -30,8 +30,8 @@ class MergedToken:
         return self.tokenizer.decode(x)
 
 
-# text = "รายละเอียดและหลักเกณฑ์การคัดเลือก AI Startup Incubation​ by AIEAT"
-# tokens = MergedToken()
-# print(tokens.tokenize(text))
-# print(tokens.encode(text))
-# print([tokens.decode([token]) for token in tokens.encode(text)])
+text = "รายละเอียดและหลักเกณฑ์การคัดเลือก AI Startup Incubation​ by AIEAT"
+tokens = MergedToken()
+print(tokens.tokenize(text))
+print(tokens.encode(text))
+print([tokens.decode([token]) for token in tokens.encode(text)])
