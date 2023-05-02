@@ -1,3 +1,12 @@
+# flake8: noqa
+
+
+def sorted_by_len(keyword_list):
+    len_keywords = [[len(kw), kw] for kw in keyword_list]
+
+    return [kw for _, kw in sorted(len_keywords)][::-1]
+
+
 PORN_KEYWORDS = [
     "คลิปหลุด",
     "กระเจี๊ยว",
@@ -14,6 +23,7 @@ PORN_KEYWORDS = [
     "ควยใหญ่",
     "หนังเอ็กซ์",
     "แหกหี",
+    "เย็ด",
 ]
 GAMBLE_KEYWORDS = [
     "ufabet",
@@ -66,13 +76,13 @@ CODE_KEYWORDS = [
     "innerHTML",
     "parseInt",
     "addEventListener",
-    "console\.log",  # noqa :W605
+    "console\.log",
     "checkCookieForTarget",
     "setAttribute",
     "getItem",
-    "if \(",  # noqa :W605
+    "if \(",
     "else {",
-    "JSON\.stringify",  # noqa :W605
+    "JSON\.stringify",
     "onclick",
 ]
 
@@ -119,39 +129,39 @@ PARTIAL_REMOVAL_KEYWORDS = [
     "เข้าสู่ระบบด้วยชื่อผู้ใช้",
     "แสดงกระทู้จาก:",
     "กระทู้: [0-9,]+",
-    "เว็บไซต์เรามีการใช้คุกกี้และเก็บข้อมูลผู้ใช้งาน โปรดศึกษาและยอมรับ นโยบายคุ้มครองข้อมูลส่วนบุคคล ก่อนใช้งาน",  # noqa :E501
-    "Privacy & Cookies: This site uses cookies. By continuing to use this website, you agree to their use\.",  # noqa :E501, W605
-    "Previous\t\nNext\nLeave a Reply Cancel reply\nYou must be logged in to post a comment.\nSearch for:\nFeatured Post\n",  # noqa :E501
-    "Click to read more\nYou must be logged in to view or write comments\.",  # noqa :W605
+    "เว็บไซต์เรามีการใช้คุกกี้และเก็บข้อมูลผู้ใช้งาน โปรดศึกษาและยอมรับ นโยบายคุ้มครองข้อมูลส่วนบุคคล ก่อนใช้งาน",
+    "Privacy & Cookies: This site uses cookies. By continuing to use this website, you agree to their use\.",
+    "Previous\t\nNext\nLeave a Reply Cancel reply\nYou must be logged in to post a comment.\nSearch for:\nFeatured Post\n",
+    "Click to read more\nYou must be logged in to view or write comments\.",
     "[0-9,]+ Views",
     "Skip to content",
     "Last Modified Posts",
     "Last Updated:",
-    "\(อ่าน [0-9,]+ ครั้ง\)",  # noqa :W605
+    "\(อ่าน [0-9,]+ ครั้ง\)",
     "Recent Comments",
     "«.*?»",
     "< --แสดงทั้งหมด-- >",
     "นโยบายความเป็นส่วนตัว",
     "เงื่อนไขการใช้เว็บไซต์",
     "ตั้งค่าคุกกี้",
-    "ท่านยอมรับให้เว็บไซต์นี้จัดเก็บคุกกี้เพื่อประสบการณ์การใช้งานเว็บไซต์ที่ดียิ่งขึ้น",  # noqa :E501
+    "ท่านยอมรับให้เว็บไซต์นี้จัดเก็บคุกกี้เพื่อประสบการณ์การใช้งานเว็บไซต์ที่ดียิ่งขึ้น",
     "รวมถึงช่วยให้ท่านมีโอกาสได้รับข้อเสนอหรือเนื้อหาที่ตรงตามความสนใจของท่าน",
     "ท่านสามารถดู Privacy Notice ของเว็บไซต์เรา ได้ที่นี่",
-    "You may be trying to access this site from a secured browser on the server. Please enable scripts and reload this page.",  # noqa :E501
-    "เผยแพร่: \d\d [ก-๙]+ \d\d\d\d \d\d:\d\d น\.",  # noqa :W605
-    "Last updated: \d\d [ก-๙]+\.[ก-๙]+\. \d\d\d\d \d\d:\d\d น\.",  # noqa :W605
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit\.",  # noqa :W605
+    "You may be trying to access this site from a secured browser on the server. Please enable scripts and reload this page.",
+    "เผยแพร่: \d\d [ก-๙]+ \d\d\d\d \d\d:\d\d น\.",
+    "Last updated: \d\d [ก-๙]+\.[ก-๙]+\. \d\d\d\d \d\d:\d\d น\.",
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit\.",
     "Search for:",
     "Save my name, email, and website in this browser for the next time I comment",
     "Your email address will not be published. Required fields are marked",
     "Leave a Reply Cancel reply",
-    "((?:หน้าหลัก|เข้าสู่ระบบ|หน้าแรก) \|(?: .+(?:(?: \|)|$))+)",  # noqa :W605
+    "((?:หน้าหลัก|เข้าสู่ระบบ|หน้าแรก) \|(?: [^\s]+(?:(?: \|)|$|\s))+)",
     "กลับหน้าแรก",
     "ติดต่อเรา",
     "Contact Us",
-    "#\w+",  # noqa :W605
+    "#\w+",
     "ติดต่อผู้ดูแลเว็บไซต์",
-    "หากท่านพบว่ามีข้อมูลใดๆที่ละเมิดทรัพย์สินทางปัญญาปรากฏอยู่ในเว็บไซต์โปรดแจ้งให้ทราบ",  # noqa :E501
+    "หากท่านพบว่ามีข้อมูลใดๆที่ละเมิดทรัพย์สินทางปัญญาปรากฏอยู่ในเว็บไซต์โปรดแจ้งให้ทราบ",
     "No related posts",
     "Posted in",
     "((?:Tags:|Tagged|Tag) (?:.{1,40}(?:,|\n|$))+)",
@@ -160,7 +170,7 @@ PARTIAL_REMOVAL_KEYWORDS = [
     "All rights reserved",
     "ความยาวอย่างน้อย",
     "ระบบได้ดำเนินการส่ง OTP",
-    "เป็นสมาชิกอยู่แล้ว\?",  # noqa :W605
+    "เป็นสมาชิกอยู่แล้ว\?",
     "We use cookies",
     "Cookie Settings",
     "Homeหน้าหลัก",
@@ -169,7 +179,7 @@ PARTIAL_REMOVAL_KEYWORDS = [
     "ปัญหา การใช้งาน",
     "ปัญหาการใช้งาน" "ผู้เขียน",
     "หัวข้อ:",
-    "\*\* พร้อมส่ง \*\*",  # noqa :W605
+    "\*\* พร้อมส่ง \*\*",
 ]
 
 TH_MONTHS = [
@@ -185,18 +195,20 @@ TH_MONTHS = [
     "ตุลาคม",
     "พฤศจิกายน",
     "ธันวาคม",
-    "ม\.ค\.",  # noqa :W605
-    "ก\.พ\.",  # noqa :W605
-    "มี\.ค\.",  # noqa :W605
-    "เม\.ย\.",  # noqa :W605
-    "พ\.ค\.",  # noqa :W605
-    "มิ\.ย\.",  # noqa :W605
-    "ก\.ค\.",  # noqa :W605
-    "ส\.ค\.",  # noqa :W605
-    "ก\.ย\.",  # noqa :W605
-    "ต\.ค\.",  # noqa :W605
-    "พ\.ย\.",  # noqa :W605
-    "ธ\.ค\.",  # noqa :W605
+    "ม\.ค\.",
+    "ก\.พ\.",
+    "มี\.ค\.",
+    "เม\.ย\.",
+    "พ\.ค\.",
+    "มิ\.ย\.",
+    "ก\.ค\.",
+    "ส\.ค\.",
+    "ก\.ย\.",
+    "ต\.ค\.",
+    "พ\.ย\.",
+    "ธ\.ค\.",
 ]
 
-CODE_SPECIAL_CHARACTERS = ["\{", "\+", "\}", "/", ":"]  # noqa :W605
+CODE_SPECIAL_CHARACTERS = ["\{", "\+", "\}", "/", ":"]
+
+PARTIAL_REMOVAL_KEYWORDS = sorted_by_len(PARTIAL_REMOVAL_KEYWORDS)

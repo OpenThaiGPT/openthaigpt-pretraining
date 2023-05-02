@@ -1,6 +1,6 @@
 import re
 from pythainlp.util import countthai
-from keywords import (
+from .keywords import (
     DOCUMENT_REMOVAL_KEYWORDS,
     PARTIAL_REMOVAL_KEYWORDS,
     TH_MONTHS,
@@ -85,7 +85,7 @@ def clean_text(text: str) -> str:
     ):
         return ""
 
-    text = remove_partial_keywords(text)
+    text = remove_partial_keywords(text).strip()
 
     return text
 
