@@ -5,5 +5,12 @@
         "./src/core",
         "./src/data",
         "./src/model"
-    ]
+    ],
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "none",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.linting.enabled": true,
+    "python.linting.mypyEnabled": true
 }
