@@ -1,6 +1,6 @@
 from transformers import PreTrainedTokenizerFast
 from constants import GPTJ_TOKEN_DIR, NEW_TOKEN_DIR
-from typing import Any, List
+from typing import Any, List, Union
 
 
 class GPTJToken:
@@ -13,7 +13,7 @@ class GPTJToken:
     def encode(self, x: str) -> List[Any]:
         return self.tokenizer.encode(x)
 
-    def decode(self, x: int) -> str:
+    def decode(self, x: Union[int, List[int]]) -> str:
         return self.tokenizer.decode(x)
 
 
@@ -27,11 +27,11 @@ class MergedToken:
     def encode(self, x: str) -> List[Any]:
         return self.tokenizer.encode(x)
 
-    def decode(self, x: int) -> str:
+    def decode(self, x: Union[int, List[int]]) -> str:
         return self.tokenizer.decode(x)
 
 
-text = "รายละเอียดและหลักเกณฑ์การคัดเลือก AI Startup Incubation​ by AIEAT"
+text = "รายละเอียดและหลักเกณฑ์การคัดเลือก AI Startup Incubation by AIEAT"
 tokens = MergedToken()
 print(tokens.tokenize(text))
 print(tokens.encode(text))
