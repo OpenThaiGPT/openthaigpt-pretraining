@@ -47,6 +47,10 @@ CHECK_RATIO_TEST_CASES = [
         "doc": """หมอน, ส้มโอ, รถไฟ, กุ้ง, เนื้อวัว, หอยนางรม, กระดาษ, แม่น้ำ, ปลาซาบะ, เตียง, สุนัข, กล้อง, ปูนา, โทรทัศน์, หอยเชลล์, สายไหม, มะม่วง, ก้อนแกลบ, กะปิ, ปลาหมึก""",
     },
     {
+        "remove": True,
+        "doc": """bGF2aWVlc3RiZWxsZW1hZy5jb20# oxixagi-a.anchor.com [URL=http://oxixagi-u.com/]oxixagi-u.anchor.com[/URL] http://oxixagi-t.com/ http://oxixagi-t.com/ http://oxixagi-t.com/ http://oxixagi-t.com/ http://oxixagi-t.com/ http://oxixagi-t.com/ http://oxixagi-t.com/…""",
+    },
+    {
         "remove": False,
         "doc": """บิตคอยน์ (Bitcoin) หรือ BTC คือสกุลเงินดิจิทัล (Cryptocurrency) สกุลแรกของโลกที่ถูกสร้างขึ้นบน “บล็อกเชน” (Blockchain) ซึ่งเป็นเทคโนโลยีที่ใช้""",
     },
