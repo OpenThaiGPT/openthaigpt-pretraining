@@ -1,4 +1,4 @@
-from openthaigpt_pretraining_data.core.testcase import (
+from testcases.core_testcases import (
     DOCUMENT_REMOVE_TEST_CASES,
     CHECK_RATIO_TEST_CASES,
     REMOVE_KEYWORDS_TEST_CASES,

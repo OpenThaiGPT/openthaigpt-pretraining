@@ -1,4 +1,4 @@
-from openthaigpt_pretraining_data.oscar.testcase import (
+from testcases.oscar_testcases import (
     DOCUMENT_REMOVE_TEST_CASES,
     CHECK_RATIO_TEST_CASES,
     REMOVE_KEYWORDS_TEST_CASES,
