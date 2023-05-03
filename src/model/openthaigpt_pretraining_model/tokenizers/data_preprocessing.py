@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Union, Generator, Dict
 from tqdm import tqdm
 import sentencepiece as spm
 from datasets import load_dataset, Dataset, IterableDataset
@@ -8,6 +8,7 @@ from datasets import load_dataset, Dataset, IterableDataset
 # CONSTANTS
 DOC_ID = "id"
 DOC_TEXT = "text"
+USER_DEFINED_SYMBOLS = ["<mask>"]
 
 
 class SPMTokenizer:
@@ -15,6 +16,7 @@ class SPMTokenizer:
         # load the tokenizer model
         self.tokenizer = spm.SentencePieceProcessor()
         self.tokenizer.load(tokenizer_model_path)
+        self.tokenizer.set_user_defined_symbols(USER_DEFINED_SYMBOLS)
 
     @staticmethod
     def preprocess_text(text: str) -> str:
@@ -23,11 +25,11 @@ class SPMTokenizer:
 
     # define a function to tokenize the text
     def tokenize_text(self, text: str) -> str:
-        text = SPMTokenizer.preprocess_text(text)
+        text = self.preprocess_text(text)
         return self.tokenizer.encode(text, out_type=int)
 
 
-def text_generator(data_path: str) -> dict:
+def text_generator(data_path: str) -> Generator[Dict[str, str], None, None]:
     for filename in os.listdir(data_path):
         with open(f"{data_path}/{filename}", "r") as f:
             text = f.read()
@@ -37,7 +39,7 @@ def text_generator(data_path: str) -> dict:
 def tokenize_dataset(
     tokenizer_model_path: str,
     output_path: str,
-    num_docs: int = 5000,
+    num_docs: Optional[Union[str, int]] = 5000,
     num_proc: Optional[int] = os.cpu_count(),
     batch_size: int = 1000,
     is_slurm: bool = False,

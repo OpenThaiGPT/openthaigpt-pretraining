@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Union
 from tqdm import tqdm
 import sentencepiece as spm
 from datasets import load_dataset, Dataset
@@ -48,7 +48,7 @@ class DataSetColumnIterator:
 def train_tokenizer(
     output_path: str,
     vocab_size: int,
-    num_docs: Optional[int] = None,
+    num_docs: Optional[Union[str, int]] = None,
     num_proc: Optional[int] = os.cpu_count(),
     is_slurm: bool = False,
     load_dataset_path: str = "oscar",
