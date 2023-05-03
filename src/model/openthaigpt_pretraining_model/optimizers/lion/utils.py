@@ -52,11 +52,11 @@ def closest_power_of_2(x):
 
 
 @torch.no_grad()
-def do_eval(model, loader_val, ctx):
+def do_eval(model, loader_val, ctx, device):
     val_loss = 0.0
     c_1 = 0
     for i1, batch1 in enumerate(loader_val):
-        batch1 = batch1.cuda()
+        batch1 = batch1.to(device)
         with ctx:
             loss1 = model(batch1, labels=batch1).loss
             val_loss = float(val_loss) + float(loss1.item())
@@ -164,16 +164,6 @@ class Trainer:
 
         self.loader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
-        self.ctx = get_torch_context(dtype)
-        self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
-        self.model = model = make_model(
-            model_name,
-            self.max_tokens,
-            self.tokenizer,
-            self.use_flash,
-            self.use_checkpointing,
-        )
-
         self.backend = "nccl"
 
         self.ddp = int(os.environ.get("RANK", -1)) != -1
@@ -182,6 +172,21 @@ class Trainer:
             ddp_local_rank = int(os.environ["LOCAL_RANK"])
             device = f"cuda:{ddp_local_rank}"
             torch.cuda.set_device(device)
+        else:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        self.device = device
+
+        self.ctx = get_torch_context(dtype)
+        self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
+        self.model = model = make_model(
+            model_name,
+            self.max_tokens,
+            self.tokenizer,
+            self.use_flash,
+            self.use_checkpointing,
+            self.device
+        )
 
         if optimizer == "lion":
             print("Use lion optimizer")
@@ -206,7 +211,7 @@ class Trainer:
             self.model = DDP(self.model, device_ids=[ddp_local_rank])
 
     def train_step(self, batch):
-        batch = batch.cuda()
+        batch = batch.to(self.device)
         with self.ctx:
             loss = self.model(batch, labels=batch).loss
             loss = loss / self.grad
@@ -217,7 +222,7 @@ class Trainer:
         self.model.eval()
         prog = tqdm(self.loader_val)
         for i, batch in enumerate(prog):
-            batch = batch.cuda()
+            batch = batch.to(self.device)
             with self.ctx:
                 loss = self.model(batch, labels=batch).loss
                 loss = loss / self.grad
@@ -230,7 +235,7 @@ class Trainer:
     def generate_samples(self, n_samples=8):
         GPT2Attention._attn = _attn_orig  # back to faster but more memory consuming
         model = self.model
-        x = torch.tensor([[self.tokenizer.eos_token_id]] * n_samples).cuda()
+        x = torch.tensor([[self.tokenizer.eos_token_id]] * n_samples).to(self.device)
         t0 = time.time()
         model.eval()
         y = model.generate(
@@ -269,7 +274,7 @@ class Trainer:
                 print("Step =", self.step)
                 # loss_val = self.val_step()
                 self.model.eval()
-                val_loss = do_eval(self.model, self.loader_val, self.ctx)
+                val_loss = do_eval(self.model, self.loader_val, self.ctx, self.device)
                 self.model.train()
                 print(f"loss_val: {val_loss.item():.3f}")
                 if self.do_sample:
