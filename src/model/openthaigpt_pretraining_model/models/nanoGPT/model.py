@@ -40,7 +40,6 @@ def make_model(
         pad_token_id=tokenizer.pad_token_id,
         optimize_cuda_cache=True,
     )
-    # model = GPT2LMHeadModel(config).cuda()
     model = GPT2LMHeadModel(config).to(device)
     GPT2Attention._attn = _attn_orig
     if use_flash:
@@ -59,7 +58,4 @@ def make_model(
     model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"GPT-2 size requires_grad: {model_size/1000**2:.1f}M parameters")
 
-    # if torch.cuda.device_count() > 1:
-    # print("Let's use", torch.cuda.device_count(), "GPUs!")
-    # model = nn.DataParallel(model)
     return model
