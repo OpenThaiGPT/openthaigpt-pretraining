@@ -1,36 +1,16 @@
-from transformers import AutoTokenizer, GPTJConfig
-from openthaigpt_pretraining_model.gptj.gptj_model_xformers import GPTJModel
+from openthaigpt_pretraining_model.gptj.gptj_model_xformers import get_output
 import torch
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-configpretrained = GPTJConfig.from_pretrained(
-    "hf-internal-testing/tiny-random-gptj"
-).to_dict()
-
-configpretrained["use_xformers"] = True
-configuration_use_xformers = GPTJConfig.from_dict(configpretrained)
-
-configpretrained["use_xformers"] = False
-configuration = GPTJConfig.from_dict(configpretrained)
 
 
 def test_gptj_xformers_attention():
-    tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gptj")
-    model1 = GPTJModel.from_pretrained(
-        "hf-internal-testing/tiny-random-gptj", config=configuration
+    pretrained_name = "hf-internal-testing/tiny-random-gptj"
+    input_text = "Yo"
+    output_xformers = get_output(
+        pretrained_name=pretrained_name, use_xformers=True, input_text=input_text
     )
-    model2 = GPTJModel.from_pretrained(
-        "hf-internal-testing/tiny-random-gptj", config=configuration_use_xformers
+    output_originals = get_output(
+        pretrained_name=pretrained_name, use_xformers=False, input_text=input_text
     )
-
-    inputs_1 = tokenizer("Hello", return_tensors="pt")
 
     with torch.no_grad():
-        assert torch.all(
-            torch.abs(
-                model1(**inputs_1).last_hidden_state
-                - model2(**inputs_1).last_hidden_state
-            )
-            <= 1e-6
-        )
+        assert torch.all(torch.abs(output_xformers - output_originals) <= 1e-6)
