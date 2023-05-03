@@ -1,5 +1,5 @@
 from transformers import PreTrainedTokenizerFast
-from constants import GPTJ_TOKEN_DIR, TH_TOKEN_DIR, NEW_TOKEN_DIR
+from .constants import GPTJ_TOKEN_DIR, TH_TOKEN_DIR, NEW_TOKEN_DIR
 from typing import Any, List, Union
 
 
