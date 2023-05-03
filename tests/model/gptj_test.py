@@ -1,16 +1,18 @@
-from transformers import AutoTokenizer
-from openthaigpt_pretraining_model.gptj.gptj_model_xformers import GPTJModel, GPTJConfig
+from transformers import AutoTokenizer, GPTJConfig
+from openthaigpt_pretraining_model.gptj.gptj_model_xformers import GPTJModel
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-configuration_use_xformers = GPTJConfig.from_pretrained(
-    "hf-internal-testing/tiny-random-gptj", use_xformers=True
-)
+configpretrained = GPTJConfig.from_pretrained(
+    "hf-internal-testing/tiny-random-gptj"
+).to_dict()
 
-configuration = GPTJConfig.from_pretrained(
-    "hf-internal-testing/tiny-random-gptj", use_xformers=False
-)
+configpretrained["use_xformers"] = True
+configuration_use_xformers = GPTJConfig.from_dict(configpretrained)
+
+configpretrained["use_xformers"] = False
+configuration = GPTJConfig.from_dict(configpretrained)
 
 
 def test_gptj_xformers_attention():
