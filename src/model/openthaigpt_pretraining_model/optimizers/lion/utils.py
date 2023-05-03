@@ -173,7 +173,7 @@ class Trainer:
             device = f"cuda:{ddp_local_rank}"
             torch.cuda.set_device(device)
         else:
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.device = device
 
@@ -185,7 +185,7 @@ class Trainer:
             self.tokenizer,
             self.use_flash,
             self.use_checkpointing,
-            self.device
+            self.device,
         )
 
         if optimizer == "lion":

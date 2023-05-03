@@ -1,6 +1,3 @@
-import torch
-import torch.nn as nn
-
 import torch.nn.functional as F
 import torch.backends.cuda as cuda
 from transformers import AutoConfig
@@ -31,7 +28,9 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
     return attn_out, None
 
 
-def make_model(pretrained_name, max_tokens, tokenizer, use_flash, use_checkpointing, device):
+def make_model(
+    pretrained_name, max_tokens, tokenizer, use_flash, use_checkpointing, device
+):
     config = AutoConfig.from_pretrained(
         pretrained_name,
         vocab_size=len(tokenizer),
@@ -61,6 +60,6 @@ def make_model(pretrained_name, max_tokens, tokenizer, use_flash, use_checkpoint
     print(f"GPT-2 size requires_grad: {model_size/1000**2:.1f}M parameters")
 
     # if torch.cuda.device_count() > 1:
-        # print("Let's use", torch.cuda.device_count(), "GPUs!")
-        # model = nn.DataParallel(model)
+    # print("Let's use", torch.cuda.device_count(), "GPUs!")
+    # model = nn.DataParallel(model)
     return model
