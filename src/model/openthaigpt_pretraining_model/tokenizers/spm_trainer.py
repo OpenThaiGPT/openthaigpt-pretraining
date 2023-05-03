@@ -2,7 +2,7 @@ import os
 from typing import Optional
 from tqdm import tqdm
 import sentencepiece as spm
-from datasets import load_dataset, Dataset, IterableDataset
+from datasets import load_dataset, Dataset
 
 # CONSTANTS
 PREPARE_DATASETS_KEY = "text_processed"
@@ -21,7 +21,7 @@ def prepare_datasets(texts: dict) -> dict:
 
     Returns:
         dict: A dictionary with a single key 'PREPARE_DATASETS_KEY' that maps to a list of preprocessed text documents.
-    """
+    """  # noqa: E501
     preapared_texts = []
     for text in texts[DOC_TEXT]:  # for every doc
         # write custom preprocessing
@@ -72,7 +72,7 @@ def train_tokenizer(
 
     Returns:
         None
-    """
+    """  # noqa: E501
     if load_dataset_local_path is None:
         if not is_slurm:
             text_dataset = load_dataset(
