@@ -31,5 +31,5 @@ def test_merge_tokenizer():
             gpt2_token.decode([token]) for token in gpt2_token.encode(test)
         ]
 
-    for idx, token in enumerate(TEXT_TEST_CASES):
+    for idx, token in enumerate(TEXT_TEST_TOKEN):
         assert m_token.encode(token) == gptj_token.encode(token)
