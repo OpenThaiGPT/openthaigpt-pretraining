@@ -1,10 +1,13 @@
 from contextlib import nullcontext
 import time
+import os
 
 import torch
 
 import torch.optim as optim
 from torch.utils.data import DataLoader, IterableDataset
+from torch.nn.parallel import DistributedDataParallel as DDP  # noqa: N817
+from torch.distributed import init_process_group, destroy_process_group
 
 import numpy as np
 import random
@@ -16,7 +19,7 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
 from lion_pytorch import Lion
 
-from ...models.nanoGPT.model import (
+from openthaigpt_pretraining_model.models.nanoGPT.model import (
     make_model,
     _attn_wrapper,
     _attn_orig,
@@ -171,6 +174,15 @@ class Trainer:
             self.use_checkpointing,
         )
 
+        self.backend = "nccl"
+
+        self.ddp = int(os.environ.get("RANK", -1)) != -1
+        if self.ddp:
+            init_process_group(backend=self.backend)
+            ddp_local_rank = int(os.environ["LOCAL_RANK"])
+            device = f"cuda:{ddp_local_rank}"
+            torch.cuda.set_device(device)
+
         if optimizer == "lion":
             print("Use lion optimizer")
             self.opt = Lion(
@@ -190,6 +202,8 @@ class Trainer:
         else:
             raise NotImplementedError("only support lion or AdamW")
         self.model = torch.compile(model)
+        if self.ddp:
+            self.model = DDP(self.model, device_ids=[ddp_local_rank])
 
     def train_step(self, batch):
         batch = batch.cuda()
@@ -240,6 +254,9 @@ class Trainer:
         for i, batch in enumerate(prog):
             self.step = i + 1
 
+            if self.ddp:
+                self.model.require_backward_grad_sync = i % self.grad != 0
+
             loss = self.train_step(batch)
             prog.set_description(f"loss: {loss.item():.3f}")
 
@@ -261,3 +278,6 @@ class Trainer:
             self.grad = max(1, closest_power_of_2(i + 1) // 32)
             if self.step > self.max_steps:
                 break
+
+        if self.ddp:
+            destroy_process_group()
