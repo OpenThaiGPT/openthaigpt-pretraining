@@ -1,5 +1,3 @@
-import pytest
-
 from openthaigpt_pretraining_model.spm_trainer import train_tokenizer
 
 OUTPUT_PATH = "./tokenizer"
