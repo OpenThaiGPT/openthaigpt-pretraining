@@ -1,6 +1,7 @@
 import pytest
 
-from openthaigpt_pretraining_model.spm_trainer import train_tokenizer
+from openthaigpt_pretraining_model.tokenizers.spm_trainer import train_tokenizer
+from openthaigpt_pretraining_model.tokenizers.data_preprocessing import tokenize_dataset
 
 OUTPUT_PATH = "./tokenizer"
 VOCAB_SIZE_TEST_CASES = [5000, 7500]
