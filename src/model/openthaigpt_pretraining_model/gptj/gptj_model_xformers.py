@@ -45,11 +45,11 @@ def _attn_xformers(
         raise TypeError("Not support head_mask")
 
     # Attention output
-    attn_output = xops.memory_efficient_attention_forward(
-        query,
-        key,
-        value,
+    attn_output = xops.memory_efficient_attention(
+        query.transpose(2, 1),
+        key.transpose(2, 1),
+        value.transpose(2, 1),
         xops.LowerTriangularMask(),
-    )
+    ).transpose(2, 1)
 
     return attn_output, None
