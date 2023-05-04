@@ -14,7 +14,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-<<<<<<< HEAD
     "xformers>=0.0.18",
     "llama@git+https://github.com/facebookresearch/llama.git",
     "sentencepiece>=0.1.98",
@@ -23,8 +22,6 @@ dependencies = [
     "transformers>=4.28.1",
     "datasets>=2.12.0",
     "zstandard>=0.21.0"
-]
-=======
     "pythainlp==4.0.0"
 ]
->>>>>>> db7fe61672fe40564722d9ee9c206e2816b122a0
+
