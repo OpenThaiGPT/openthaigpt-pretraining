@@ -1,11 +1,11 @@
-from transformers import PreTrainedTokenizerFast
-from .constants import GPTJ_TOKEN_DIR, TH_TOKEN_DIR, NEW_TOKEN_DIR
+from transformers import AutoTokenizer
+from .merge import merge
 from typing import Any, List, Union
 
 
 class GPTJToken:
     def __init__(self):
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=GPTJ_TOKEN_DIR)
+        self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
     def tokenize(self, x: str) -> List[Any]:
         return self.tokenizer.tokenize(x)
@@ -19,7 +19,7 @@ class GPTJToken:
 
 class GPT2Token:
     def __init__(self):
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=TH_TOKEN_DIR)
+        self.tokenizer = AutoTokenizer.from_pretrained("flax-community/gpt2-base-thai")
 
     def tokenize(self, x: str) -> List[Any]:
         return self.tokenizer.tokenize(x)
@@ -33,8 +33,7 @@ class GPT2Token:
 
 class MergedToken:
     def __init__(self):
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=NEW_TOKEN_DIR)
-
+        self.tokenizer = merge()
     def tokenize(self, x: str) -> List[Any]:
         return self.tokenizer.tokenize(x)
 

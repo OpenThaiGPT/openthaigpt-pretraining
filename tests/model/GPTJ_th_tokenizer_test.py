@@ -1,4 +1,3 @@
-# import time
 from openthaigpt_pretraining_model.GPTJ_TH_tokenizer.tokenizer import (
     GPTJToken,
     GPT2Token,
