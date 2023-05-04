@@ -30,11 +30,6 @@ for p in thai_spm.pieces:
         new_p.score = 0.0
         llama_spm.pieces.append(new_p)
 
-# merged_pieces = list(llama_spm.pieces)
-# merged_pieces.sort(key=lambda p: p.score, reverse=True)
-# llama_spm.ClearField("pieces")
-# llama_spm.pieces.extend(merged_pieces)
-
 llama_spm_tokens2 = {p.piece for p in llama_spm.pieces}
 print(f"After: {len(llama_spm_tokens2)}")
 
