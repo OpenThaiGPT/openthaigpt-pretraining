@@ -34,6 +34,7 @@ class GPT2Token:
 class MergedToken:
     def __init__(self):
         self.tokenizer = merge()
+
     def tokenize(self, x: str) -> List[Any]:
         return self.tokenizer.tokenize(x)
 
