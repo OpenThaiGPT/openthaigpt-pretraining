@@ -1,5 +1,6 @@
 from transformers import LlamaTokenizer
-from .constants import LLAMA_TOKENIZER_DIR, ENGTHAI_LLAMA_TOKENIZER_DIR
+from constants import LLAMA_TOKENIZER_DIR
+from merge_tokenizer import merge
 
 
 class LLaMaToken:
@@ -18,7 +19,7 @@ class LLaMaToken:
 
 class EngThaiLLaMaToken:
     def __init__(self):
-        self.token = LlamaTokenizer.from_pretrained(ENGTHAI_LLAMA_TOKENIZER_DIR)
+        self.token = merge()
 
     def tokenize(self, x: str) -> str:
         return self.token.tokenize(x)
@@ -30,6 +31,6 @@ class EngThaiLLaMaToken:
         return self.token.encode(x)
 
 
-# text = "including การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
-# token = EngThaiLLaMaToken()
-# print(token.tokenize(text))
+text = "including การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
+token = EngThaiLLaMaToken()
+print(token.tokenize(text))
