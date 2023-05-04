@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, GPT2TokenizerFast
 from huggingface_hub import hf_hub_download
-from constants import FILE_DIR, GPT2_MERGE_DIR, GPTJ_MERGE_DIR
+from .constants import FILE_DIR, GPT2_MERGE_DIR, GPTJ_MERGE_DIR
 import json
 
 
