@@ -9,6 +9,12 @@ class LLaMaToken:
     def tokenize(self, x: str) -> str:
         return self.token.tokenize(x)
 
+    def decode(self, x: str) -> str:
+        return self.token.decode(x)
+
+    def encode(self, x: str) -> str:
+        return self.token.encode(x)
+
 
 class EngThaiLLaMaToken:
     def __init__(self):
@@ -16,6 +22,12 @@ class EngThaiLLaMaToken:
 
     def tokenize(self, x: str) -> str:
         return self.token.tokenize(x)
+
+    def decode(self, x: str) -> str:
+        return self.token.decode(x)
+
+    def encode(self, x: str) -> str:
+        return self.token.encode(x)
 
 
 # text = "including การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
