@@ -1,12 +1,11 @@
-from transformers import LlamaTokenizer
 import time
-from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
-    LLAMA_TOKENIZER_DIR,
-    ENGTHAI_LLAMA_TOKENIZER_DIR,
+from openthaigpt_pretraining_model.llama_thai_tokenizer.tokenizer import (
+    LLaMaToken,
+    EngThaiLLaMaToken,
 )
 
-llama_tokenizer = LlamaTokenizer.from_pretrained(LLAMA_TOKENIZER_DIR)
-EngTh_llama_tokenizer = LlamaTokenizer.from_pretrained(ENGTHAI_LLAMA_TOKENIZER_DIR)
+llama_tokenizer = LLaMaToken()
+EngTh_llama_tokenizer = EngThaiLLaMaToken()
 
 text = "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
 start = time.time()

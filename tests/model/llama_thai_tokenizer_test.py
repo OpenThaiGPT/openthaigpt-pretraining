@@ -14,94 +14,34 @@ TEXT_TEST_CASES = [
 
 LABEL_TEST_ENGTHAI_CASES = [
     [
-        "▁",
-        "ก",
-        "า",
-        "ร",
-        "ใช้",
-        "ง",
-        "า",
-        "น",
-        "หล",
-        "ั",
-        "ก",
-        "ของ",
+        "▁การใช้งาน",
+        "หลักของ",
         "▁L",
         "La",
         "MA",
-        "▁คือ",
-        "ก",
-        "า",
-        "ร",
+        "▁คือการ",
         "วิจัย",
         "เกี่ยวกับ",
         "รูปแบบ",
-        "ภ",
-        "า",
-        "ษ",
-        "า",
-        "ที่",
-        "ให",
-        "ญ",
-        "่",
+        "ภาษา",
+        "ที่ใหญ่",
     ],
     [
         "▁L",
         "La",
         "MA",
-        "▁",
-        "มุ่งเน้น",
-        "ที่",
-        "ก",
-        "า",
-        "รศ",
-        "ึก",
-        "ษ",
-        "า",
+        "▁มุ่ง",
+        "เน้น",
+        "ที่การ",
+        "ศึกษา",
         "รูปแบบ",
-        "ภ",
-        "า",
-        "ษ",
-        "า",
+        "ภาษา",
         "ที่",
-        "กว",
-        "้",
-        "า",
-        "ง",
-        "ขวาง",
+        "กว้างขวาง",
     ],
-    [
-        "▁อ",
-        "ย",
-        "า",
-        "ก",
-        "ให้",
-        "วันนี้",
-        "▁pull",
-        "▁request",
-        "▁",
-        "ผ",
-        "่",
-        "า",
-        "น",
-    ],
-    [
-        "▁ขอ",
-        "เพิ่ม",
-        "ส",
-        "ั",
-        "ก",
-        "▁",
-        "1",
-        "▁point",
-        "▁ก็",
-        "ยัง",
-        "ดี",
-        "คร",
-        "ั",
-        "บ",
-    ],
-    ["▁rev", "iewer", "▁", "ใจดี", "มากกก", "กก", "กก", "กก", "กก", "กก", "ก"],
+    ["▁อยากให้", "วันนี้", "▁pull", "▁request", "▁ผ่าน"],
+    ["▁ขอ", "เพิ่ม", "สัก", "▁1", "▁point", "▁ก็ยัง", "ดีครับ"],
+    ["▁rev", "iewer", "▁ใจ", "ดีมาก", "กกกก", "กกกก", "กกกก", "ก"],
 ]
 
 LABEL_TEST_LLAMA_CASES = [
@@ -302,6 +242,8 @@ LABEL_TEST_LLAMA_CASES = [
     ],
 ]
 
+TEXT_TEST_ENGLISH = "Convert Pretrained LLaMa to Token"
+
 
 def test_merge_tokenizer():
     engthai_tokenizer = EngThaiLLaMaToken()
@@ -313,3 +255,11 @@ def test_llama_tokenizer():
     llama_tokenizer = LLaMaToken()
     for idx, test_text in enumerate(TEXT_TEST_CASES):
         assert llama_tokenizer.tokenize(test_text) == LABEL_TEST_LLAMA_CASES[idx]
+
+
+def test_encode_english():
+    engthai_tokenizer = EngThaiLLaMaToken()
+    llama_tokenizer = LLaMaToken()
+    assert engthai_tokenizer.encode(TEXT_TEST_ENGLISH) == llama_tokenizer.encode(
+        TEXT_TEST_ENGLISH
+    )
