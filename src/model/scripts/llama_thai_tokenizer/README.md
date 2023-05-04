@@ -6,10 +6,14 @@ merge LLaMa Tokenizer with [wangchanberta](https://huggingface.co/airesearch/wan
 1. have faster iteration when tokenize Thai and English sentence.
 2. still have similar tokenized output when running with English sentence.
 
+## To save merge tokenizer
+
+```python3 scripts/llama_thai_tokenizer/merge_tokenizer.py```
+
 ## To test merged tokenizer
 
 1.  run llama_thai_token_test.py and inference time checked
-```python3 scripts/llama_thai_token_test.py```
+```python3 scripts/llama_thai_tokenizer/time_inference_check.py```
 
 ### Results
 - Text : การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่
