@@ -24,6 +24,14 @@ We want to measure how optimizer choices impact hardware utilization of casual l
 - [Lion](https://twitter.com/ArYoMo/status/1633949392934772738)
 - [8-bit Adam](https://www.kaggle.com/code/nbroad/8-bit-adam-optimization) (WIP)
 
+### Run with multi gpu
+- with default argument
+
+    `torchrun --standalone --nproc_per_node=num_gpus src/model/scripts/experiments/lion_experiment/run.py`
+- with custom argument
+
+    `torchrun --standalone --nproc_per_node=num_gpus src/model/scripts/experiments/lion_experiment/run.py --argument`
+
 ### Results
 
 #### GPT2-XL (1.5B)
