@@ -6,7 +6,7 @@ import os
 from typing import Dict
 
 
-def merge(thai_tokenizer_repo: str):
+def merge(thai_tokenizer_repo: str = "flax-community/gpt2-base-thai"):
     # load tokenizer
     gptj_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
     gpt2_tokenizer = AutoTokenizer.from_pretrained(thai_tokenizer_repo)
