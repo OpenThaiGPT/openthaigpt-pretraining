@@ -13,6 +13,7 @@ requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
+
 dependencies = [
     "xformers>=0.0.18",
     "llama@git+https://github.com/facebookresearch/llama.git",
@@ -21,5 +22,6 @@ dependencies = [
     "lion-pytorch>=0.0.7",
     "transformers>=4.28.1",
     "datasets>=2.12.0",
-    "zstandard>=0.21.0"
+    "zstandard>=0.21.0",
+    "protobuf==3.20.0",
 ]
