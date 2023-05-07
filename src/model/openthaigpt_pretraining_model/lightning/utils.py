@@ -108,6 +108,7 @@ class Trainer:
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
+        seed_everything(seed)
         # self.max_steps = max_steps
         # self.warmup_steps = warmup_steps
         # self.eval_steps = eval_steps
