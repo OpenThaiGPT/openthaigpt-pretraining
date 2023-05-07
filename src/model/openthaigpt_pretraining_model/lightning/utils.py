@@ -1,4 +1,4 @@
-from datasets import load_dataset, DataLoader
+from datasets import load_dataset
 import numpy as np
 import random
 from tqdm import tqdm
@@ -7,7 +7,7 @@ from lightning.fabric.accelerators import Accelerator
 from lightning.fabric.strategies import Strategy
 import torch
 import torch.optim as optim
-from torch.utils.data import IterableDataset
+from torch.utils.data import IterableDataset, DataLoader
 from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
@@ -148,6 +148,8 @@ class Trainer:
                 tie_word_embeddings=False,
             )
             self.model = model = GPTJForCausalLM(cfg)
+        else:
+            raise NotImplementedError("only support LlaMa or gptj")
 
         self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
         self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
@@ -174,7 +176,7 @@ class Trainer:
                 lr=lr,
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
-                fused=True,
+                # fused=True,
             )
         else:
             raise NotImplementedError("only support lion or AdamW")

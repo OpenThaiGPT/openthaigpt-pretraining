@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--context_length", type=int, default=256, help="seq")
-    parser.add_argument("--optimizer", type=str, default="adamw | lion")
+    parser.add_argument("--optimizer", type=str, default="adamw" help = "adamw | lion")
     parser.add_argument("--weight_decay", type=float, default=1e-2, help="weight decay")
     parser.add_argument("--lr", type=float, default=5e-4, help="lr")
     '''
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         accelerator=args.accelerator,
         strategy=args.strategy,
         devices=args.devices,
-        precision=args.precsion,
+        precision=args.precision,
         seed=args.seed,
         batch_size=args.batch_size,
         # grad=args.grad,
