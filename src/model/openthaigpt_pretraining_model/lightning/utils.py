@@ -94,27 +94,14 @@ class Trainer:
         batch_size: int = 8,
         # grad: int = 4,
         context_length: int = 256,
-        # max_steps: int = 1000,
-        # eval_steps: int = 100,
-        # warmup_steps: int = 2,
         model_name: str = "decapoda-research/llama-7b-hf",
         optimizer: str = "adamw",
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
-        # do_sample,
-        # use_flash,
-        # use_checkpointing,
     ):
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
-        seed_everything(seed)
-        # self.max_steps = max_steps
-        # self.warmup_steps = warmup_steps
-        # self.eval_steps = eval_steps
-        # self.do_sample = do_sample
-        # self.use_flash = use_flash
-        # self.use_checkpointing = use_checkpointing
         # self.fabric = L.Fabric(accelerator="cuda", devices=2, precision="16-mixed", strategy="ddp")
         self.fabric = L.Fabric(
             accelerator=accelerator,
@@ -134,14 +121,6 @@ class Trainer:
         )
 
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
-        # self.model = model = createmodel(
-        #     model_name,
-        #     self.max_tokens,
-        #     self.tokenizer,
-        #     self.use_flash,
-        #     self.use_checkpointing,
-        #     self.device,
-        # )
         cfg = ModelArgs(
             dim=512,
             n_layers=8,
@@ -188,7 +167,6 @@ class Trainer:
         progress_bar = tqdm(self.dataloader_val)
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
-                # batch = batch.to(self.device)
                 loss = self.model(batch, labels=batch).loss
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()

@@ -1,41 +1,59 @@
-from tqdm import tqdm
-import lightning as L
-import torch
-from torch.utils.data import DataLoader
-from openthaigpt_pretraining_model.models.llama.model import (
-    ModelArgs,
-    Transformer,
-    ORIGIN_ATTENTION_MODE,
-)
-from openthaigpt_pretraining_model.lightning.utils import DatasetWrapper, seed_everything
-
-CFG = ModelArgs(
-    dim=512,
-    n_layers=8,
-    n_heads=8,
-    vocab_size=-1,
-    multiple_of=256,
-    norm_eps=1e-5,
-    max_batch_size=32,
-    max_seq_len=2048,
-    attention_mode=ORIGIN_ATTENTION_MODE,
+import argparse
+from openthaigpt_pretraining_model.lightning.utils import (
+    seed_everything,
+    Trainer,
 )
 
-seed_everything(69)
-dataset = DatasetWrapper("train", "decapoda-research/llama-7b-hf")
-train_loader = DataLoader(dataset, batch_size=2, num_workers=2)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--accelerator", type=str, default="cuda", help="cpu | cuda")
+    parser.add_argument("--strategy", type=str, default="ddp", help="dp | ddp | ddp_spawn | xla | deepspeed | fsdp")
+    parser.add_argument("--devices", type=int, default=1, help="number of GPUS")
+    parser.add_argument("--precision", type=str, default="32-true", help="32-true | 32 | 16-mixed | bf16-mixed | 64-true")
+    parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
+    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--context_length", type=int, default=256, help="seq")
+    parser.add_argument("--optimizer", type=str, default="adamw | lion")
+    parser.add_argument("--weight_decay", type=float, default=1e-2, help="weight decay")
+    parser.add_argument("--lr", type=float, default=5e-4, help="lr")
+    '''
+        accelerator: Union[str, Accelerator] = "auto",
+        strategy: Union[str, Strategy] = "auto",
+        devices: Union[List[int], str, int] = "auto",
+        precision: Union[str, int] = "32-true",
+        seed: int = 42,
+        batch_size: int = 8,
+        # grad: int = 4,
+        context_length: int = 256,
+        model_name: str = "decapoda-research/llama-7b-hf",
+        optimizer: str = "adamw",
+        weight_decay: float = 1e-2,
+        lr: float = 1e-4,
+    '''
+    
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="decapoda-research/llama-7b-hf",
+        help="{decapoda-research/llama-7b-hf}",
+    )
 
-fabric = L.Fabric(accelerator="cuda", devices=2, precision="16-mixed", strategy="ddp")
-fabric.launch()
-model = Transformer(CFG)
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
-optimizer.zero_grad()
-model, optimizer = fabric.setup(model, optimizer)
-dataloader = fabric.setup_dataloaders(train_loader)
+    args = parser.parse_args()
+    print(args)
 
-for idx, batch in enumerate(tqdm(dataloader)):
-    loss = model(batch, labels=batch).loss
-    fabric.backward(loss)
-
-    optimizer.step()
-    optimizer.zero_grad()
+    seed_everything(args.seed)
+    trainer = Trainer(
+        accelerator=args.accelerator,
+        strategy=args.strategy,
+        devices=args.devices,
+        precision=args.precsion,
+        seed=args.seed,
+        batch_size=args.batch_size,
+        # grad=args.grad,
+        context_length=args.context_length,
+        model_name=args.model_name,
+        optimizer=args.optimizer,
+        weight_decay=args.weight_decay,
+        lr=args.lr,
+    )
+    trainer.train()
