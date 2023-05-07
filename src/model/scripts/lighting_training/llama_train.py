@@ -7,7 +7,7 @@ from openthaigpt_pretraining_model.models.llama.model import (
     Transformer,
     ORIGIN_ATTENTION_MODE,
 )
-from openthaigpt_pretraining_model.lightning.utils import DatasetWrapper
+from openthaigpt_pretraining_model.lightning.utils import DatasetWrapper, seed_everything
 
 CFG = ModelArgs(
     dim=512,
@@ -21,7 +21,8 @@ CFG = ModelArgs(
     attention_mode=ORIGIN_ATTENTION_MODE,
 )
 
-dataset = DatasetWrapper("train")
+seed_everything(69)
+dataset = DatasetWrapper("train", "decapoda-research/llama-7b-hf")
 train_loader = DataLoader(dataset, batch_size=2, num_workers=2)
 
 fabric = L.Fabric(accelerator="cuda", devices=2, precision="16-mixed", strategy="ddp")

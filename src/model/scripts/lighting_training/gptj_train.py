@@ -6,7 +6,7 @@ from transformers import (
     GPTJConfig,
     GPTJForCausalLM,
 )
-from openthaigpt_pretraining_model.lightning.utils import DatasetWrapper
+from openthaigpt_pretraining_model.lightning.utils import DatasetWrapper, seed_everything
 
 cfg = GPTJConfig(
     vocab_size=50400,
@@ -27,7 +27,8 @@ cfg = GPTJConfig(
     eos_token_id=50256,
     tie_word_embeddings=False,
 )
-dataset = DatasetWrapper("train")
+seed_everything(69)
+dataset = DatasetWrapper("train", "EleutherAI/gpt-j-6B")
 train_loader = DataLoader(dataset, batch_size=2, num_workers=2)
 
 fabric = L.Fabric(accelerator="cuda", devices=2, precision="16-mixed", strategy="ddp")
