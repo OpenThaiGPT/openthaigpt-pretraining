@@ -12,6 +12,8 @@ from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
     AutoTokenizer,
+    AutoConfig,
+    GPTJForCausalLM,
 )
 from .constants import (
     DATASET_NAME,
@@ -94,7 +96,7 @@ class Trainer:
         batch_size: int = 8,
         # grad: int = 4,
         context_length: int = 256,
-        model_name: str = "decapoda-research/llama-7b-hf",
+        model_name: str = "llama",
         optimizer: str = "adamw",
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
@@ -110,6 +112,42 @@ class Trainer:
             precision=precision,
         )
         self.fabric.launch()
+        if model_name == "llama":
+            model_name = "EleutherAI/gpt-j-6B"  # for tokenizer
+            cfg = ModelArgs(
+                dim=512,
+                n_layers=8,
+                n_heads=8,
+                vocab_size=32000,
+                multiple_of=256,
+                norm_eps=1e-5,
+                max_batch_size=32,
+                max_seq_len=2048,
+                attention_mode=ORIGIN_ATTENTION_MODE,
+            )
+            self.model = model = Transformer(cfg)
+        elif model_name == "gptj":
+            model_name = "decapoda-research/llama-7b-hf"  # for tokenizer
+            cfg = AutoConfig(
+                vocab_size=50400,
+                n_positions=2048,
+                n_embd=1536,
+                n_layer=12,
+                n_head=8,
+                rotary_dim=64,
+                n_inner=None,
+                activation_function="gelu_new",
+                resid_pdrop=0.1,
+                embd_pdrop=0.1,
+                attn_pdrop=0.1,
+                layer_norm_epsilon=1e-5,
+                initializer_range=0.02,
+                use_cache=True,
+                bos_token_id=50256,
+                eos_token_id=50256,
+                tie_word_embeddings=False,
+            )
+            self.model = model = GPTJForCausalLM(cfg)
 
         self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
         self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
@@ -121,18 +159,6 @@ class Trainer:
         )
 
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
-        cfg = ModelArgs(
-            dim=512,
-            n_layers=8,
-            n_heads=8,
-            vocab_size=32000,
-            multiple_of=256,
-            norm_eps=1e-5,
-            max_batch_size=32,
-            max_seq_len=2048,
-            attention_mode=ORIGIN_ATTENTION_MODE,
-        )
-        self.model = model = Transformer(cfg)
 
         if optimizer == "lion":
             print("Use lion optimizer")

@@ -30,12 +30,12 @@ if __name__ == "__main__":
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
     '''
-    
+
     parser.add_argument(
         "--model_name",
         type=str,
-        default="decapoda-research/llama-7b-hf",
-        help="{decapoda-research/llama-7b-hf}",
+        default="llama",
+        help="{llama(7B) | gptj}",
     )
 
     args = parser.parse_args()
