@@ -26,11 +26,6 @@ from .constants import (
     LLAMA_MODEL,
     GPTJ_MODEL,
 )
-# from openthaigpt_pretraining_model.models.llama.model import (
-#     ModelArgs,
-#     Transformer,
-#     ORIGIN_ATTENTION_MODE,
-# )
 
 
 class DatasetWrapper(IterableDataset):
@@ -109,18 +104,6 @@ class Trainer:
         self.fabric.launch()
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            # cfg = ModelArgs(
-            #     dim=512,
-            #     n_layers=8,
-            #     n_heads=8,
-            #     vocab_size=32000,
-            #     multiple_of=256,
-            #     norm_eps=1e-5,
-            #     max_batch_size=32,
-            #     max_seq_len=2048,
-            #     attention_mode=ORIGIN_ATTENTION_MODE,
-            # )
-            # self.model = model = Transformer(cfg)
             cfg = LlamaConfig(
                 vocab_size=32000,
                 hidden_size=1024,
@@ -134,7 +117,7 @@ class Trainer:
             model_name = GPTJ_MODEL  # for tokenizer
             cfg = GPTJConfig(
                 vocab_size=50400,
-                n_positions=2048,
+                n_positions=context_length,
                 n_embd=1536,
                 n_layer=12,
                 n_head=8,
