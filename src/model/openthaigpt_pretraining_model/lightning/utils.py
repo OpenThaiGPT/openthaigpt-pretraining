@@ -12,7 +12,7 @@ from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
     AutoTokenizer,
-    AutoConfig,
+    GPTJConfig,
     GPTJForCausalLM,
 )
 from .constants import (
@@ -113,7 +113,7 @@ class Trainer:
         )
         self.fabric.launch()
         if model_name == "llama":
-            model_name = "EleutherAI/gpt-j-6B"  # for tokenizer
+            model_name = "decapoda-research/llama-7b-hf"  # for tokenizer
             cfg = ModelArgs(
                 dim=512,
                 n_layers=8,
@@ -127,8 +127,8 @@ class Trainer:
             )
             self.model = model = Transformer(cfg)
         elif model_name == "gptj":
-            model_name = "decapoda-research/llama-7b-hf"  # for tokenizer
-            cfg = AutoConfig(
+            model_name = "EleutherAI/gpt-j-6B"  # for tokenizer
+            cfg = GPTJConfig(
                 vocab_size=50400,
                 n_positions=2048,
                 n_embd=1536,
@@ -176,7 +176,6 @@ class Trainer:
                 lr=lr,
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
-                # fused=True,
             )
         else:
             raise NotImplementedError("only support lion or AdamW")
@@ -187,7 +186,6 @@ class Trainer:
 
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
-        self.fabric.backward(loss)
         return loss
 
     def val_step(self):
@@ -200,6 +198,10 @@ class Trainer:
         self.model.train()
         return loss
 
+    def call_loss_llama(self):
+    
+    def call_loss_gptj(self):
+    
     def train(self):
         progress_bar = tqdm(self.dataloader)
         self.opt.zero_grad()
