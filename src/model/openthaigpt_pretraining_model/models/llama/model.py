@@ -197,7 +197,7 @@ class Transformer(nn.Module):
             self.params.dim // self.params.n_heads, self.params.max_seq_len * 2
         )
 
-    def forward(self, tokens: torch.Tensor, start_pos: int, labels: Optional[torch.Tensor] = None):
+    def forward(self, tokens: torch.Tensor, start_pos: int):
         _bsz, seqlen = tokens.shape
         h = self.tok_embeddings(tokens)
         self.freqs_cis = self.freqs_cis.to(h.device)
