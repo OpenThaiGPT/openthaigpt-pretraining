@@ -110,7 +110,7 @@ class Trainer:
                 num_hidden_layers=8,
                 num_attention_heads=8,
                 hidden_act="silu",
-                max_position_embeddings=2048,  # sequence length
+                max_position_embeddings=context_length,
             )
             self.model = model = LlamaForCausalLM(cfg)
         elif model_name == "gptj":
