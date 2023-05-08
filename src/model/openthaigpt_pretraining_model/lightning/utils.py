@@ -198,10 +198,6 @@ class Trainer:
         self.model.train()
         return loss
 
-    def call_loss_llama(self):
-    
-    def call_loss_gptj(self):
-    
     def train(self):
         progress_bar = tqdm(self.dataloader)
         self.opt.zero_grad()
