@@ -120,8 +120,8 @@ class Trainer:
             self.model = model = make_model_gptj(
                 vocab_size=vocab_size,
                 context_length=context_length,
-                use_xformers=False,
-                use_checkpointing=False,
+                use_xformers=xformers,
+                use_checkpointing=checkpoint,
                 device=self.fabric.device,
             )
         else:
