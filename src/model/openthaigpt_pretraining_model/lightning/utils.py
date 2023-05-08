@@ -24,7 +24,9 @@ from .constants import (
     LLAMA_MODEL,
     GPTJ_MODEL,
 )
-from openthaigpt_pretraining_model.models.gptj import make_model_gptj
+from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
+    make_model_gptj,
+)
 
 
 class DatasetWrapper(IterableDataset):
