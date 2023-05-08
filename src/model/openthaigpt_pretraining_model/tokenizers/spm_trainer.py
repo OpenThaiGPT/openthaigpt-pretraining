@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Union
 from tqdm import tqdm
 import sentencepiece as spm
 from datasets import load_dataset, Dataset
@@ -48,21 +48,21 @@ class DataSetColumnIterator:
 def train_tokenizer(
     output_path: str,
     vocab_size: int,
-    num_docs: int,
+    num_docs: Optional[Union[str, int]] = None,
     num_proc: Optional[int] = os.cpu_count(),
     is_slurm: bool = False,
     load_dataset_path: str = "oscar",
     load_dataset_name: str = "unshuffled_deduplicated_th",
     load_dataset_local_path: Optional[str] = None,
     load_dataset_data_type: str = "csv",
-):
+) -> None:
     """
     Train a SentencePiece tokenizer on a large text dataset.
 
     Args:
         output_path (str): The path and prefix to use when saving the trained tokenizer.
         vocab_size (int): The size of the vocabulary to use when training the tokenizer.
-        num_docs (int): The number of documents to use from the input dataset.
+        num_docs (int, optional): The number of documents to use from the input dataset.
         num_proc (int, optional): The number of CPU cores to use when training the tokenizer. Defaults to the number of available CPU cores.
         is_slurm (bool, optional): Whether the code is running on a Slurm cluster. Defaults to False.
         load_dataset_path (str, optional): The name of the Hugging Face dataset to load. Defaults to "oscar".
@@ -81,6 +81,9 @@ def train_tokenizer(
                 split="train",
                 streaming=not is_slurm,
             )
+
+            num_docs = len(text_dataset) if num_docs is None else num_docs
+
             new_dataset: dict = {DOC_ID: [], DOC_TEXT: []}
             for item in tqdm(text_dataset.shuffle().take(num_docs)):
                 new_dataset[DOC_ID].append(item[DOC_ID])
@@ -88,6 +91,8 @@ def train_tokenizer(
             text_dataset = Dataset.from_dict(new_dataset)
 
         else:
+            num_docs = "" if num_docs is None else num_docs
+
             text_dataset = load_dataset(
                 path=load_dataset_path,
                 name=load_dataset_name,
