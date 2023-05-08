@@ -12,6 +12,7 @@ from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
     AutoTokenizer,
+    LlamaTokenizer,
     GPTJConfig,
     GPTJForCausalLM,
 )
@@ -30,7 +31,10 @@ from openthaigpt_pretraining_model.models.llama.model import (
 
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, model, max_tokens=256):
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
+        if model != "decapoda-research/llama-7b-hf":
+            self.tokenizer = AutoTokenizer.from_pretrained(model)
+        else:
+            self.tokenizer = LlamaTokenizer.from_pretrained(model)
         self.mode = mode
         self.max_tokens = max_tokens
 
