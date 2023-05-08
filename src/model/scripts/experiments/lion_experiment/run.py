@@ -14,7 +14,6 @@ if __name__ == "__main__":
     parser.add_argument("--optimizer", type=str, default="adamw")
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
     parser.add_argument("--context_length", type=int, default=256, help="seq")
     parser.add_argument("--lr", type=float, default=5e-4, help="lr")
     parser.add_argument("--max_steps", type=int, default=800, help="max steps")

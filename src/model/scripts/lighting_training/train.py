@@ -7,16 +7,27 @@ from openthaigpt_pretraining_model.lightning.utils import (
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--accelerator", type=str, default="cuda", help="cpu | cuda")
-    parser.add_argument("--strategy", type=str, default="auto", help="dp | ddp | ddp_spawn | xla | deepspeed | fsdp")
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        default="auto",
+        help="dp | ddp | ddp_spawn | xla | deepspeed | fsdp",
+    )
     parser.add_argument("--devices", type=int, default=1, help="number of GPUS")
-    parser.add_argument("--precision", type=str, default="32-true", help="32-true | 32 | 16-mixed | bf16-mixed | 64-true")
+    parser.add_argument(
+        "--precision",
+        type=str,
+        default="32-true",
+        help="32-true | 32 | 16-mixed | bf16-mixed | 64-true",
+    )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
     parser.add_argument("--context_length", type=int, default=256, help="seq")
     parser.add_argument("--optimizer", type=str, default="adamw", help="adamw | lion")
     parser.add_argument("--weight_decay", type=float, default=1e-2, help="weight decay")
     parser.add_argument("--lr", type=float, default=5e-4, help="lr")
-    '''
+    """
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
         devices: Union[List[int], str, int] = "auto",
@@ -29,7 +40,7 @@ if __name__ == "__main__":
         optimizer: str = "adamw",
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
-    '''
+    """
 
     parser.add_argument(
         "--model_name",
