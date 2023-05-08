@@ -6,6 +6,21 @@ from openthaigpt_pretraining_model.lightning.utils import (
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    """
+        accelerator: Union[str, Accelerator] = "auto",
+        strategy: Union[str, Strategy] = "auto",
+        devices: Union[List[int], str, int] = "auto",
+        precision: Union[str, int] = "32-true",
+        seed: int = 42,
+        batch_size: int = 8,
+        grad: int = 4,
+        context_length: int = 256,
+        model_name: str = "llama",
+        optimizer: str = "adamw",
+        weight_decay: float = 1e-2,
+        lr: float = 1e-4,
+        vocab_size: int = 50400,
+    """
     parser.add_argument("--accelerator", type=str, default="cuda", help="cpu | cuda")
     parser.add_argument(
         "--strategy",
@@ -27,27 +42,13 @@ if __name__ == "__main__":
     parser.add_argument("--optimizer", type=str, default="adamw", help="adamw | lion")
     parser.add_argument("--weight_decay", type=float, default=1e-2, help="weight decay")
     parser.add_argument("--lr", type=float, default=5e-4, help="lr")
-    """
-        accelerator: Union[str, Accelerator] = "auto",
-        strategy: Union[str, Strategy] = "auto",
-        devices: Union[List[int], str, int] = "auto",
-        precision: Union[str, int] = "32-true",
-        seed: int = 42,
-        batch_size: int = 8,
-        # grad: int = 4,
-        context_length: int = 256,
-        model_name: str = "decapoda-research/llama-7b-hf",
-        optimizer: str = "adamw",
-        weight_decay: float = 1e-2,
-        lr: float = 1e-4,
-    """
-
     parser.add_argument(
         "--model_name",
         type=str,
         default="llama",
         help="{llama(7B) | gptj}",
     )
+    parser.add_argument("--vocab_size", type=int, default=50400)
 
     args = parser.parse_args()
     print(args)
@@ -60,11 +61,12 @@ if __name__ == "__main__":
         precision=args.precision,
         seed=args.seed,
         batch_size=args.batch_size,
-        # grad=args.grad,
+        grad=args.grad,
         context_length=args.context_length,
         model_name=args.model_name,
         optimizer=args.optimizer,
         weight_decay=args.weight_decay,
         lr=args.lr,
+        vocab_size=args.vocab_size,
     )
     trainer.train()

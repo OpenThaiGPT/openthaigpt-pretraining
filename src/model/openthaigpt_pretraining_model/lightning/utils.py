@@ -90,6 +90,7 @@ class Trainer:
         optimizer: str = "adamw",
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
+        vocab_size: int = 50400,
     ):
         self.max_tokens = context_length
         self.step = 0
@@ -105,7 +106,7 @@ class Trainer:
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
             cfg = LlamaConfig(
-                vocab_size=32000,
+                vocab_size=vocab_size,
                 hidden_size=1024,
                 num_hidden_layers=8,
                 num_attention_heads=8,
@@ -116,7 +117,7 @@ class Trainer:
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             cfg = GPTJConfig(
-                vocab_size=50400,
+                vocab_size=vocab_size,
                 n_positions=context_length,
                 n_embd=1536,
                 n_layer=12,
