@@ -13,8 +13,6 @@ from typing import List, Union
 from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
-    GPTJConfig,
-    GPTJForCausalLM,
     LlamaConfig,
     LlamaForCausalLM,
 )
@@ -26,6 +24,7 @@ from .constants import (
     LLAMA_MODEL,
     GPTJ_MODEL,
 )
+from openthaigpt_pretraining_model.models.gptj import make_model_gptj
 
 
 class DatasetWrapper(IterableDataset):
@@ -116,28 +115,15 @@ class Trainer:
             self.model = model = LlamaForCausalLM(cfg)
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
-            cfg = GPTJConfig(
+            self.model = model = make_model_gptj(
                 vocab_size=vocab_size,
-                n_positions=context_length,
-                n_embd=1536,
-                n_layer=12,
-                n_head=8,
-                rotary_dim=64,
-                n_inner=None,
-                activation_function="gelu_new",
-                resid_pdrop=0.1,
-                embd_pdrop=0.1,
-                attn_pdrop=0.1,
-                layer_norm_epsilon=1e-5,
-                initializer_range=0.02,
-                use_cache=True,
-                bos_token_id=50256,
-                eos_token_id=50256,
-                tie_word_embeddings=False,
+                context_length=context_length,
+                use_xformers=False,
+                use_checkpointing=False,
+                device=self.fabric.device,
             )
-            self.model = model = GPTJForCausalLM(cfg)
         else:
-            raise NotImplementedError("only support LlaMa or gptj")
+            raise NotImplementedError("only support LlaMa or GPTJ")
 
         self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
         self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
