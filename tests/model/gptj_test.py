@@ -1,4 +1,4 @@
-from openthaigpt_pretraining_model.gptj.gptj_model_xformers import (
+from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     _attn_xformers,
     _attn_xformers_cpu,
 )
