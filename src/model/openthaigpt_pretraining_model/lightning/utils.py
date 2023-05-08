@@ -90,6 +90,8 @@ class Trainer:
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
         vocab_size: int = 50400,
+        xformers: bool = False,
+        checkpoint: bool = False,
     ):
         self.max_tokens = context_length
         self.step = 0

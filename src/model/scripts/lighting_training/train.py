@@ -20,6 +20,8 @@ if __name__ == "__main__":
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
         vocab_size: int = 50400,
+        xformers: bool = False,
+        checkpoint: bool = False,
     """
     parser.add_argument("--accelerator", type=str, default="cuda", help="cpu | cuda")
     parser.add_argument(
@@ -49,6 +51,18 @@ if __name__ == "__main__":
         help="{llama(7B) | gptj}",
     )
     parser.add_argument("--vocab_size", type=int, default=50400)
+    parser.add_argument(
+        "--xformers",
+        type=bool,
+        default=False,
+        help="xformers attention only available for GPTJ",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=bool,
+        default=False,
+        help="gradient checkpoint only available for GPTJ",
+    )
 
     args = parser.parse_args()
     print(args)
@@ -68,5 +82,7 @@ if __name__ == "__main__":
         weight_decay=args.weight_decay,
         lr=args.lr,
         vocab_size=args.vocab_size,
+        xformers=args.xformers,
+        checkpoint=args.checkpoint,
     )
     trainer.train()
