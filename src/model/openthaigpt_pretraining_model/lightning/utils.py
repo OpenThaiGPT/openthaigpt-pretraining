@@ -15,6 +15,8 @@ from transformers import (
     LlamaTokenizer,
     GPTJConfig,
     GPTJForCausalLM,
+    LlamaConfig,
+    LlamaForCausalLM,
 )
 from .constants import (
     DATASET_NAME,
@@ -22,11 +24,11 @@ from .constants import (
     SPLIT_TRAIN,
     LANGUAGE_DATASET,
 )
-from openthaigpt_pretraining_model.models.llama.model import (
-    ModelArgs,
-    Transformer,
-    ORIGIN_ATTENTION_MODE,
-)
+# from openthaigpt_pretraining_model.models.llama.model import (
+#     ModelArgs,
+#     Transformer,
+#     ORIGIN_ATTENTION_MODE,
+# )
 
 
 class DatasetWrapper(IterableDataset):
@@ -76,19 +78,6 @@ def seed_everything(seed):
     random.seed(seed)
 
 
-@torch.no_grad()
-def do_eval(model, loader_val, device):
-    val_loss = 0.0
-    c_1 = 0
-    for i1, batch1 in enumerate(loader_val):
-        batch1 = batch1.to(device)
-        loss1 = model(batch1, labels=batch1).loss
-        val_loss = float(val_loss) + float(loss1.item())
-        c_1 += 1
-    print(f"loss_val : {(val_loss / c_1):.3f}")
-    return val_loss / c_1
-
-
 class Trainer:
     def __init__(
         self,
@@ -98,7 +87,7 @@ class Trainer:
         precision: Union[str, int] = "32-true",
         seed: int = 42,
         batch_size: int = 8,
-        # grad: int = 4,
+        grad: int = 4,
         context_length: int = 256,
         model_name: str = "llama",
         optimizer: str = "adamw",
@@ -108,7 +97,7 @@ class Trainer:
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
-        # self.fabric = L.Fabric(accelerator="cuda", devices=2, precision="16-mixed", strategy="ddp")
+        self.grad = grad
         self.fabric = L.Fabric(
             accelerator=accelerator,
             strategy=strategy,
@@ -118,18 +107,27 @@ class Trainer:
         self.fabric.launch()
         if model_name == "llama":
             model_name = "decapoda-research/llama-7b-hf"  # for tokenizer
-            cfg = ModelArgs(
-                dim=512,
-                n_layers=8,
-                n_heads=8,
+            # cfg = ModelArgs(
+            #     dim=512,
+            #     n_layers=8,
+            #     n_heads=8,
+            #     vocab_size=32000,
+            #     multiple_of=256,
+            #     norm_eps=1e-5,
+            #     max_batch_size=32,
+            #     max_seq_len=2048,
+            #     attention_mode=ORIGIN_ATTENTION_MODE,
+            # )
+            # self.model = model = Transformer(cfg)
+            cfg = LlamaConfig(
                 vocab_size=32000,
-                multiple_of=256,
-                norm_eps=1e-5,
-                max_batch_size=32,
-                max_seq_len=2048,
-                attention_mode=ORIGIN_ATTENTION_MODE,
+                hidden_size=1024,
+                num_hidden_layers=8,
+                num_attention_heads=8,
+                hidden_act="silu",
+                max_position_embeddings=2048,  # sequence length
             )
-            self.model = model = Transformer(cfg)
+            self.model = model = LlamaForCausalLM(cfg)
         elif model_name == "gptj":
             model_name = "EleutherAI/gpt-j-6B"  # for tokenizer
             cfg = GPTJConfig(
@@ -211,15 +209,9 @@ class Trainer:
 
             progress_bar.set_description(f"loss: {loss.item():.3f}")
             self.fabric.backward(loss)
-            self.opt.step()
-            self.opt.zero_grad()
+            if (i + 1) % self.grad == 0:
+                self.opt.step()
+                self.opt.zero_grad()
 
-        # self.model.eval()
-        # val_loss = do_eval(self.model, self.data
-        # loader_val, self.device)
-        # self.model.train()
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
-
-        # if self.ddp:
-        #     destroy_process_group()
