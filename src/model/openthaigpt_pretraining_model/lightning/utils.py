@@ -23,6 +23,8 @@ from .constants import (
     SPLIT_VAL,
     SPLIT_TRAIN,
     LANGUAGE_DATASET,
+    LLAMA_MODEL,
+    GPTJ_MODEL,
 )
 # from openthaigpt_pretraining_model.models.llama.model import (
 #     ModelArgs,
@@ -106,7 +108,7 @@ class Trainer:
         )
         self.fabric.launch()
         if model_name == "llama":
-            model_name = "decapoda-research/llama-7b-hf"  # for tokenizer
+            model_name = LLAMA_MODEL  # for tokenizer
             # cfg = ModelArgs(
             #     dim=512,
             #     n_layers=8,
@@ -129,7 +131,7 @@ class Trainer:
             )
             self.model = model = LlamaForCausalLM(cfg)
         elif model_name == "gptj":
-            model_name = "EleutherAI/gpt-j-6B"  # for tokenizer
+            model_name = GPTJ_MODEL  # for tokenizer
             cfg = GPTJConfig(
                 vocab_size=50400,
                 n_positions=2048,
