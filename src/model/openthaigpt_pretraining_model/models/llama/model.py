@@ -214,5 +214,4 @@ class Transformer(nn.Module):
             h = layer(h, start_pos, freqs_cis, mask)
         h = self.norm(h)
         output = self.output(h[:, -1, :])  # only compute last logits
-
         return output.float()
