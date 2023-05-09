@@ -134,6 +134,12 @@ class Trainer:
                 attention_mode=ORIGIN_ATTENTION_MODE,
             )
             self.model = model = Transformer(cfg)
+            model_size = sum(t.numel() for t in model.parameters())
+            print(f"llama size: {model_size/1000**2:.1f}M parameters")
+
+            model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            print(f"llama size requires_grad: {model_size/1000**2:.1f}M parameters")
+
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             self.model = model = make_model_gptj(
@@ -175,7 +181,7 @@ class Trainer:
         else:
             raise NotImplementedError("only support lion or AdamW")
 
-        model, self.opt = self.fabric.setup(model, self.opt)
+        self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
