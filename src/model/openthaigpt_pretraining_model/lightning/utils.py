@@ -181,11 +181,16 @@ class Trainer:
         self.opt.zero_grad()
 
         for i, batch in enumerate(progress_bar):
-            loss = self.train_step(batch)
+            is_accumulating = (i + 1) % self.grad != 0
 
-            progress_bar.set_description(f"loss: {loss.item():.3f}")
-            self.fabric.backward(loss)
-            if (i + 1) % self.grad == 0:
+            with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
+                loss = self.train_step(batch)
+
+                progress_bar.set_description(f"loss: {loss.item():.3f}")
+
+                self.fabric.backward(loss)
+
+            if not is_accumulating:
                 self.opt.step()
                 self.opt.zero_grad()
 
