@@ -13,8 +13,8 @@ from typing import List, Union
 from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
-    LlamaConfig,
-    LlamaForCausalLM,
+    # LlamaConfig,
+    # LlamaForCausalLM,
 )
 from .constants import (
     DATASET_NAME,
@@ -26,6 +26,11 @@ from .constants import (
 )
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     make_model_gptj,
+)
+from openthaigpt_pretraining_model.models.llama.model import (
+    ModelArgs,
+    Transformer,
+    ORIGIN_ATTENTION_MODE,
 )
 
 
@@ -108,15 +113,27 @@ class Trainer:
         self.fabric.launch()
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            cfg = LlamaConfig(
+            # cfg = LlamaConfig(
+            #     vocab_size=vocab_size,
+            #     hidden_size=1024,
+            #     num_hidden_layers=8,
+            #     num_attention_heads=8,
+            #     hidden_act="silu",
+            #     max_position_embeddings=context_length,
+            # )
+            # self.model = model = LlamaForCausalLM(cfg)
+            cfg = ModelArgs(
+                dim=512,
+                n_layers=8,
+                n_heads=8,
                 vocab_size=vocab_size,
-                hidden_size=1024,
-                num_hidden_layers=8,
-                num_attention_heads=8,
-                hidden_act="silu",
-                max_position_embeddings=context_length,
+                multiple_of=256,
+                norm_eps=1e-5,
+                max_batch_size=batch_size,
+                max_seq_len=context_length,
+                attention_mode=ORIGIN_ATTENTION_MODE,
             )
-            self.model = model = LlamaForCausalLM(cfg)
+            self.model = model = Transformer(cfg)
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             self.model = model = make_model_gptj(

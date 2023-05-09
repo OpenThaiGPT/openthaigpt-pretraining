@@ -223,12 +223,12 @@ class Transformer(nn.Module):
         logits = self.output(h)
 
         if labels is not None:
-            shift_logits = logits[..., :-1, :].contiguoes()
-            shift_labels = labels[..., :, 1:].contiguoes()
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., :, 1:].contiguous()
 
             loss_fn = CrossEntropyLoss()
             loss = loss_fn(
-                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.views(-1)
+                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
             )
             return OutputModel(logits=logits, loss=loss)
 
