@@ -15,6 +15,9 @@ on:
 
     branches:
       - "main"
+  concurrency:
+    group: test_model:${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
   pytest_and_coverage_model:
