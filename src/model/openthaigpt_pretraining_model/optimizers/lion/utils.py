@@ -19,11 +19,7 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
 from lion_pytorch import Lion
 
-from openthaigpt_pretraining_model.models.nanoGPT.model import (
-    make_model,
-    _attn_wrapper,
-    _attn_orig,
-)
+from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from .constants import (
     DTYPE_CHOICE,
     MODEL_NAME,
@@ -35,6 +31,8 @@ from .constants import (
     SPLIT_TRAIN,
     LANGUAGE_DATASET,
 )
+
+_attn_orig = GPT2Attention._attn
 
 
 def seed_everything(seed):
