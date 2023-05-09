@@ -61,7 +61,7 @@ def do_eval(model, loader_val, ctx, device):
             loss1 = model(batch1, labels=batch1).loss
             val_loss = float(val_loss) + float(loss1.item())
         c_1 += 1
-    print(f"loss_val : {(val_loss / c_1):.3f}")
+    # print(f"loss_val : {(val_loss / c_1):.3f}")
     return val_loss / c_1
 
 
@@ -79,7 +79,7 @@ def get_torch_context(dtype: str):
     ctx = (
         nullcontext()
         if device_type == "cpu"
-        else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
+        else torch.amp.autocast(device_type=device_type, dtype=ptdtype)  # type: ignore
     )
     return ctx
 
@@ -141,6 +141,7 @@ class Trainer:
         use_flash,
         use_checkpointing,
         dtype: str,
+        use_rotary,
     ):
         self.max_tokens = context_length
         self.grad = grad
@@ -154,7 +155,7 @@ class Trainer:
         self.dataset_val = DatasetWrapper("val", self.max_tokens)
         self.use_flash = use_flash
         self.use_checkpointing = use_checkpointing
-
+        self.use_rotary = use_rotary
         self.tokenizer = self.dataset.tokenizer
         self.loader = DataLoader(
             self.dataset,
@@ -186,6 +187,7 @@ class Trainer:
             self.use_flash,
             self.use_checkpointing,
             self.device,
+            self.use_rotary,
         )
 
         if optimizer == "lion":
@@ -197,7 +199,7 @@ class Trainer:
             )
         elif optimizer == "adamw":
             print("Use AdamW optimizer")
-            self.opt = optim.AdamW(
+            self.opt = optim.AdamW(  # type: ignore
                 params=model.parameters(),
                 lr=lr,
                 weight_decay=weight_decay,
@@ -206,7 +208,7 @@ class Trainer:
             )
         else:
             raise NotImplementedError("only support lion or AdamW")
-        self.model = torch.compile(model)
+        self.model = torch.compile(model)  # type: ignore
         if self.ddp:
             self.model = DDP(self.model, device_ids=[ddp_local_rank])
 
@@ -276,7 +278,7 @@ class Trainer:
                 self.model.eval()
                 val_loss = do_eval(self.model, self.loader_val, self.ctx, self.device)
                 self.model.train()
-                print(f"loss_val: {val_loss.item():.3f}")
+                print(f"loss_val : {val_loss:.3f}")
                 if self.do_sample:
                     self.generate_samples(6)
 
