@@ -4,6 +4,7 @@ import math
 
 import torch
 from torch import nn
+from torch.nn import CrossEntropyLoss
 import torch.nn.functional as F
 
 import xformers.ops as xops
@@ -197,7 +198,12 @@ class Transformer(nn.Module):
             self.params.dim // self.params.n_heads, self.params.max_seq_len * 2
         )
 
-    def forward(self, tokens: torch.Tensor, start_pos: int):
+    def forward(
+        self,
+        tokens: torch.Tensor,
+        start_pos: int = 0,
+        labels: Optional[torch.Tensor] = None,
+    ):
         _bsz, seqlen = tokens.shape
         h = self.tok_embeddings(tokens)
         self.freqs_cis = self.freqs_cis.to(h.device)
@@ -213,5 +219,23 @@ class Transformer(nn.Module):
         for layer in self.layers:
             h = layer(h, start_pos, freqs_cis, mask)
         h = self.norm(h)
-        output = self.output(h[:, -1, :])  # only compute last logits
-        return output.float()
+        # logits = self.output(h[:, -1, :])  # only compute last logits
+        logits = self.output(h)
+
+        if labels is not None:
+            shift_logits = logits[..., :-1, :].contiguoes()
+            shift_labels = labels[..., :, 1:].contiguoes()
+
+            loss_fn = CrossEntropyLoss()
+            loss = loss_fn(
+                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.views(-1)
+            )
+            return OutputModel(logits=logits, loss=loss)
+
+        return logits.float()
+
+
+class OutputModel:
+    def __init__(self, logits, loss):
+        self.logits = logits
+        self.loss = loss
