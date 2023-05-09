@@ -15,6 +15,9 @@ on:
 
     branches:
       - "main"
+  concurrency:
+    group: test_core:${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
   pytest_and_coverage_core:
@@ -36,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e src/core
-      
+
       - name: Run Mypy
         run: |
           mypy ./src/core/openthaigpt_pretraining

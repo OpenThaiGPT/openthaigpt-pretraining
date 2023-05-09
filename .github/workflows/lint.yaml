@@ -8,6 +8,10 @@ on:
     branches:
       - "main"
 
+concurrency:
+  group: linter:${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint_and_format:
     runs-on: ${{ matrix.os }}
@@ -36,5 +40,6 @@ jobs:
           black --check .
 
       - name: Run Flake8
+        if: ${{ always() }}
         run: |
           flake8
