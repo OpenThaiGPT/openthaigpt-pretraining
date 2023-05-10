@@ -117,6 +117,15 @@ class Trainer:
                 max_position_embeddings=context_length,
             )
             self.model = model = LlamaForCausalLM(cfg)
+            if checkpoint:
+                self.model.gradient_checkpointing_enable()
+
+            model_size = sum(t.numel() for t in model.parameters())
+            print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
+
+            model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
+
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             self.model = model = make_model_gptj(
