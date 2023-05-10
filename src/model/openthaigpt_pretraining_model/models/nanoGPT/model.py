@@ -826,7 +826,7 @@ class GPT2Model(GPT2PreTrainedModel):
                     head_mask[i],  # type: ignore
                     encoder_hidden_states,
                     encoder_attention_mask,
-                    position_ids=position_ids,
+                    position_ids,
                 )
             else:
                 outputs = block(
