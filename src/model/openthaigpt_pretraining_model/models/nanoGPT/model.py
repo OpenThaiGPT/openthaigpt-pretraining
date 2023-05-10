@@ -34,15 +34,7 @@ from transformers.modeling_outputs import (
     CausalLMOutputWithCrossAttentions,
 )
 
-from ...optimizers.lion.constants import (  # type: ignore
-    ROTARY_EMB_BASE,
-    ROTARY_PCT,
-)
-
-
 logger = logging.get_logger(__name__)
-# _attn_orig = GPT2Attention._attn
-
 _CHECKPOINT_FOR_DOC = "gpt2"
 _CONFIG_FOR_DOC = "GPT2Config"
 
@@ -178,15 +170,12 @@ class GPT2Attention(nn.Module):
         super().__init__()
 
         max_positions = config.max_position_embeddings
-        self.rotary_pct = ROTARY_PCT
-        self.rotary_emb_base = ROTARY_EMB_BASE
         self.register_buffer(
             "bias",
             torch.tril(
                 torch.ones((max_positions, max_positions), dtype=torch.bool)
             ).view(1, 1, max_positions, max_positions),
         )
-        self.use_rotary = config.use_rotary
         self.register_buffer("masked_bias", torch.tensor(-1e4))
 
         self.embed_dim = config.hidden_size
@@ -195,18 +184,12 @@ class GPT2Attention(nn.Module):
         self.split_size = self.embed_dim
         if self.head_dim * self.num_heads != self.embed_dim:
             raise ValueError(
-                f"`embed_dim` must be divisible by num_heads {self.embed_dim} :"
-                f" {self.num_heads})."
+                f"`embed_dim` must be divisible by num_heads :" f" {self.num_heads})."
             )
 
         self.scale_attn_weights = config.scale_attn_weights
         self.is_cross_attention = is_cross_attention
 
-        self.rotary_ndims = int(self.head_dim * self.rotary_pct)
-
-        self.rotary_emb = RotaryEmbedding(
-            self.rotary_ndims, config.max_position_embeddings, base=self.rotary_emb_base
-        )
         # Layer-wise attention scaling, reordering, and upcasting
         self.scale_attn_by_inverse_layer_idx = config.scale_attn_by_inverse_layer_idx
         self.layer_idx = layer_idx
@@ -266,7 +249,7 @@ class GPT2Attention(nn.Module):
             causal_mask = self.bias[
                 :, :, key_length - query_length : key_length, :key_length
             ]
-            mask_value = torch.finfo(attn_weights.dtype).mt_interact()
+            mask_value = torch.finfo(attn_weights.dtype).min
             mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(
                 attn_weights.device
             )
@@ -279,6 +262,7 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights + attention_mask
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+
         attn_weights = attn_weights.type(value.dtype)
         attn_weights = self.attn_dropout(attn_weights)
 
@@ -330,6 +314,7 @@ class GPT2Attention(nn.Module):
                 :, :, key_length - query_length : key_length, :key_length
             ]
             mask_value = torch.finfo(attn_weights.dtype).min
+
             mask_value = torch.tensor(mask_value, dtype=attn_weights.dtype).to(
                 attn_weights.device
             )
@@ -382,11 +367,10 @@ class GPT2Attention(nn.Module):
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = False,
         output_attentions: Optional[bool] = False,
-        position_ids: Optional[torch.LongTensor] = None,
     ) -> Tuple[Union[torch.Tensor, Tuple[torch.Tensor]], ...]:
         if encoder_hidden_states is not None:
             if not hasattr(self, "q_attn"):
-                raise ValueError("If class is used as cross attention")
+                raise ValueError("If class is used as cross attention,..")
 
             query = self.q_attn(hidden_states)
             key, value = self.c_attn(encoder_hidden_states).split(
@@ -399,26 +383,6 @@ class GPT2Attention(nn.Module):
         query = self._split_heads(query, self.num_heads, self.head_dim)
         key = self._split_heads(key, self.num_heads, self.head_dim)
         value = self._split_heads(value, self.num_heads, self.head_dim)
-
-        if self.use_rotary:
-            # Compute rotary embeddings on rotary_ndims
-            query_rot = query[
-                ..., : self.rotary_ndims
-            ]  # [batch, num_attention_heads, seq_len, head_size]
-            query_pass = query[..., self.rotary_ndims :]
-            key_rot = key[..., : self.rotary_ndims]
-            key_pass = key[..., self.rotary_ndims :]
-
-            # Compute token offset for rotary embeddings (when decoding)
-            seq_len = key.shape[-2]
-            if layer_past:
-                seq_len += layer_past[0].shape[-2]
-            cos, sin = self.rotary_emb(value, seq_len=seq_len)
-            query, key = apply_rotary_pos_emb(
-                query_rot, key_rot, cos, sin, position_ids
-            )
-            query = torch.cat((query, query_pass), dim=-1)
-            key = torch.cat((key, key_pass), dim=-1)
 
         if layer_past is not None:
             past_key, past_value = layer_past  # type: ignore
@@ -594,12 +558,10 @@ class GPT2Model(GPT2PreTrainedModel):
         super().__init__(config)
 
         self.embed_dim = config.hidden_size
-        self.use_rotary = config.use_rotary
+
         self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
-        if not self.use_rotary:
-            self.wpe = nn.Embedding(config.max_position_embeddings, self.embed_dim)
-        else:
-            print("Let's use Rotary Positional Encoding")
+        self.wpe = nn.Embedding(config.max_position_embeddings, self.embed_dim)
+
         self.drop = nn.Dropout(config.embd_pdrop)
         self.h = nn.ModuleList(
             [GPT2Block(config, layer_idx=i) for i in range(config.num_hidden_layers)]
@@ -617,7 +579,7 @@ class GPT2Model(GPT2PreTrainedModel):
     def parallelize(self, device_map=None):
         # Check validity of device_map
         warnings.warn(
-            "`GPT2Model.parallelize` is deprecated and will be removed",
+            "`GPT2Model.parallelize` is deprecated and.. ",
             FutureWarning,
         )
         self.device_map = (
@@ -634,8 +596,7 @@ class GPT2Model(GPT2PreTrainedModel):
         )
         self.last_device = "cuda:" + str(max(self.device_map.keys()))
         self.wte = self.wte.to(self.first_device)
-        if not self.use_rotary:
-            self.wpe = self.wpe.to(self.first_device)
+        self.wpe = self.wpe.to(self.first_device)
         # Load onto devices
         for k, v in self.device_map.items():
             for block in v:
@@ -646,7 +607,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
     def deparallelize(self):
         warnings.warn(
-            "Like `parallelize`, `deparallelize` is deprecated and will be removed",
+            "Like `parallelize`, `deparallelize` is deprecated and ..",
             FutureWarning,
         )
         self.model_parallel = False
@@ -654,8 +615,7 @@ class GPT2Model(GPT2PreTrainedModel):
         self.first_device = "cpu"
         self.last_device = "cpu"
         self.wte = self.wte.to("cpu")
-        if not self.use_rotary:
-            self.wpe = self.wpe.to("cpu")
+        self.wpe = self.wpe.to("cpu")
         for index in range(len(self.h)):
             self.h[index] = self.h[index].to("cpu")
         self.ln_f = self.ln_f.to("cpu")
@@ -742,12 +702,12 @@ class GPT2Model(GPT2PreTrainedModel):
             )
             position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])  # type: ignore  # noqa: E501
 
+        # GPT2Attention mask.
         if attention_mask is not None:
             if batch_size <= 0:
                 raise ValueError("batch_size has to be defined and > 0")
             attention_mask = attention_mask.view(batch_size, -1)  # type: ignore
             attention_mask = attention_mask[:, None, None, :]  # type: ignore
-
             attention_mask = attention_mask.to(dtype=self.dtype)  # type: ignore
             attention_mask = (1.0 - attention_mask) * torch.finfo(self.dtype).min
 
@@ -768,12 +728,8 @@ class GPT2Model(GPT2PreTrainedModel):
 
         if inputs_embeds is None:
             inputs_embeds = self.wte(input_ids)
-
-        if not self.use_rotary:
-            position_embeds = self.wpe(position_ids)
-            hidden_states = inputs_embeds + position_embeds
-        else:
-            hidden_states = inputs_embeds
+        position_embeds = self.wpe(position_ids)
+        hidden_states = inputs_embeds + position_embeds
 
         if token_type_ids is not None:
             token_type_embeds = self.wte(token_type_ids)
@@ -785,7 +741,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once("use_cache=True is incompatible")
+                logger.warning_once("use_cache=True is incompatible ...")
                 use_cache = False
 
         presents = () if use_cache else None
@@ -813,7 +769,6 @@ class GPT2Model(GPT2PreTrainedModel):
 
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
-                        # None for past_key_value
                         return module(*inputs, use_cache, output_attentions)
 
                     return custom_forward
@@ -826,7 +781,6 @@ class GPT2Model(GPT2PreTrainedModel):
                     head_mask[i],  # type: ignore
                     encoder_hidden_states,
                     encoder_attention_mask,
-                    position_ids=position_ids,
                 )
             else:
                 outputs = block(
@@ -838,7 +792,6 @@ class GPT2Model(GPT2PreTrainedModel):
                     encoder_attention_mask=encoder_attention_mask,
                     use_cache=use_cache,
                     output_attentions=output_attentions,
-                    position_ids=position_ids,
                 )
 
             hidden_states = outputs[0]
@@ -1072,7 +1025,6 @@ def make_model(
     use_flash,
     use_checkpointing,
     device,
-    use_rotary,
 ):
     config = AutoConfig.from_pretrained(
         pretrained_name,
@@ -1083,7 +1035,6 @@ def make_model(
         pad_token_id=tokenizer.pad_token_id,
         optimize_cuda_cache=True,
     )
-    config.use_rotary = use_rotary
     model = GPT2LMHeadModel(config).to(device)
 
     # GPT2Attention._attn = _attn_orig
