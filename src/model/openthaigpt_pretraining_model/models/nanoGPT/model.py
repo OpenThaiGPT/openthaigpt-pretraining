@@ -1,14 +1,9 @@
 import torch.nn.functional as F
 import torch.backends.cuda as cuda
 from transformers import AutoConfig
-from dataclasses import dataclass
-
-# from transformers.models.gpt2.modeling_gpt2 import GPT2Attention  # noqa: N813
-
-
-from transformers.modeling_utils import PreTrainedModel
-from transformers.models.gpt2.configuration_gpt2 import GPT2Config
-import os
+from transformers.models.gpt2.modeling_gpt2 import (
+    GPT2PreTrainedModel,
+)  # noqa: E501
 from transformers.models.gpt2.modeling_gpt2 import GPT2MLP
 from typing import Optional, Tuple, Union
 from transformers.pytorch_utils import (
@@ -21,12 +16,10 @@ import torch.utils.checkpoint
 from torch import nn
 from torch.cuda.amp import autocast
 from transformers.utils import (
-    ModelOutput,
     add_code_sample_docstrings,
     logging,
 )
 from torch.nn import CrossEntropyLoss
-import math
 import warnings
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 from transformers.modeling_outputs import (
@@ -66,111 +59,6 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
             dropout_p=self.attn_dropout.p,
         ).float()
     return attn_out, None
-
-
-def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
-    """Load tf checkpoints in a pytorch model"""
-    try:
-        import re
-
-        import tensorflow as tf
-    except ImportError:
-        logger.error("requires TensorFlow to be installed.")
-        raise
-    tf_path = os.path.abspath(gpt2_checkpoint_path)
-    logger.info(f"Converting TensorFlow checkpoint from {tf_path}")
-    # Load weights from TF model
-    init_vars = tf.train.list_variables(tf_path)
-    names = []
-    arrays = []
-    for name, shape in init_vars:
-        logger.info(f"Loading TF weight {name} with shape {shape}")
-        array = tf.train.load_variable(tf_path, name)
-        names.append(name)
-        arrays.append(array.squeeze())
-
-    for name, array in zip(names, arrays):
-        name = name[6:]  # skip "model/"
-        name = name.split("/")
-        pointer = model
-        for m_name in name:
-            if re.fullmatch(r"[A-Za-z]+\d+", m_name):
-                scope_names = re.split(r"(\d+)", m_name)
-            else:
-                scope_names = [m_name]
-            if scope_names[0] == "w" or scope_names[0] == "g":
-                pointer = getattr(pointer, "weight")
-            elif scope_names[0] == "b":
-                pointer = getattr(pointer, "bias")
-            elif scope_names[0] == "wpe" or scope_names[0] == "wte":
-                pointer = getattr(pointer, scope_names[0])
-                pointer = getattr(pointer, "weight")
-            else:
-                pointer = getattr(pointer, scope_names[0])
-            if len(scope_names) >= 2:
-                num = int(scope_names[1])
-                pointer = pointer[num]
-        try:
-            assert (
-                pointer.shape == array.shape
-            ), f"Pointer shape {pointer.shape} and array shape {array.shape} mismatched"
-        except AssertionError as e:
-            e.args += (pointer.shape, array.shape)
-            raise
-        logger.info(f"Initialize PyTorch weight {name}")
-        pointer.data = torch.from_numpy(array)
-    return model
-
-
-class GPT2PreTrainedModel(PreTrainedModel):
-    config_class = GPT2Config
-    load_tf_weights = load_tf_weights_in_gpt2
-    base_model_prefix = "transformer"
-    is_parallelizable = True
-    supports_gradient_checkpointing = True
-    _no_split_modules = ["GPT2Block"]
-
-    def __init__(self, *inputs, **kwargs):
-        super().__init__(*inputs, **kwargs)
-
-    def _init_weights(self, module):
-        """Initialize the weights."""
-        if isinstance(module, (nn.Linear, Conv1D)):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
-            if module.bias is not None:
-                module.bias.data.zero_()
-        elif isinstance(module, nn.Embedding):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
-            if module.padding_idx is not None:
-                module.weight.data[module.padding_idx].zero_()
-        elif isinstance(module, nn.LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-
-        for name, p in module.named_parameters():
-            if name == "c_proj.weight":
-                p.data.normal_(
-                    mean=0.0,
-                    std=(
-                        self.config.initializer_range
-                        / math.sqrt(2 * self.config.n_layer)
-                    ),
-                )
-
-    def _set_gradient_checkpointing(self, module, value=False):
-        if isinstance(module, GPT2Model):
-            module.gradient_checkpointing = value
-
-
-@dataclass
-class GPT2DoubleHeadsModelOutput(ModelOutput):
-    loss: Optional[torch.FloatTensor] = None
-    mc_loss: Optional[torch.FloatTensor] = None
-    logits: torch.FloatTensor = None  # type: ignore
-    mc_logits: torch.FloatTensor = None  # type: ignore
-    past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
-    hidden_states: Optional[Tuple[torch.FloatTensor]] = None
-    attentions: Optional[Tuple[torch.FloatTensor]] = None
 
 
 class GPT2Attention(nn.Module):
