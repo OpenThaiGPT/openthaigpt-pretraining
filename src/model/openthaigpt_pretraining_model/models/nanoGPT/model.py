@@ -203,10 +203,12 @@ class GPT2Attention(nn.Module):
         self.is_cross_attention = is_cross_attention
 
         self.rotary_ndims = int(self.head_dim * self.rotary_pct)
-
-        self.rotary_emb = RotaryEmbedding(
-            self.rotary_ndims, config.max_position_embeddings, base=self.rotary_emb_base
-        )
+        if self.use_rotary:
+            self.rotary_emb = RotaryEmbedding(
+                self.rotary_ndims,
+                config.max_position_embeddings,
+                base=self.rotary_emb_base,
+            )
         # Layer-wise attention scaling, reordering, and upcasting
         self.scale_attn_by_inverse_layer_idx = config.scale_attn_by_inverse_layer_idx
         self.layer_idx = layer_idx
@@ -814,7 +816,12 @@ class GPT2Model(GPT2PreTrainedModel):
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
                         # None for past_key_value
-                        return module(*inputs, use_cache, output_attentions)
+                        return module(
+                            *inputs,
+                            use_cache,
+                            output_attentions,
+                            position_ids=position_ids,
+                        )
 
                     return custom_forward
 
@@ -826,7 +833,6 @@ class GPT2Model(GPT2PreTrainedModel):
                     head_mask[i],  # type: ignore
                     encoder_hidden_states,
                     encoder_attention_mask,
-                    position_ids,
                 )
             else:
                 outputs = block(
@@ -1095,8 +1101,9 @@ def make_model(
 
     # https://www.kaggle.com/code/vad13irt/optimization-approaches-for-transformers
     if use_checkpointing:
+        print("Use Gradient Checkpointing")
         model.gradient_checkpointing_enable()
-
+    print(model)
     model_size = sum(t.numel() for t in model.parameters())
     print(f"GPT-2 size: {model_size/1000**2:.1f}M parameters")
 
