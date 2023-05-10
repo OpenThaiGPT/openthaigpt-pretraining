@@ -27,6 +27,9 @@ from .constants import (
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     make_model_gptj,
 )
+from openthaigpt_pretraining_model.models.llama_hf.model import (
+    make_model_llama,
+)
 
 
 class DatasetWrapper(IterableDataset):
@@ -108,23 +111,11 @@ class Trainer:
         self.fabric.launch()
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            cfg = LlamaConfig(
+            self.model = model = make_model_llama(
                 vocab_size=vocab_size,
-                hidden_size=1024,
-                num_hidden_layers=8,
-                num_attention_heads=8,
-                hidden_act="silu",
-                max_position_embeddings=context_length,
+                context_length=context_length,
+                use_checkpointing=checkpoint,
             )
-            self.model = model = LlamaForCausalLM(cfg)
-            if checkpoint:
-                self.model.gradient_checkpointing_enable()
-
-            model_size = sum(t.numel() for t in model.parameters())
-            print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
-
-            model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-            print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
 
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer

@@ -481,9 +481,7 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
         return outputs
 
 
-def make_model_llama(
-    vocab_size, context_length, use_checkpointing, device: str = "cuda"
-):
+def make_model_llama(vocab_size, context_length, use_checkpointing):
     cfg = LlamaConfig(
         vocab_size=vocab_size,
         hidden_size=1024,
@@ -491,7 +489,7 @@ def make_model_llama(
         num_attention_heads=8,
         hidden_act="silu",
         max_position_embeddings=context_length,
-        gradient_checkpointing=True,
+        gradient_checkpointing=use_checkpointing,
     )
 
     model = LlamaForCausalLM(cfg)
