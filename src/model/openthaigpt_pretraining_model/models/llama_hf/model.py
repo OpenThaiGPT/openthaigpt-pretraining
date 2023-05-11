@@ -305,7 +305,7 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
         return outputs
 
 
-class LlamaForModify(LlamaPreTrainedModel):
+class LlamaModify(LlamaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.model = LlamaModel(config)
@@ -484,7 +484,7 @@ def make_model_llama(vocab_size, context_length, use_checkpointing):
         max_position_embeddings=context_length,
     )
     if use_checkpointing == 2:
-        model = LlamaForModify(cfg)
+        model = LlamaModify(cfg)
         print("use gradient checkpointing only attentions")
     else:
         model = LlamaForCausalLM(cfg)
