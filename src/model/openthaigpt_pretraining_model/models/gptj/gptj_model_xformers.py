@@ -13,7 +13,6 @@ from transformers import GPTJConfig, GPTJForCausalLM
 from torch import nn
 from torch.nn import CrossEntropyLoss
 
-# import torch.utils.checkpoint as checkpoint
 from typing import Optional, Tuple, Union
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
@@ -266,34 +265,6 @@ class GPTJModel(GPTJPreTrainedModel):
                     head_mask = head_mask.to(hidden_states.device)  # type: ignore
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)  # type: ignore
-
-            # if self.gradient_checkpointing and self.training:
-
-            #     def create_custom_forward(module):
-            #         def custom_forward(*inputs):
-            #             # None for past_key_value
-            #             return module(*inputs, use_cache, output_attentions)
-
-            #         return custom_forward
-
-            #     outputs = torch.utils.checkpoint.checkpoint(
-            #         create_custom_forward(block),
-            #         hidden_states,
-            #         None,
-            #         attention_mask,
-            #         position_ids,
-            #         head_mask[i],
-            #     )
-            # else:
-            #     outputs = block(
-            #         hidden_states=hidden_states,
-            #         layer_past=layer_past,
-            #         attention_mask=attention_mask,
-            #         position_ids=position_ids,
-            #         head_mask=head_mask[i],
-            #         use_cache=use_cache,
-            #         output_attentions=output_attentions,
-            #     )
             outputs = block(
                 hidden_states=hidden_states,
                 layer_past=layer_past,
