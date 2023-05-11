@@ -15,7 +15,6 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 
-import torch.utils.checkpoint as checkpoint
 from typing import Optional, Tuple, List, Union
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
@@ -26,10 +25,9 @@ from transformers.modeling_outputs import (
 class LlamaModel(LlamaPreTrainedModel):
     """
     Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`LlamaDecoderLayer`]
-
     Args:
         config: LlamaConfig
-    """
+    """  # noqa
 
     def __init__(self, config: LlamaConfig):
         super().__init__(config)
@@ -57,7 +55,7 @@ class LlamaModel(LlamaPreTrainedModel):
     def set_input_embeddings(self, value):
         self.embed_tokens = value
 
-    # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask
+    # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask # noqa
     def _prepare_decoder_attention_mask(
         self, attention_mask, input_shape, inputs_embeds, past_key_values_length
     ):
@@ -87,7 +85,7 @@ class LlamaModel(LlamaPreTrainedModel):
 
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        input_ids: torch.LongTensor = None,  # type: ignore
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -116,7 +114,7 @@ class LlamaModel(LlamaPreTrainedModel):
         # retrieve input_ids and inputs_embeds
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError(
-                "You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time"
+                "You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time"  # noqa
             )
         elif input_ids is not None:
             batch_size, seq_length = input_ids.shape
@@ -135,16 +133,20 @@ class LlamaModel(LlamaPreTrainedModel):
             seq_length_with_past = seq_length_with_past + past_key_values_length
 
         if position_ids is None:
-            device = input_ids.device if input_ids is not None else inputs_embeds.device
-            position_ids = torch.arange(
+            device = (
+                input_ids.device
+                if input_ids is not None
+                else inputs_embeds.device  # type: ignore
+            )
+            position_ids = torch.arange(  # type: ignore
                 past_key_values_length,
                 seq_length + past_key_values_length,
                 dtype=torch.long,
                 device=device,
             )
-            position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
+            position_ids = position_ids.unsqueeze(0).view(-1, seq_length)  # type: ignore # noqa
         else:
-            position_ids = position_ids.view(-1, seq_length).long()
+            position_ids = position_ids.view(-1, seq_length).long()  # type: ignore # noqa
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
@@ -167,7 +169,7 @@ class LlamaModel(LlamaPreTrainedModel):
         if self.gradient_checkpointing and self.training:
             if use_cache:
                 logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."  # noqa
                 )
                 use_cache = False
 
@@ -178,7 +180,7 @@ class LlamaModel(LlamaPreTrainedModel):
 
         for idx, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states += (hidden_states,)
+                all_hidden_states += (hidden_states,)  # type: ignore
 
             past_key_value = (
                 past_key_values[idx] if past_key_values is not None else None
@@ -197,16 +199,16 @@ class LlamaModel(LlamaPreTrainedModel):
             hidden_states = layer_outputs[0]
 
             if use_cache:
-                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)  # type: ignore # noqa
 
             if output_attentions:
-                all_self_attns += (layer_outputs[1],)
+                all_self_attns += (layer_outputs[1],)  # type: ignore # noqa
 
         hidden_states = self.norm(hidden_states)
 
         # add hidden states from the last decoder layer
         if output_hidden_states:
-            all_hidden_states += (hidden_states,)
+            all_hidden_states += (hidden_states,)  # type: ignore # noqa
 
         next_cache = next_decoder_cache if use_cache else None
         if not return_dict:
@@ -248,7 +250,7 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
                 If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
                 (see `past_key_values`).
             past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
-        """
+        """  # noqa
         residual = hidden_states
         hidden_states = self.input_layernorm(hidden_states)
 
@@ -269,13 +271,15 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
                 hidden_states,
                 self_attn_weights,
                 present_key_value,
-            ) = checkpoint(
+            ) = torch.utils.checkpoint(
                 create_custom_forward(self.self_attn),
                 hidden_states,
                 attention_mask,
                 position_ids,
                 past_key_value,
-            )
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+            )  # type: ignore
         else:
             hidden_states, self_attn_weights, present_key_value = self.self_attn(
                 hidden_states=hidden_states,
@@ -297,12 +301,12 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
         outputs = (hidden_states,)
 
         if output_attentions:
-            outputs += (self_attn_weights,)
+            outputs += (self_attn_weights,)  # type: ignore
 
         if use_cache:
-            outputs += (present_key_value,)
+            outputs += (present_key_value,)  # type: ignore
 
-        return outputs
+        return outputs  # type: ignore
 
 
 class LlamaModify(LlamaPreTrainedModel):
@@ -335,7 +339,7 @@ class LlamaModify(LlamaPreTrainedModel):
 
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        input_ids: torch.LongTensor = None,  # type: ignore
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -370,7 +374,7 @@ class LlamaModify(LlamaPreTrainedModel):
         >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
         >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         "Hey, are you consciours? Can you talk to me?\nI'm not consciours, but I can talk to you."
-        ```"""
+        ```"""  # noqa
 
         output_attentions = (
             output_attentions
@@ -446,7 +450,7 @@ class LlamaModify(LlamaPreTrainedModel):
             if past_key_values:
                 position_ids = position_ids[:, -1].unsqueeze(-1)
 
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step # noqa
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:

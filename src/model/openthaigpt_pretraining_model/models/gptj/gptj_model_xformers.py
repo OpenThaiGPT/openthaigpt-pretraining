@@ -170,7 +170,7 @@ class GPTJModel(GPTJPreTrainedModel):
             )
         elif input_ids is not None:
             input_shape = input_ids.size()
-            input_ids = input_ids.view(-1, input_shape[-1])
+            input_ids = input_ids.view(-1, input_shape[-1])  # type: ignore
             batch_size = input_ids.shape[0]
         elif inputs_embeds is not None:
             input_shape = inputs_embeds.size()[:-1]
@@ -178,47 +178,47 @@ class GPTJModel(GPTJPreTrainedModel):
         else:
             raise ValueError("You have to specify either input_ids or inputs_embeds")
 
-        device = input_ids.device if input_ids is not None else inputs_embeds.device
+        device = input_ids.device if input_ids is not None else inputs_embeds.device  # type: ignore # noqa
 
         if token_type_ids is not None:
-            token_type_ids = token_type_ids.view(-1, input_shape[-1])
+            token_type_ids = token_type_ids.view(-1, input_shape[-1])  # type: ignore
 
         if position_ids is not None:
-            position_ids = position_ids.view(-1, input_shape[-1]).long()
+            position_ids = position_ids.view(-1, input_shape[-1]).long()  # type: ignore
 
         if past_key_values is None:
             past_length = 0
-            past_key_values = tuple([None] * len(self.h))
+            past_key_values = tuple([None] * len(self.h))  # type: ignore
         else:
             past_length = past_key_values[0][0].size(-2)
 
         if position_ids is None:
-            position_ids = torch.arange(
+            position_ids = torch.arange(  # type: ignore
                 past_length,
                 input_shape[-1] + past_length,
                 dtype=torch.long,
                 device=device,
             )
-            position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])
+            position_ids = position_ids.unsqueeze(0).view(-1, input_shape[-1])  # type: ignore # noqa
 
         # Attention mask.
         if attention_mask is not None:
             if batch_size <= 0:
                 raise ValueError("batch_size has to be defined and > 0")
-            attention_mask = attention_mask.view(batch_size, -1)
+            attention_mask = attention_mask.view(batch_size, -1)  # type: ignore
             # We create a 3D attention mask from a 2D tensor mask.
             # Sizes are [batch_size, 1, 1, to_seq_length]
-            # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
-            # this attention mask is more simple than the triangular masking of causal attention
+            # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length] # noqa
+            # this attention mask is more simple than the triangular masking of causal attention # noqa
             # used in OpenAI GPT, we just need to prepare the broadcast dimension here.
-            attention_mask = attention_mask[:, None, None, :]
+            attention_mask = attention_mask[:, None, None, :]  # type: ignore
 
             # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
             # masked positions, this operation will create a tensor which is 0.0 for
-            # positions we want to attend and the dtype's smallest value for masked positions.
+            # positions we want to attend and the dtype's smallest value for masked positions. # noqa
             # Since we are adding it to the raw scores before the softmax, this is
             # effectively the same as removing these entirely.
-            attention_mask = attention_mask.to(dtype=self.dtype)  # fp16 compatibility
+            attention_mask = attention_mask.to(dtype=self.dtype)  # type: ignore
             attention_mask = (1.0 - attention_mask) * torch.finfo(self.dtype).min
 
         # Prepare head mask if needed
@@ -243,29 +243,29 @@ class GPTJModel(GPTJPreTrainedModel):
         if self.gradient_checkpointing and self.training:
             if use_cache:
                 logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."  # noqa
                 )
                 use_cache = False
 
         presents = () if use_cache else None
         all_self_attentions = () if output_attentions else None
         all_hidden_states = () if output_hidden_states else None
-        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
+        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):  # type: ignore # noqa
             # Model parallel
             if self.model_parallel:
                 torch.cuda.set_device(hidden_states.device)
-                # Ensure layer_past is on same device as hidden_states (might not be correct)
+                # Ensure layer_past is on same device as hidden_states (might not be correct) # noqa
                 if layer_past is not None:
-                    layer_past = tuple(
+                    layer_past = tuple(  # type: ignore
                         past_state.to(hidden_states.device) for past_state in layer_past
                     )
-                # Ensure that attention_mask is always on the same device as hidden_states
+                # Ensure that attention_mask is always on the same device as hidden_states # noqa
                 if attention_mask is not None:
-                    attention_mask = attention_mask.to(hidden_states.device)
+                    attention_mask = attention_mask.to(hidden_states.device)  # type: ignore # noqa
                 if isinstance(head_mask, torch.Tensor):
-                    head_mask = head_mask.to(hidden_states.device)
+                    head_mask = head_mask.to(hidden_states.device)  # type: ignore
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = all_hidden_states + (hidden_states,)  # type: ignore
 
             # if self.gradient_checkpointing and self.training:
 
@@ -299,7 +299,7 @@ class GPTJModel(GPTJPreTrainedModel):
                 layer_past=layer_past,
                 attention_mask=attention_mask,
                 position_ids=position_ids,
-                head_mask=head_mask[i],
+                head_mask=head_mask[i],  # type: ignore
                 use_cache=use_cache,
                 output_attentions=output_attentions,
                 gradient_checkpointing=self.gradient_checkpointing,
@@ -307,14 +307,14 @@ class GPTJModel(GPTJPreTrainedModel):
 
             hidden_states = outputs[0]
             if use_cache is True:
-                presents = presents + (outputs[1],)
+                presents = presents + (outputs[1],)  # type: ignore
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (
+                all_self_attentions = all_self_attentions + (  # type: ignore
                     outputs[2 if use_cache else 1],
                 )
 
-            # Model Parallel: If it's the last layer for that device, put things on the next device
+            # Model Parallel: If it's the last layer for that device, put things on the next device # noqa
             if self.model_parallel:
                 for k, v in self.device_map.items():
                     if i == v[-1] and "cuda:" + str(k) != self.last_device:
@@ -325,7 +325,7 @@ class GPTJModel(GPTJPreTrainedModel):
         hidden_states = hidden_states.view(output_shape)
         # Add last hidden state
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = all_hidden_states + (hidden_states,)  # type: ignore
 
         if not return_dict:
             return tuple(
@@ -479,7 +479,7 @@ class GPTJModify(GPTJPreTrainedModel):
             if past_key_values:
                 position_ids = position_ids[:, -1].unsqueeze(-1)
 
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step # noqa
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
@@ -517,7 +517,7 @@ class GPTJModify(GPTJPreTrainedModel):
             Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
             `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
             are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
-        """
+        """  # noqa
         return_dict = (
             return_dict if return_dict is not None else self.config.use_return_dict
         )
@@ -580,8 +580,8 @@ class GPTJModify(GPTJPreTrainedModel):
         This function is used to re-order the `past_key_values` cache if [`~PretrainedModel.beam_search`] or
         [`~PretrainedModel.beam_sample`] is called. This is required to match `past_key_values` with the correct
         beam_idx at every generation step.
-        """
-        return tuple(
+        """  # noqa
+        return tuple(  # type: ignore
             tuple(
                 past_state.index_select(0, beam_idx.to(past_state.device))
                 for past_state in layer_past
