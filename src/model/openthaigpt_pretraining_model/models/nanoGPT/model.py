@@ -1,36 +1,20 @@
 import torch.nn.functional as F
 import torch.backends.cuda as cuda
 from transformers import AutoConfig
-
-# from transformers.models.gpt2.modeling_gpt2 import (
-#     GPT2PreTrainedModel,
-# )  # noqa: E501
-# from transformers.models.gpt2.modeling_gpt2 import GPT2MLP
 from transformers.models.gpt_neox.modeling_gpt_neox import (
     RotaryEmbedding,
     apply_rotary_pos_emb,
 )  # noqa: F401
 
 from typing import Optional, Tuple, Union
-
-# from transformers.pytorch_utils import (
-#     Conv1D,
-#     find_pruneable_heads_and_indices,
-#     # prune_conv1d_layer,
-# )
 import torch
 import torch.utils.checkpoint
 from torch import nn
-
-# from torch.cuda.amp import autocast
 from transformers.utils import (
     add_code_sample_docstrings,
     logging,
 )
 from torch.nn import CrossEntropyLoss
-
-# import warnings
-# from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
@@ -75,9 +59,9 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
     return attn_out, None
 
 
-class GPT2Attention(OriginalGPT2Attention):
+class EditGPT2Attention(OriginalGPT2Attention):
     def __init__(self, config, is_cross_attention=False, layer_idx=None):
-        super().__init__()
+        super().__init__(config)
 
         self.rotary_pct = ROTARY_PCT
         self.rotary_emb_base = ROTARY_EMB_BASE
@@ -168,25 +152,10 @@ class GPT2Attention(OriginalGPT2Attention):
         return outputs  # type: ignore
 
 
-class GPT2Block(OriginalGPT2Block):
+class EditGPT2Block(OriginalGPT2Block):
     def __init__(self, config, layer_idx=None):
-        super().__init__()
-        # hidden_size = config.hidden_size
-        # inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
-
-        # self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.attn = GPT2Attention(config, layer_idx=layer_idx)
-        # self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-
-        # if config.add_cross_attention:
-        #     self.crossattention = GPT2Attention(
-        #         config, is_cross_attention=True, layer_idx=layer_idx
-        #     )
-        #     self.ln_cross_attn = nn.LayerNorm(
-        #         hidden_size, eps=config.layer_norm_epsilon
-        #     )
-
-        # self.mlp = GPT2MLP(inner_dim, config)
+        super().__init__(config)
+        self.attn = EditGPT2Attention(config, layer_idx=layer_idx)
 
     def forward(
         self,
@@ -250,89 +219,22 @@ class GPT2Block(OriginalGPT2Block):
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 
 
-class GPT2Model(OriginalGPT2Model):
-    # _keys_to_ignore_on_load_missing = ["attn.masked_bias"]
-
+class EditGPT2Model(OriginalGPT2Model):
     def __init__(self, config):
         super().__init__(config)
 
-        # self.embed_dim = config.hidden_size
         self.use_rotary = config.use_rotary
-        # self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
         if not self.use_rotary:
             self.wpe = nn.Embedding(config.max_position_embeddings, self.embed_dim)
         else:
+            del self.wpe
             print("Let's use Rotary Positional Encoding")
-        # self.drop = nn.Dropout(config.embd_pdrop)
         self.h = nn.ModuleList(
-            [GPT2Block(config, layer_idx=i) for i in range(config.num_hidden_layers)]
+            [
+                EditGPT2Block(config, layer_idx=i)
+                for i in range(config.num_hidden_layers)
+            ]
         )
-        # self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
-
-        # Model parallel
-        # self.model_parallel = False
-        # self.device_map = None
-        # self.gradient_checkpointing = False
-
-        # Initialize weights and apply final processing
-        # self.post_init()
-
-    # def parallelize(self, device_map=None):
-    #     # Check validity of device_map
-    #     warnings.warn(
-    #         "`GPT2Model.parallelize` is deprecated and will be removed",
-    #         FutureWarning,
-    #     )
-    #     self.device_map = (
-    #         get_device_map(len(self.h), range(torch.cuda.device_count()))
-    #         if device_map is None
-    #         else device_map
-    #     )
-    #     assert_device_map(self.device_map, len(self.h))
-    #     self.model_parallel = True
-    #     self.first_device = (
-    #         "cpu"
-    #         if "cpu" in self.device_map.keys()
-    #         else "cuda:" + str(min(self.device_map.keys()))
-    #     )
-    #     self.last_device = "cuda:" + str(max(self.device_map.keys()))
-    #     self.wte = self.wte.to(self.first_device)
-    #     if not self.use_rotary:
-    #         self.wpe = self.wpe.to(self.first_device)
-    #     # Load onto devices
-    #     for k, v in self.device_map.items():
-    #         for block in v:
-    #             cuda_device = "cuda:" + str(k)
-    #             self.h[block] = self.h[block].to(cuda_device)
-    #     # ln_f to last
-    #     self.ln_f = self.ln_f.to(self.last_device)
-
-    # def deparallelize(self):
-    #     warnings.warn(
-    #         "Like `parallelize`, `deparallelize` is deprecated and will be removed",
-    #         FutureWarning,
-    #     )
-    #     self.model_parallel = False
-    #     self.device_map = None
-    #     self.first_device = "cpu"
-    #     self.last_device = "cpu"
-    #     self.wte = self.wte.to("cpu")
-    #     if not self.use_rotary:
-    #         self.wpe = self.wpe.to("cpu")
-    #     for index in range(len(self.h)):
-    #         self.h[index] = self.h[index].to("cpu")
-    #     self.ln_f = self.ln_f.to("cpu")
-    #     torch.cuda.empty_cache()
-
-    # def get_input_embeddings(self):
-    #     return self.wte
-
-    # def set_input_embeddings(self, new_embeddings):
-    #     self.wte = new_embeddings
-
-    # def _prune_heads(self, heads_to_prune):
-    #     for layer, heads in heads_to_prune.items():
-    #         self.h[layer].attn.prune_heads(heads)
 
     @add_code_sample_docstrings(
         checkpoint=_CHECKPOINT_FOR_DOC,
@@ -555,93 +457,10 @@ class GPT2Model(OriginalGPT2Model):
         )
 
 
-class GPT2LMHeadModel(OriginalGPT2LMHeadModel):
-    # _keys_to_ignore_on_load_missing = [
-    #     r"attn.masked_bias",
-    #     r"attn.bias",
-    #     r"lm_head.weight",
-    # ]
-
+class EditGPT2LMHeadModel(OriginalGPT2LMHeadModel):
     def __init__(self, config):
         super().__init__(config)
-        self.transformer = GPT2Model(config)
-        # self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
-        # Model parallel
-        # self.model_parallel = False
-        # self.device_map = None
-
-        # Initialize weights and apply final processing
-        # self.post_init()
-
-    # def parallelize(self, device_map=None):
-    #     warnings.warn(
-    #         "`GPT2LMHeadModel.parallelize` is deprecated and will be removed",
-    #         FutureWarning,
-    #     )
-    #     self.device_map = (
-    #         get_device_map(len(self.transformer.h), range(torch.cuda.device_count()))
-    #         if device_map is None
-    #         else device_map
-    #     )
-    #     assert_device_map(self.device_map, len(self.transformer.h))
-    #     self.transformer.parallelize(self.device_map)
-    #     self.lm_head = self.lm_head.to(self.transformer.first_device)
-    #     self.model_parallel = True
-
-    # def deparallelize(self):
-    #     warnings.warn(
-    #         "Like `parallelize`, `deparallelize` will be removed",
-    #         FutureWarning,
-    #     )
-    #     self.transformer.deparallelize()
-    #     self.transformer = self.transformer.to("cpu")
-    #     self.lm_head = self.lm_head.to("cpu")
-    #     self.model_parallel = False
-    #     torch.cuda.empty_cache()
-
-    # def get_output_embeddings(self):
-    #     return self.lm_head
-
-    # def set_output_embeddings(self, new_embeddings):
-    #     self.lm_head = new_embeddings
-
-    # def prepare_inputs_for_generation(
-    #     self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs
-    # ):
-    #     token_type_ids = kwargs.get("token_type_ids", None)
-    #     # only last token for inputs_ids if past is defined in kwargs
-    #     if past_key_values:
-    #         input_ids = input_ids[:, -1].unsqueeze(-1)
-    #         if token_type_ids is not None:
-    #             token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
-
-    #     attention_mask = kwargs.get("attention_mask", None)
-    #     position_ids = kwargs.get("position_ids", None)
-
-    #     if attention_mask is not None and position_ids is None:
-    #         # create position_ids on the fly for batch generation
-    #         position_ids = attention_mask.long().cumsum(-1) - 1
-    #         position_ids.masked_fill_(attention_mask == 0, 1)
-    #         if past_key_values:
-    #             position_ids = position_ids[:, -1].unsqueeze(-1)
-    #     else:
-    #         position_ids = None
-
-    #     if inputs_embeds is not None and past_key_values is None:
-    #         model_inputs = {"inputs_embeds": inputs_embeds}
-    #     else:
-    #         model_inputs = {"input_ids": input_ids}
-
-    #     model_inputs.update(
-    #         {
-    #             "past_key_values": past_key_values,
-    #             "use_cache": kwargs.get("use_cache"),
-    #             "position_ids": position_ids,
-    #             "attention_mask": attention_mask,
-    #             "token_type_ids": token_type_ids,
-    #         }
-    #     )
-    #     return model_inputs
+        self.transformer = EditGPT2Model(config)
 
     @add_code_sample_docstrings(
         checkpoint=_CHECKPOINT_FOR_DOC,
@@ -735,12 +554,12 @@ def make_model(
         optimize_cuda_cache=True,
     )
     config.use_rotary = use_rotary
-    model = GPT2LMHeadModel(config).to(device)
+    model = EditGPT2LMHeadModel(config).to(device)
 
-    GPT2Attention._attn = _attn_orig
+    EditGPT2Attention._attn = _attn_orig
     if use_flash:
         print("Use Flash Attention")
-        GPT2Attention._attn = _attn_wrapper
+        EditGPT2Attention._attn = _attn_wrapper
 
     model.resize_token_embeddings(len(tokenizer))
 
