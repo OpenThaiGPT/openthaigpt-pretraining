@@ -1,7 +1,7 @@
 from transformers import (
     # LlamaModel,
     LlamaConfig,
-    # LlamaForCausalLM,
+    LlamaForCausalLM,
 )
 from transformers.models.llama.modeling_llama import (
     LlamaPreTrainedModel,
@@ -11,11 +11,13 @@ from transformers.models.llama.modeling_llama import (
     _expand_mask,
     logger,
 )
+
+# from transformers.modeling_utils import PreTrainedModel
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 
-# import torch.utils.checkpoint as checkpoint
+import torch.utils.checkpoint as checkpoint
 from typing import Optional, Tuple, List, Union
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
@@ -184,31 +186,15 @@ class LlamaModel(LlamaPreTrainedModel):
                 past_key_values[idx] if past_key_values is not None else None
             )
 
-            if self.gradient_checkpointing and self.training:
-
-                def create_custom_forward(module):
-                    def custom_forward(*inputs):
-                        # None for past_key_value
-                        return module(*inputs, output_attentions, None)
-
-                    return custom_forward
-
-                layer_outputs = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(decoder_layer),
-                    hidden_states,
-                    attention_mask,
-                    position_ids,
-                    None,
-                )
-            else:
-                layer_outputs = decoder_layer(
-                    hidden_states,
-                    attention_mask=attention_mask,
-                    position_ids=position_ids,
-                    past_key_value=past_key_value,
-                    output_attentions=output_attentions,
-                    use_cache=use_cache,
-                )
+            layer_outputs = decoder_layer(
+                hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_value=past_key_value,
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+                gradient_checkpointing=self.gradient_checkpointing,
+            )
 
             hidden_states = layer_outputs[0]
 
@@ -239,7 +225,89 @@ class LlamaModel(LlamaPreTrainedModel):
         )
 
 
-class LlamaForCausalLM(LlamaPreTrainedModel):
+class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_value: Optional[Tuple[torch.Tensor]] = None,
+        output_attentions: Optional[bool] = False,
+        use_cache: Optional[bool] = False,
+        gradient_checkpointing: Optional[bool] = False,
+    ) -> Tuple[
+        torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
+    ]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+        """
+        residual = hidden_states
+        hidden_states = self.input_layernorm(hidden_states)
+
+        # Self Attention
+        if gradient_checkpointing and self.training:
+
+            def create_custom_forward(module):
+                def custom_forward(*inputs):
+                    return module(
+                        *inputs,
+                        output_attentions=output_attentions,
+                        use_cache=use_cache,
+                    )
+
+                return custom_forward
+
+            (
+                hidden_states,
+                self_attn_weights,
+                present_key_value,
+            ) = checkpoint(
+                create_custom_forward(self.self_attn),
+                hidden_states,
+                attention_mask,
+                position_ids,
+                past_key_value,
+            )
+        else:
+            hidden_states, self_attn_weights, present_key_value = self.self_attn(
+                hidden_states=hidden_states,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_value=past_key_value,
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+            )
+
+        hidden_states = residual + hidden_states
+
+        # Fully Connected
+        residual = hidden_states
+        hidden_states = self.post_attention_layernorm(hidden_states)
+        hidden_states = self.mlp(hidden_states)
+        hidden_states = residual + hidden_states
+
+        outputs = (hidden_states,)
+
+        if output_attentions:
+            outputs += (self_attn_weights,)
+
+        if use_cache:
+            outputs += (present_key_value,)
+
+        return outputs
+
+
+class LlamaForModify(LlamaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.model = LlamaModel(config)
@@ -408,79 +476,6 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
         return reordered_past
 
 
-class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
-    def __init__(self, config: LlamaConfig):
-        super().__init__(config)
-
-        self.gradient_checkpointing = config.gradient_checkpointing
-
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.LongTensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        output_attentions: Optional[bool] = False,
-        use_cache: Optional[bool] = False,
-    ) -> Tuple[
-        torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
-    ]:
-        residual = hidden_states
-        hidden_states = self.input_layernorm(hidden_states)
-
-        # Self Attention
-        if self.gradient_checkpointing and self.training:
-
-            def create_custom_forward(module):
-                def custom_forward(*inputs):
-                    return module(
-                        *inputs,
-                        output_attentions=output_attentions,
-                        use_cache=use_cache,
-                    )
-
-                return custom_forward
-
-            (
-                hidden_states,
-                self_attn_weights,
-                present_key_value,
-            ) = torch.utils.checkpoint.checkpoint(
-                create_custom_forward(self.self_attn),
-                hidden_states,
-                attention_mask,
-                position_ids,
-                past_key_value,
-            )
-        else:
-            hidden_states, self_attn_weights, present_key_value = self.self_attn(
-                hidden_states=hidden_states,
-                attention_mask=attention_mask,
-                position_ids=position_ids,
-                past_key_value=past_key_value,
-                output_attentions=output_attentions,
-                use_cache=use_cache,
-            )
-
-        hidden_states = residual + hidden_states
-
-        # Fully Connected
-        residual = hidden_states
-        hidden_states = self.post_attention_layernorm(hidden_states)
-        hidden_states = self.mlp(hidden_states)
-        hidden_states = residual + hidden_states
-
-        outputs = (hidden_states,)
-
-        if output_attentions:
-            outputs += (self_attn_weights,)
-
-        if use_cache:
-            outputs += (present_key_value,)
-
-        return outputs
-
-
 def make_model_llama(vocab_size, context_length, use_checkpointing):
     cfg = LlamaConfig(
         vocab_size=vocab_size,
@@ -489,10 +484,13 @@ def make_model_llama(vocab_size, context_length, use_checkpointing):
         num_attention_heads=8,
         hidden_act="silu",
         max_position_embeddings=context_length,
-        gradient_checkpointing=use_checkpointing,
     )
-
-    model = LlamaForCausalLM(cfg)
+    if use_checkpointing == 2:
+        model = LlamaForModify(cfg)
+    else:
+        model = LlamaForCausalLM(cfg)
+    if use_checkpointing:
+        model.gradient_checkpointing_enable()
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")

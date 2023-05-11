@@ -13,8 +13,8 @@ from typing import List, Union
 from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
-    LlamaConfig,
-    LlamaForCausalLM,
+    # LlamaConfig,
+    # LlamaForCausalLM,
 )
 from .constants import (
     DATASET_NAME,
