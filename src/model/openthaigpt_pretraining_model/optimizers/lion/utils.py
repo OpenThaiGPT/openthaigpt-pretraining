@@ -18,6 +18,7 @@ from transformers import GPT2TokenizerFast
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
 from lion_pytorch import Lion
+from bitsandbytes.optim import Adam8bit
 
 from openthaigpt_pretraining_model.models.nanoGPT.model import (
     make_model,
@@ -203,6 +204,14 @@ class Trainer:
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
                 fused=True,
+            )
+        elif optimizer == "adam8bit":
+            print("Use Adam8bit optimizer")
+            self.opt = Adam8bit(
+                params=model.parameters(),
+                lr=lr,
+                weight_decay=weight_decay,
+                betas=(0.9, 0.95),
             )
         else:
             raise NotImplementedError("only support lion or AdamW")
