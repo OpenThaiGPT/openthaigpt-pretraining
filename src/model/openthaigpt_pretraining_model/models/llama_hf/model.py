@@ -1,5 +1,4 @@
 from transformers import (
-    # LlamaModel,
     LlamaConfig,
     LlamaForCausalLM,
 )
@@ -12,7 +11,6 @@ from transformers.models.llama.modeling_llama import (
     logger,
 )
 
-# from transformers.modeling_utils import PreTrainedModel
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
