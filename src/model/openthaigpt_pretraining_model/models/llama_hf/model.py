@@ -37,6 +37,7 @@ class LlamaModel(LlamaPreTrainedModel):
         self.embed_tokens = nn.Embedding(
             config.vocab_size, config.hidden_size, self.padding_idx
         )
+        # Here is new LlamaDecoder
         self.layers = nn.ModuleList(
             [
                 LlamaDecoderLayerWithCheckpointing(config)
@@ -193,7 +194,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 past_key_value=past_key_value,
                 output_attentions=output_attentions,
                 use_cache=use_cache,
-                gradient_checkpointing=self.gradient_checkpointing,
+                gradient_checkpointing=self.gradient_checkpointing,  # send parameters
             )
 
             hidden_states = layer_outputs[0]
@@ -225,6 +226,7 @@ class LlamaModel(LlamaPreTrainedModel):
         )
 
 
+# create new class for attentions gradient checkpoint
 class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
     def forward(
         self,
@@ -234,7 +236,7 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = False,
-        gradient_checkpointing: Optional[bool] = False,
+        gradient_checkpointing: Optional[bool] = False,  # add parameters
     ) -> Tuple[
         torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
     ]:
@@ -309,6 +311,7 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
         return outputs  # type: ignore
 
 
+# create new Llama that call LlamaClass which edit LlamaDecoderLayerWithCheckpointing
 class LlamaModify(LlamaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
