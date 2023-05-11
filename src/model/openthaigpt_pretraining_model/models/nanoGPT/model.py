@@ -1,27 +1,36 @@
 import torch.nn.functional as F
 import torch.backends.cuda as cuda
 from transformers import AutoConfig
-from transformers.models.gpt2.modeling_gpt2 import (
-    GPT2PreTrainedModel,
-)  # noqa: E501
-from transformers.models.gpt2.modeling_gpt2 import GPT2MLP
+
+# from transformers.models.gpt2.modeling_gpt2 import (
+#     GPT2PreTrainedModel,
+# )  # noqa: E501
+# from transformers.models.gpt2.modeling_gpt2 import GPT2MLP
+from transformers.models.gpt_neox.modeling_gpt_neox import (
+    RotaryEmbedding,
+    apply_rotary_pos_emb,
+)  # noqa: F401
+
 from typing import Optional, Tuple, Union
-from transformers.pytorch_utils import (
-    Conv1D,
-    find_pruneable_heads_and_indices,
-    prune_conv1d_layer,
-)
+
+# from transformers.pytorch_utils import (
+#     Conv1D,
+#     find_pruneable_heads_and_indices,
+#     # prune_conv1d_layer,
+# )
 import torch
 import torch.utils.checkpoint
 from torch import nn
-from torch.cuda.amp import autocast
+
+# from torch.cuda.amp import autocast
 from transformers.utils import (
     add_code_sample_docstrings,
     logging,
 )
 from torch.nn import CrossEntropyLoss
-import warnings
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
+
+# import warnings
+# from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
@@ -31,10 +40,15 @@ from ...optimizers.lion.constants import (  # type: ignore
     ROTARY_EMB_BASE,
     ROTARY_PCT,
 )
-
+from transformers.models.gpt2.modeling_gpt2 import (
+    GPT2Attention as OriginalGPT2Attention,
+    GPT2Block as OriginalGPT2Block,
+    GPT2Model as OriginalGPT2Model,
+    GPT2LMHeadModel as OriginalGPT2LMHeadModel,
+)  # noqa: E501
 
 logger = logging.get_logger(__name__)
-# _attn_orig = GPT2Attention._attn
+_attn_orig = OriginalGPT2Attention._attn
 
 _CHECKPOINT_FOR_DOC = "gpt2"
 _CONFIG_FOR_DOC = "GPT2Config"
@@ -61,35 +75,13 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
     return attn_out, None
 
 
-class GPT2Attention(nn.Module):
+class GPT2Attention(OriginalGPT2Attention):
     def __init__(self, config, is_cross_attention=False, layer_idx=None):
         super().__init__()
 
-        max_positions = config.max_position_embeddings
         self.rotary_pct = ROTARY_PCT
         self.rotary_emb_base = ROTARY_EMB_BASE
-        self.register_buffer(
-            "bias",
-            torch.tril(
-                torch.ones((max_positions, max_positions), dtype=torch.bool)
-            ).view(1, 1, max_positions, max_positions),
-        )
         self.use_rotary = config.use_rotary
-        self.register_buffer("masked_bias", torch.tensor(-1e4))
-
-        self.embed_dim = config.hidden_size
-        self.num_heads = config.num_attention_heads
-        self.head_dim = self.embed_dim // self.num_heads
-        self.split_size = self.embed_dim
-        if self.head_dim * self.num_heads != self.embed_dim:
-            raise ValueError(
-                f"`embed_dim` must be divisible by num_heads {self.embed_dim} :"
-                f" {self.num_heads})."
-            )
-
-        self.scale_attn_weights = config.scale_attn_weights
-        self.is_cross_attention = is_cross_attention
-
         self.rotary_ndims = int(self.head_dim * self.rotary_pct)
         if self.use_rotary:
             self.rotary_emb = RotaryEmbedding(
@@ -97,170 +89,6 @@ class GPT2Attention(nn.Module):
                 config.max_position_embeddings,
                 base=self.rotary_emb_base,
             )
-        # Layer-wise attention scaling, reordering, and upcasting
-        self.scale_attn_by_inverse_layer_idx = config.scale_attn_by_inverse_layer_idx
-        self.layer_idx = layer_idx
-        self.reorder_and_upcast_attn = config.reorder_and_upcast_attn
-
-        if self.is_cross_attention:
-            self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
-            self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
-        else:
-            self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
-        self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
-
-        self.attn_dropout = nn.Dropout(config.attn_pdrop)
-        self.resid_dropout = nn.Dropout(config.resid_pdrop)
-
-        self.pruned_heads = set()
-
-    def prune_heads(self, heads):
-        if len(heads) == 0:
-            return
-        heads, index = find_pruneable_heads_and_indices(
-            heads, self.num_heads, self.head_dim, self.pruned_heads
-        )
-        index_attn = torch.cat(
-            [index, index + self.split_size, index + (2 * self.split_size)]
-        )
-
-        # Prune conv1d layers
-        self.c_attn = prune_conv1d_layer(self.c_attn, index_attn, dim=1)
-        self.c_proj = prune_conv1d_layer(self.c_proj, index, dim=0)
-
-        # Update hyper params
-        self.split_size = (self.split_size // self.num_heads) * (
-            self.num_heads - len(heads)
-        )
-        self.num_heads = self.num_heads - len(heads)
-        self.pruned_heads = self.pruned_heads.union(heads)
-
-    def _attn(self, query, key, value, attention_mask=None, head_mask=None):
-        attn_weights = torch.matmul(query, key.transpose(-1, -2))
-
-        if self.scale_attn_weights:
-            attn_weights = attn_weights / torch.full(
-                [],
-                value.size(-1) ** 0.5,
-                dtype=attn_weights.dtype,
-                device=attn_weights.device,
-            )
-
-        # Layer-wise attention scaling
-        if self.scale_attn_by_inverse_layer_idx:
-            attn_weights = attn_weights / float(self.layer_idx + 1)
-
-        if not self.is_cross_attention:
-            # if only "normal" attention layer implements causal mask
-            query_length, key_length = query.size(-2), key.size(-2)
-            causal_mask = self.bias[
-                :, :, key_length - query_length : key_length, :key_length
-            ]
-            mask_value = torch.finfo(attn_weights.dtype).mt_interact()
-            mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(
-                attn_weights.device
-            )
-            attn_weights = torch.where(
-                causal_mask, attn_weights.to(attn_weights.dtype), mask_value
-            )
-
-        if attention_mask is not None:
-            # Apply the attention mask
-            attn_weights = attn_weights + attention_mask
-
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-        attn_weights = attn_weights.type(value.dtype)
-        attn_weights = self.attn_dropout(attn_weights)
-
-        # Mask heads if we want to
-        if head_mask is not None:
-            attn_weights = attn_weights * head_mask
-
-        attn_output = torch.matmul(attn_weights, value)
-
-        return attn_output, attn_weights
-
-    def _upcast_and_reordered_attn(
-        self, query, key, value, attention_mask=None, head_mask=None
-    ):
-        bsz, num_heads, q_seq_len, dk = query.size()
-        _, _, k_seq_len, _ = key.size()
-
-        # Preallocate attn_weights for `baddbmm`
-        attn_weights = torch.empty(
-            bsz * num_heads,
-            q_seq_len,
-            k_seq_len,
-            dtype=torch.float32,
-            device=query.device,
-        )
-
-        # Compute Scale Factor
-        scale_factor = 1.0
-        if self.scale_attn_weights:
-            scale_factor /= float(value.size(-1)) ** 0.5
-
-        if self.scale_attn_by_inverse_layer_idx:
-            scale_factor /= float(self.layer_idx + 1)
-
-        # Upcast (turn off autocast) and reorder (Scale K by 1 / root(dk))
-        with autocast(enabled=False):
-            q, k = query.reshape(-1, q_seq_len, dk), key.transpose(-1, -2).reshape(
-                -1, dk, k_seq_len
-            )
-            attn_weights = torch.baddbmm(
-                attn_weights, q.float(), k.float(), beta=0, alpha=scale_factor
-            )
-            attn_weights = attn_weights.reshape(bsz, num_heads, q_seq_len, k_seq_len)
-
-        if not self.is_cross_attention:
-            # if only "normal" attention layer implements causal mask
-            query_length, key_length = query.size(-2), key.size(-2)
-            causal_mask = self.bias[
-                :, :, key_length - query_length : key_length, :key_length
-            ]
-            mask_value = torch.finfo(attn_weights.dtype).min
-            mask_value = torch.tensor(mask_value, dtype=attn_weights.dtype).to(
-                attn_weights.device
-            )
-            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
-
-        if attention_mask is not None:
-            # Apply the attention mask
-            attn_weights = attn_weights + attention_mask
-
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-
-        if attn_weights.dtype != torch.float32:
-            raise RuntimeError(
-                "Error with upcasting, attn_weights does not have dtype torch.float32"
-            )
-        attn_weights = attn_weights.type(value.dtype)
-        attn_weights = self.attn_dropout(attn_weights)
-
-        # Mask heads if we want to
-        if head_mask is not None:
-            attn_weights = attn_weights * head_mask
-
-        attn_output = torch.matmul(attn_weights, value)
-
-        return attn_output, attn_weights
-
-    def _split_heads(self, tensor, num_heads, attn_head_size):
-        """
-        Splits hidden_size dim into attn_head_size and num_heads
-        """
-        new_shape = tensor.size()[:-1] + (num_heads, attn_head_size)
-        tensor = tensor.view(new_shape)
-        return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
-
-    def _merge_heads(self, tensor, num_heads, attn_head_size):
-        """
-        Merges attn_head_size dim and num_attn_heads dim into hidden_size
-        """
-        tensor = tensor.permute(0, 2, 1, 3).contiguous()
-        new_shape = tensor.size()[:-2] + (num_heads * attn_head_size,)
-        return tensor.view(new_shape)
 
     def forward(
         self,
@@ -340,25 +168,25 @@ class GPT2Attention(nn.Module):
         return outputs  # type: ignore
 
 
-class GPT2Block(nn.Module):
+class GPT2Block(OriginalGPT2Block):
     def __init__(self, config, layer_idx=None):
         super().__init__()
-        hidden_size = config.hidden_size
-        inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
+        # hidden_size = config.hidden_size
+        # inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
 
-        self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        # self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.attn = GPT2Attention(config, layer_idx=layer_idx)
-        self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        # self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
-        if config.add_cross_attention:
-            self.crossattention = GPT2Attention(
-                config, is_cross_attention=True, layer_idx=layer_idx
-            )
-            self.ln_cross_attn = nn.LayerNorm(
-                hidden_size, eps=config.layer_norm_epsilon
-            )
+        # if config.add_cross_attention:
+        #     self.crossattention = GPT2Attention(
+        #         config, is_cross_attention=True, layer_idx=layer_idx
+        #     )
+        #     self.ln_cross_attn = nn.LayerNorm(
+        #         hidden_size, eps=config.layer_norm_epsilon
+        #     )
 
-        self.mlp = GPT2MLP(inner_dim, config)
+        # self.mlp = GPT2MLP(inner_dim, config)
 
     def forward(
         self,
@@ -388,11 +216,9 @@ class GPT2Block(nn.Module):
         )
         attn_output = attn_outputs[0]  # output_attn: a, present, (attentions)
         outputs = attn_outputs[1:]
-        # residual connection
         hidden_states = attn_output + residual
 
         if encoder_hidden_states is not None:
-            # add one self-attention block for cross-attention
             if not hasattr(self, "crossattention"):
                 raise ValueError(f"If `encoder_hidden_states` are passed, {self}")
             residual = hidden_states
@@ -406,7 +232,6 @@ class GPT2Block(nn.Module):
                 output_attentions=output_attentions,
             )
             attn_output = cross_attn_outputs[0]
-            # residual connection
             hidden_states = residual + attn_output
             outputs = (
                 outputs + cross_attn_outputs[2:]
@@ -415,7 +240,6 @@ class GPT2Block(nn.Module):
         residual = hidden_states
         hidden_states = self.ln_2(hidden_states)
         feed_forward_hidden_states = self.mlp(hidden_states)
-        # residual connection
         hidden_states = residual + feed_forward_hidden_states
 
         if use_cache:
@@ -426,140 +250,89 @@ class GPT2Block(nn.Module):
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 
 
-class RotaryEmbedding(torch.nn.Module):
-    def __init__(self, dim, max_position_embeddings, base=10000, device=None):
-        super().__init__()
-        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float().to(device) / dim))
-        self.register_buffer("inv_freq", inv_freq)
-
-        # Build here to make `torch.jit.trace` work.
-        self.max_seq_len_cached = max_position_embeddings
-        t = torch.arange(
-            self.max_seq_len_cached,
-            device=self.inv_freq.device,
-            dtype=self.inv_freq.dtype,
-        )
-        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
-        emb = torch.cat((freqs, freqs), dim=-1)
-        self.cos_cached = emb.cos()[None, None, :, :]
-        self.sin_cached = emb.sin()[None, None, :, :]
-
-    def forward(self, x, seq_len=None):
-        # x: [bs, num_attention_heads, seq_len, head_size]
-        if seq_len > self.max_seq_len_cached:
-            self.max_seq_len_cached = seq_len
-            t = torch.arange(
-                self.max_seq_len_cached, device=x.device, dtype=self.inv_freq.dtype
-            )
-            freqs = torch.einsum("i,j->ij", t, self.inv_freq)
-            emb = torch.cat((freqs, freqs), dim=-1).to(x.device)
-            self.cos_cached = emb.cos()[None, None, :, :]
-            self.sin_cached = emb.sin()[None, None, :, :]
-        return self.cos_cached[:seq_len, ...].to(x.device), self.sin_cached[
-            :seq_len, ...
-        ].to(x.device)
-
-
-def rotate_half(x):
-    """Rotates half the hidden dims of the input."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
-
-
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
-    gather_indices = position_ids[:, None, :, None]  # [bs, 1, seq_len, 1]
-    gather_indices = gather_indices.repeat(1, cos.shape[1], 1, cos.shape[3])
-    cos = torch.gather(cos.repeat(gather_indices.shape[0], 1, 1, 1), 2, gather_indices)
-    sin = torch.gather(sin.repeat(gather_indices.shape[0], 1, 1, 1), 2, gather_indices)
-    q_embed = (q * cos) + (rotate_half(q) * sin)
-    k_embed = (k * cos) + (rotate_half(k) * sin)
-    return q_embed, k_embed
-
-
-class GPT2Model(GPT2PreTrainedModel):
-    _keys_to_ignore_on_load_missing = ["attn.masked_bias"]
+class GPT2Model(OriginalGPT2Model):
+    # _keys_to_ignore_on_load_missing = ["attn.masked_bias"]
 
     def __init__(self, config):
         super().__init__(config)
 
-        self.embed_dim = config.hidden_size
+        # self.embed_dim = config.hidden_size
         self.use_rotary = config.use_rotary
-        self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
+        # self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
         if not self.use_rotary:
             self.wpe = nn.Embedding(config.max_position_embeddings, self.embed_dim)
         else:
             print("Let's use Rotary Positional Encoding")
-        self.drop = nn.Dropout(config.embd_pdrop)
+        # self.drop = nn.Dropout(config.embd_pdrop)
         self.h = nn.ModuleList(
             [GPT2Block(config, layer_idx=i) for i in range(config.num_hidden_layers)]
         )
-        self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
+        # self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
 
         # Model parallel
-        self.model_parallel = False
-        self.device_map = None
-        self.gradient_checkpointing = False
+        # self.model_parallel = False
+        # self.device_map = None
+        # self.gradient_checkpointing = False
 
         # Initialize weights and apply final processing
-        self.post_init()
+        # self.post_init()
 
-    def parallelize(self, device_map=None):
-        # Check validity of device_map
-        warnings.warn(
-            "`GPT2Model.parallelize` is deprecated and will be removed",
-            FutureWarning,
-        )
-        self.device_map = (
-            get_device_map(len(self.h), range(torch.cuda.device_count()))
-            if device_map is None
-            else device_map
-        )
-        assert_device_map(self.device_map, len(self.h))
-        self.model_parallel = True
-        self.first_device = (
-            "cpu"
-            if "cpu" in self.device_map.keys()
-            else "cuda:" + str(min(self.device_map.keys()))
-        )
-        self.last_device = "cuda:" + str(max(self.device_map.keys()))
-        self.wte = self.wte.to(self.first_device)
-        if not self.use_rotary:
-            self.wpe = self.wpe.to(self.first_device)
-        # Load onto devices
-        for k, v in self.device_map.items():
-            for block in v:
-                cuda_device = "cuda:" + str(k)
-                self.h[block] = self.h[block].to(cuda_device)
-        # ln_f to last
-        self.ln_f = self.ln_f.to(self.last_device)
+    # def parallelize(self, device_map=None):
+    #     # Check validity of device_map
+    #     warnings.warn(
+    #         "`GPT2Model.parallelize` is deprecated and will be removed",
+    #         FutureWarning,
+    #     )
+    #     self.device_map = (
+    #         get_device_map(len(self.h), range(torch.cuda.device_count()))
+    #         if device_map is None
+    #         else device_map
+    #     )
+    #     assert_device_map(self.device_map, len(self.h))
+    #     self.model_parallel = True
+    #     self.first_device = (
+    #         "cpu"
+    #         if "cpu" in self.device_map.keys()
+    #         else "cuda:" + str(min(self.device_map.keys()))
+    #     )
+    #     self.last_device = "cuda:" + str(max(self.device_map.keys()))
+    #     self.wte = self.wte.to(self.first_device)
+    #     if not self.use_rotary:
+    #         self.wpe = self.wpe.to(self.first_device)
+    #     # Load onto devices
+    #     for k, v in self.device_map.items():
+    #         for block in v:
+    #             cuda_device = "cuda:" + str(k)
+    #             self.h[block] = self.h[block].to(cuda_device)
+    #     # ln_f to last
+    #     self.ln_f = self.ln_f.to(self.last_device)
 
-    def deparallelize(self):
-        warnings.warn(
-            "Like `parallelize`, `deparallelize` is deprecated and will be removed",
-            FutureWarning,
-        )
-        self.model_parallel = False
-        self.device_map = None
-        self.first_device = "cpu"
-        self.last_device = "cpu"
-        self.wte = self.wte.to("cpu")
-        if not self.use_rotary:
-            self.wpe = self.wpe.to("cpu")
-        for index in range(len(self.h)):
-            self.h[index] = self.h[index].to("cpu")
-        self.ln_f = self.ln_f.to("cpu")
-        torch.cuda.empty_cache()
+    # def deparallelize(self):
+    #     warnings.warn(
+    #         "Like `parallelize`, `deparallelize` is deprecated and will be removed",
+    #         FutureWarning,
+    #     )
+    #     self.model_parallel = False
+    #     self.device_map = None
+    #     self.first_device = "cpu"
+    #     self.last_device = "cpu"
+    #     self.wte = self.wte.to("cpu")
+    #     if not self.use_rotary:
+    #         self.wpe = self.wpe.to("cpu")
+    #     for index in range(len(self.h)):
+    #         self.h[index] = self.h[index].to("cpu")
+    #     self.ln_f = self.ln_f.to("cpu")
+    #     torch.cuda.empty_cache()
 
-    def get_input_embeddings(self):
-        return self.wte
+    # def get_input_embeddings(self):
+    #     return self.wte
 
-    def set_input_embeddings(self, new_embeddings):
-        self.wte = new_embeddings
+    # def set_input_embeddings(self, new_embeddings):
+    #     self.wte = new_embeddings
 
-    def _prune_heads(self, heads_to_prune):
-        for layer, heads in heads_to_prune.items():
-            self.h[layer].attn.prune_heads(heads)
+    # def _prune_heads(self, heads_to_prune):
+    #     for layer, heads in heads_to_prune.items():
+    #         self.h[layer].attn.prune_heads(heads)
 
     @add_code_sample_docstrings(
         checkpoint=_CHECKPOINT_FOR_DOC,
@@ -782,93 +555,93 @@ class GPT2Model(GPT2PreTrainedModel):
         )
 
 
-class GPT2LMHeadModel(GPT2PreTrainedModel):
-    _keys_to_ignore_on_load_missing = [
-        r"attn.masked_bias",
-        r"attn.bias",
-        r"lm_head.weight",
-    ]
+class GPT2LMHeadModel(OriginalGPT2LMHeadModel):
+    # _keys_to_ignore_on_load_missing = [
+    #     r"attn.masked_bias",
+    #     r"attn.bias",
+    #     r"lm_head.weight",
+    # ]
 
     def __init__(self, config):
         super().__init__(config)
         self.transformer = GPT2Model(config)
-        self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        # self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
         # Model parallel
-        self.model_parallel = False
-        self.device_map = None
+        # self.model_parallel = False
+        # self.device_map = None
 
         # Initialize weights and apply final processing
-        self.post_init()
+        # self.post_init()
 
-    def parallelize(self, device_map=None):
-        warnings.warn(
-            "`GPT2LMHeadModel.parallelize` is deprecated and will be removed",
-            FutureWarning,
-        )
-        self.device_map = (
-            get_device_map(len(self.transformer.h), range(torch.cuda.device_count()))
-            if device_map is None
-            else device_map
-        )
-        assert_device_map(self.device_map, len(self.transformer.h))
-        self.transformer.parallelize(self.device_map)
-        self.lm_head = self.lm_head.to(self.transformer.first_device)
-        self.model_parallel = True
+    # def parallelize(self, device_map=None):
+    #     warnings.warn(
+    #         "`GPT2LMHeadModel.parallelize` is deprecated and will be removed",
+    #         FutureWarning,
+    #     )
+    #     self.device_map = (
+    #         get_device_map(len(self.transformer.h), range(torch.cuda.device_count()))
+    #         if device_map is None
+    #         else device_map
+    #     )
+    #     assert_device_map(self.device_map, len(self.transformer.h))
+    #     self.transformer.parallelize(self.device_map)
+    #     self.lm_head = self.lm_head.to(self.transformer.first_device)
+    #     self.model_parallel = True
 
-    def deparallelize(self):
-        warnings.warn(
-            "Like `parallelize`, `deparallelize` will be removed",
-            FutureWarning,
-        )
-        self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")
-        self.lm_head = self.lm_head.to("cpu")
-        self.model_parallel = False
-        torch.cuda.empty_cache()
+    # def deparallelize(self):
+    #     warnings.warn(
+    #         "Like `parallelize`, `deparallelize` will be removed",
+    #         FutureWarning,
+    #     )
+    #     self.transformer.deparallelize()
+    #     self.transformer = self.transformer.to("cpu")
+    #     self.lm_head = self.lm_head.to("cpu")
+    #     self.model_parallel = False
+    #     torch.cuda.empty_cache()
 
-    def get_output_embeddings(self):
-        return self.lm_head
+    # def get_output_embeddings(self):
+    #     return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings):
-        self.lm_head = new_embeddings
+    # def set_output_embeddings(self, new_embeddings):
+    #     self.lm_head = new_embeddings
 
-    def prepare_inputs_for_generation(
-        self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs
-    ):
-        token_type_ids = kwargs.get("token_type_ids", None)
-        # only last token for inputs_ids if past is defined in kwargs
-        if past_key_values:
-            input_ids = input_ids[:, -1].unsqueeze(-1)
-            if token_type_ids is not None:
-                token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
+    # def prepare_inputs_for_generation(
+    #     self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs
+    # ):
+    #     token_type_ids = kwargs.get("token_type_ids", None)
+    #     # only last token for inputs_ids if past is defined in kwargs
+    #     if past_key_values:
+    #         input_ids = input_ids[:, -1].unsqueeze(-1)
+    #         if token_type_ids is not None:
+    #             token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
 
-        attention_mask = kwargs.get("attention_mask", None)
-        position_ids = kwargs.get("position_ids", None)
+    #     attention_mask = kwargs.get("attention_mask", None)
+    #     position_ids = kwargs.get("position_ids", None)
 
-        if attention_mask is not None and position_ids is None:
-            # create position_ids on the fly for batch generation
-            position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
-            if past_key_values:
-                position_ids = position_ids[:, -1].unsqueeze(-1)
-        else:
-            position_ids = None
+    #     if attention_mask is not None and position_ids is None:
+    #         # create position_ids on the fly for batch generation
+    #         position_ids = attention_mask.long().cumsum(-1) - 1
+    #         position_ids.masked_fill_(attention_mask == 0, 1)
+    #         if past_key_values:
+    #             position_ids = position_ids[:, -1].unsqueeze(-1)
+    #     else:
+    #         position_ids = None
 
-        if inputs_embeds is not None and past_key_values is None:
-            model_inputs = {"inputs_embeds": inputs_embeds}
-        else:
-            model_inputs = {"input_ids": input_ids}
+    #     if inputs_embeds is not None and past_key_values is None:
+    #         model_inputs = {"inputs_embeds": inputs_embeds}
+    #     else:
+    #         model_inputs = {"input_ids": input_ids}
 
-        model_inputs.update(
-            {
-                "past_key_values": past_key_values,
-                "use_cache": kwargs.get("use_cache"),
-                "position_ids": position_ids,
-                "attention_mask": attention_mask,
-                "token_type_ids": token_type_ids,
-            }
-        )
-        return model_inputs
+    #     model_inputs.update(
+    #         {
+    #             "past_key_values": past_key_values,
+    #             "use_cache": kwargs.get("use_cache"),
+    #             "position_ids": position_ids,
+    #             "attention_mask": attention_mask,
+    #             "token_type_ids": token_type_ids,
+    #         }
+    #     )
+    #     return model_inputs
 
     @add_code_sample_docstrings(
         checkpoint=_CHECKPOINT_FOR_DOC,
@@ -913,7 +686,6 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
         )
         hidden_states = transformer_outputs[0]
 
-        # Set device for model parallelism
         if self.model_parallel:
             torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head.weight.device)
@@ -922,12 +694,9 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
 
         loss = None
         if labels is not None:
-            # move labels to correct device to enable model parallelism
             labels = labels.to(lm_logits.device)  # type: ignore
-            # Shift so that tokens < n predict n
             shift_logits = lm_logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
-            # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(
                 shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
@@ -944,18 +713,6 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
             hidden_states=transformer_outputs.hidden_states,
             attentions=transformer_outputs.attentions,
             cross_attentions=transformer_outputs.cross_attentions,
-        )
-
-    @staticmethod
-    def _reorder_cache(
-        past_key_values: Tuple[Tuple[torch.Tensor]], beam_idx: torch.Tensor
-    ) -> Tuple[Tuple[torch.Tensor]]:
-        return tuple(  # type: ignore
-            tuple(
-                past_state.index_select(0, beam_idx.to(past_state.device))
-                for past_state in layer_past
-            )
-            for layer_past in past_key_values
         )
 
 
@@ -980,7 +737,7 @@ def make_model(
     config.use_rotary = use_rotary
     model = GPT2LMHeadModel(config).to(device)
 
-    # GPT2Attention._attn = _attn_orig
+    GPT2Attention._attn = _attn_orig
     if use_flash:
         print("Use Flash Attention")
         GPT2Attention._attn = _attn_wrapper
