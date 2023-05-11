@@ -59,9 +59,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--checkpoint",
-        type=bool,
-        default=False,
-        help="gradient checkpoint only available for GPTJ",
+        type=int,
+        default=0,
+        help="0 | 1 (model) | 2 (self-attentions only)",
     )
 
     args = parser.parse_args()

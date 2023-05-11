@@ -96,7 +96,7 @@ class Trainer:
         lr: float = 1e-4,
         vocab_size: int = 50400,
         xformers: bool = False,
-        checkpoint: bool = False,
+        checkpoint: int = 0,
     ):
         self.max_tokens = context_length
         self.step = 0
