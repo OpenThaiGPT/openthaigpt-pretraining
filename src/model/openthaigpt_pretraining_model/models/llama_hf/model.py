@@ -485,10 +485,13 @@ def make_model_llama(vocab_size, context_length, use_checkpointing):
     )
     if use_checkpointing == 2:
         model = LlamaForModify(cfg)
+        print("use gradient checkpointing only attentions")
     else:
         model = LlamaForCausalLM(cfg)
     if use_checkpointing:
         model.gradient_checkpointing_enable()
+        if use_checkpointing == 1:
+            print("use gradient checkpointing")
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
