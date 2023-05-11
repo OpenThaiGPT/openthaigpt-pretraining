@@ -70,5 +70,3 @@ python data_prep/convert_dataset_json.py \
 ```
 
 Where `--path` can be a single json file, or a folder containing json files, and split the intended split (hf defaults to train).
-
-When you want to train you will have 2 splits
