@@ -59,7 +59,7 @@ def _attn_wrapper(self, query, key, value, attention_mask=None, head_mask=None):
     return attn_out, None
 
 
-class EditGPT2Attention(OriginalGPT2Attention):
+class GPT2AttentionWithRotary(OriginalGPT2Attention):
     def __init__(self, config, is_cross_attention=False, layer_idx=None):
         super().__init__(config)
 
@@ -101,7 +101,9 @@ class EditGPT2Attention(OriginalGPT2Attention):
         query = self._split_heads(query, self.num_heads, self.head_dim)
         key = self._split_heads(key, self.num_heads, self.head_dim)
         value = self._split_heads(value, self.num_heads, self.head_dim)
-
+        ###############################
+        # START USE ROTARY
+        ###############################
         if self.use_rotary:
             # Compute rotary embeddings on rotary_ndims
             query_rot = query[
@@ -110,7 +112,6 @@ class EditGPT2Attention(OriginalGPT2Attention):
             query_pass = query[..., self.rotary_ndims :]
             key_rot = key[..., : self.rotary_ndims]
             key_pass = key[..., self.rotary_ndims :]
-
             # Compute token offset for rotary embeddings (when decoding)
             seq_len = key.shape[-2]
             if layer_past:
@@ -121,7 +122,9 @@ class EditGPT2Attention(OriginalGPT2Attention):
             )
             query = torch.cat((query, query_pass), dim=-1)
             key = torch.cat((key, key_pass), dim=-1)
-
+        ###############################
+        # END USE ROTARY
+        ###############################
         if layer_past is not None:
             past_key, past_value = layer_past  # type: ignore
             key = torch.cat((past_key, key), dim=-2)  # type: ignore
@@ -155,7 +158,7 @@ class EditGPT2Attention(OriginalGPT2Attention):
 class EditGPT2Block(OriginalGPT2Block):
     def __init__(self, config, layer_idx=None):
         super().__init__(config)
-        self.attn = EditGPT2Attention(config, layer_idx=layer_idx)
+        self.attn = GPT2AttentionWithRotary(config, layer_idx=layer_idx)
 
     def forward(
         self,
@@ -222,13 +225,18 @@ class EditGPT2Block(OriginalGPT2Block):
 class EditGPT2Model(OriginalGPT2Model):
     def __init__(self, config):
         super().__init__(config)
-
+        ###############################
+        # START USE ROTARY BY Remove original self.wpe
+        ###############################
         self.use_rotary = config.use_rotary
         if not self.use_rotary:
             self.wpe = nn.Embedding(config.max_position_embeddings, self.embed_dim)
         else:
             del self.wpe
             print("Let's use Rotary Positional Encoding")
+        ###############################
+        # END USE ROTARY
+        ###############################
         self.h = nn.ModuleList(
             [
                 EditGPT2Block(config, layer_idx=i)
@@ -334,12 +342,17 @@ class EditGPT2Model(OriginalGPT2Model):
         if inputs_embeds is None:
             inputs_embeds = self.wte(input_ids)
 
+        ###############################
+        # PREPARE USE ROTARY BY Remove position_embeds
+        ###############################
         if not self.use_rotary:
             position_embeds = self.wpe(position_ids)
             hidden_states = inputs_embeds + position_embeds
         else:
             hidden_states = inputs_embeds
-
+        ###############################
+        # END USE ROTARY BY Remove position_embeds
+        ###############################
         if token_type_ids is not None:
             token_type_embeds = self.wte(token_type_ids)
             hidden_states = hidden_states + token_type_embeds
@@ -553,13 +566,19 @@ def make_model(
         pad_token_id=tokenizer.pad_token_id,
         optimize_cuda_cache=True,
     )
+    ###############################
+    # PREPARE USE ROTARY BY CONFIG
+    ###############################
     config.use_rotary = use_rotary
+    ###############################
+    # END PREPARE USE ROTARY BY CONFIG
+    ###############################
     model = EditGPT2LMHeadModel(config).to(device)
 
-    EditGPT2Attention._attn = _attn_orig
+    GPT2AttentionWithRotary._attn = _attn_orig
     if use_flash:
         print("Use Flash Attention")
-        EditGPT2Attention._attn = _attn_wrapper
+        GPT2AttentionWithRotary._attn = _attn_wrapper
 
     model.resize_token_embeddings(len(tokenizer))
 
