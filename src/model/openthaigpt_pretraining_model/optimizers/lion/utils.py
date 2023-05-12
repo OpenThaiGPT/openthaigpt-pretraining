@@ -206,6 +206,7 @@ class Trainer:
                 fused=True,
             )
         elif optimizer == "adam8bit":
+            assert self.device != "cpu", "Adam8bit need GPU to execute"
             print("Use Adam8bit optimizer")
             self.opt = Adam8bit(
                 params=model.parameters(),
