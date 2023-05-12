@@ -17,4 +17,5 @@ argument that can custom
 - vocab size
 - lr
 - xformers
-- checkpoint: 0 | 1 (model) | 2 (self-attentions only)
+- checkpoint
+- checkpointing_position: False (model) | True (self-attentions only)
