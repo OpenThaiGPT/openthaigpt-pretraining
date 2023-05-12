@@ -3,12 +3,10 @@ from transformers import (
     LlamaForCausalLM,
 )
 from transformers.models.llama.modeling_llama import (
-    LlamaPreTrainedModel,
     LlamaDecoderLayer,
     LlamaRMSNorm,
-    _make_causal_mask,
-    _expand_mask,
     logger,
+    LlamaModel,
 )
 
 import torch
@@ -22,13 +20,7 @@ from transformers.modeling_outputs import (
 )
 
 
-class LlamaModel(LlamaPreTrainedModel):
-    """
-    Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`LlamaDecoderLayer`]
-    Args:
-        config: LlamaConfig
-    """  # noqa
-
+class LlamaModelWithNewCheckpoint(LlamaModel):
     def __init__(self, config: LlamaConfig):
         super().__init__(config)
         self.padding_idx = config.pad_token_id
@@ -49,40 +41,6 @@ class LlamaModel(LlamaPreTrainedModel):
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
         self.post_init()
-
-    def get_input_embeddings(self):
-        return self.embed_tokens
-
-    def set_input_embeddings(self, value):
-        self.embed_tokens = value
-
-    # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask # noqa
-    def _prepare_decoder_attention_mask(
-        self, attention_mask, input_shape, inputs_embeds, past_key_values_length
-    ):
-        # create causal mask
-        # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
-        combined_attention_mask = None
-        if input_shape[-1] > 1:
-            combined_attention_mask = _make_causal_mask(
-                input_shape,
-                inputs_embeds.dtype,
-                device=inputs_embeds.device,
-                past_key_values_length=past_key_values_length,
-            )
-
-        if attention_mask is not None:
-            # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
-            expanded_attn_mask = _expand_mask(
-                attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]
-            ).to(inputs_embeds.device)
-            combined_attention_mask = (
-                expanded_attn_mask
-                if combined_attention_mask is None
-                else expanded_attn_mask + combined_attention_mask
-            )
-
-        return combined_attention_mask
 
     def forward(
         self,
@@ -312,33 +270,15 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
 
 
 # create new Llama that call LlamaClass which edit LlamaDecoderLayerWithCheckpointing
-class LlamaNewCheckpoint(LlamaPreTrainedModel):
+class LlamaCausalNewCheckpoint(LlamaForCausalLM):
     def __init__(self, config):
         super().__init__(config)
-        self.model = LlamaModel(config)
+        self.model = LlamaModelWithNewCheckpoint(config)
 
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         # Initialize weights and apply final processing
         self.post_init()
-
-    def get_input_embeddings(self):
-        return self.model.embed_tokens
-
-    def set_input_embeddings(self, value):
-        self.model.embed_tokens = value
-
-    def get_output_embeddings(self):
-        return self.lm_head
-
-    def set_output_embeddings(self, new_embeddings):
-        self.lm_head = new_embeddings
-
-    def set_decoder(self, decoder):
-        self.model = decoder
-
-    def get_decoder(self):
-        return self.model
 
     def forward(
         self,
@@ -434,52 +374,6 @@ class LlamaNewCheckpoint(LlamaPreTrainedModel):
             attentions=outputs.attentions,
         )
 
-    def prepare_inputs_for_generation(
-        self,
-        input_ids,
-        past_key_values=None,
-        attention_mask=None,
-        inputs_embeds=None,
-        **kwargs,
-    ):
-        if past_key_values:
-            input_ids = input_ids[:, -1:]
-
-        position_ids = kwargs.get("position_ids", None)
-        if attention_mask is not None and position_ids is None:
-            # create position_ids on the fly for batch generation
-            position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
-            if past_key_values:
-                position_ids = position_ids[:, -1].unsqueeze(-1)
-
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step # noqa
-        if inputs_embeds is not None and past_key_values is None:
-            model_inputs = {"inputs_embeds": inputs_embeds}
-        else:
-            model_inputs = {"input_ids": input_ids}
-
-        model_inputs.update(
-            {
-                "position_ids": position_ids,
-                "past_key_values": past_key_values,
-                "use_cache": kwargs.get("use_cache"),
-                "attention_mask": attention_mask,
-            }
-        )
-        return model_inputs
-
-    @staticmethod
-    def _reorder_cache(past_key_values, beam_idx):
-        reordered_past = ()
-        for layer_past in past_key_values:
-            reordered_past += (
-                tuple(
-                    past_state.index_select(0, beam_idx) for past_state in layer_past
-                ),
-            )
-        return reordered_past
-
 
 def make_model_llama(vocab_size, context_length, use_checkpointing):
     cfg = LlamaConfig(
@@ -491,7 +385,7 @@ def make_model_llama(vocab_size, context_length, use_checkpointing):
         max_position_embeddings=context_length,
     )
     if use_checkpointing == 2:
-        model = LlamaNewCheckpoint(cfg)
+        model = LlamaCausalNewCheckpoint(cfg)
         print("use gradient checkpointing only attentions")
     else:
         model = LlamaForCausalLM(cfg)
