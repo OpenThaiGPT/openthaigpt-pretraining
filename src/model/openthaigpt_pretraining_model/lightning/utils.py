@@ -10,6 +10,7 @@ import torch.optim as optim
 from torch.utils.data import IterableDataset, DataLoader
 from lion_pytorch import Lion
 from typing import List, Union
+from enum import Enum
 from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
@@ -66,6 +67,10 @@ class DatasetWrapper(IterableDataset):
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]
 
+class CheckpointStatus(Enum):
+    NOT_CHECKPOINTING = 0
+    CHECKPOINTING = 1
+    CHECKPOINTING_POSITION = 2
 
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -108,17 +113,18 @@ class Trainer:
             precision=precision,
         )
         self.fabric.launch()
+        checkpoint_status = CheckpointStatus.NOT_CHECKPOINTING
         if checkpoint:
             if checkpointing_position:
-                checkpointing = 2
+                checkpoint_status = CheckpointStatus.CHECKPOINTING
             else:
-                checkpointing = 1
+                checkpoint_status = CheckpointStatus.CHECKPOINTING_POSITION 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
             self.model = model = make_model_llama(
                 vocab_size=vocab_size,
                 context_length=context_length,
-                use_checkpointing=checkpointing,
+                use_checkpointing=checkpoint_status,
             )
 
         elif model_name == "gptj":
