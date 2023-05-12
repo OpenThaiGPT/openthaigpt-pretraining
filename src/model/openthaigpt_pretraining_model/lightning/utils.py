@@ -71,7 +71,7 @@ class DatasetWrapper(IterableDataset):
 class CheckpointStatus(Enum):
     NOT_CHECKPOINTING = 0
     CHECKPOINTING = 1
-    CHECKPOINTING_POSITION = 2
+    CHECKPOINTING_ONLY_ATTENTION = 2
 
 
 def seed_everything(seed):
@@ -102,7 +102,7 @@ class Trainer:
         vocab_size: int = 50400,
         xformers: bool = False,
         checkpoint: bool = False,
-        checkpointing_position: bool = False,
+        checkpoint_only_attention: bool = False,
     ):
         self.max_tokens = context_length
         self.step = 0
@@ -117,8 +117,8 @@ class Trainer:
         self.fabric.launch()
         checkpoint_status = CheckpointStatus.NOT_CHECKPOINTING
         if checkpoint:
-            if checkpointing_position:
-                checkpoint_status = CheckpointStatus.CHECKPOINTING_POSITION
+            if checkpoint_only_attention:
+                checkpoint_status = CheckpointStatus.CHECKPOINTING_ONLY_ATTENTION
             else:
                 checkpoint_status = CheckpointStatus.CHECKPOINTING
         if model_name == "llama":

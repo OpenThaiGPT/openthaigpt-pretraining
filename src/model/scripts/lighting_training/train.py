@@ -90,6 +90,6 @@ if __name__ == "__main__":
         vocab_size=args.vocab_size,
         xformers=args.xformers,
         checkpoint=args.checkpoint,
-        checkpointing_position=args.checkpoint_only_attention,
+        checkpoint_only_attention=args.checkpoint_only_attention,
     )
     trainer.train()
