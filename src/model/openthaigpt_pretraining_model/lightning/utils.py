@@ -67,10 +67,12 @@ class DatasetWrapper(IterableDataset):
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]
 
+
 class CheckpointStatus(Enum):
     NOT_CHECKPOINTING = 0
     CHECKPOINTING = 1
     CHECKPOINTING_POSITION = 2
+
 
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -116,7 +118,7 @@ class Trainer:
         checkpoint_status = CheckpointStatus.NOT_CHECKPOINTING
         if checkpoint:
             if checkpointing_position:
-                checkpoint_status = CheckpointStatus.CHECKPOINTING_POSITION 
+                checkpoint_status = CheckpointStatus.CHECKPOINTING_POSITION
             else:
                 checkpoint_status = CheckpointStatus.CHECKPOINTING
         if model_name == "llama":
