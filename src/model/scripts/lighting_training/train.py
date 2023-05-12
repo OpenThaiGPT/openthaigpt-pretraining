@@ -64,7 +64,7 @@ if __name__ == "__main__":
         help="gradient checkpointing",
     )
     parser.add_argument(
-        "--check_position",
+        "--checkpoint_only_attention",
         type=bool,
         default=False,
         help="False (model) | True (self-attentions only)",
@@ -90,6 +90,6 @@ if __name__ == "__main__":
         vocab_size=args.vocab_size,
         xformers=args.xformers,
         checkpoint=args.checkpoint,
-        checkpointing_position=args.check_position,
+        checkpointing_position=args.checkpoint_only_attention,
     )
     trainer.train()
