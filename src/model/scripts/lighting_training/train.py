@@ -59,9 +59,15 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--checkpoint",
-        type=int,
-        default=0,
-        help="0 | 1 (model) | 2 (self-attentions only)",
+        type=bool,
+        default=False,
+        help="gradient checkpointing",
+    )
+    parser.add_argument(
+        "--check_position",
+        type=bool,
+        default=False,
+        help="False (model) | True (self-attentions only)",
     )
 
     args = parser.parse_args()
@@ -84,5 +90,6 @@ if __name__ == "__main__":
         vocab_size=args.vocab_size,
         xformers=args.xformers,
         checkpoint=args.checkpoint,
+        checkpointing_position=args.check_position,
     )
     trainer.train()

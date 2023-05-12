@@ -94,7 +94,8 @@ class Trainer:
         lr: float = 1e-4,
         vocab_size: int = 50400,
         xformers: bool = False,
-        checkpoint: int = 0,
+        checkpoint: bool = False,
+        checkpointing_position: bool = False,
     ):
         self.max_tokens = context_length
         self.step = 0
@@ -107,12 +108,17 @@ class Trainer:
             precision=precision,
         )
         self.fabric.launch()
+        if checkpoint:
+            if checkpointing_position:
+                checkpointing = 2
+            else:
+                checkpointing = 1
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
             self.model = model = make_model_llama(
                 vocab_size=vocab_size,
                 context_length=context_length,
-                use_checkpointing=checkpoint,
+                use_checkpointing=checkpointing,
             )
 
         elif model_name == "gptj":
