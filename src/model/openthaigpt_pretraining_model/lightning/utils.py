@@ -116,9 +116,9 @@ class Trainer:
         checkpoint_status = CheckpointStatus.NOT_CHECKPOINTING
         if checkpoint:
             if checkpointing_position:
-                checkpoint_status = CheckpointStatus.CHECKPOINTING
-            else:
                 checkpoint_status = CheckpointStatus.CHECKPOINTING_POSITION 
+            else:
+                checkpoint_status = CheckpointStatus.CHECKPOINTING
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
             self.model = model = make_model_llama(
