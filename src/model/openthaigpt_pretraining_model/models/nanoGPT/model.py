@@ -155,7 +155,7 @@ class GPT2AttentionWithRotary(OriginalGPT2Attention):
         return outputs  # type: ignore
 
 
-class EditGPT2Block(OriginalGPT2Block):
+class GPT2BlockWithRotary(OriginalGPT2Block):
     def __init__(self, config, layer_idx=None):
         super().__init__(config)
         self.attn = GPT2AttentionWithRotary(config, layer_idx=layer_idx)
@@ -222,7 +222,7 @@ class EditGPT2Block(OriginalGPT2Block):
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 
 
-class EditGPT2Model(OriginalGPT2Model):
+class GPT2ModelWithRotary(OriginalGPT2Model):
     def __init__(self, config):
         super().__init__(config)
         ###############################
@@ -239,7 +239,7 @@ class EditGPT2Model(OriginalGPT2Model):
         ###############################
         self.h = nn.ModuleList(
             [
-                EditGPT2Block(config, layer_idx=i)
+                GPT2BlockWithRotary(config, layer_idx=i)
                 for i in range(config.num_hidden_layers)
             ]
         )
@@ -470,10 +470,10 @@ class EditGPT2Model(OriginalGPT2Model):
         )
 
 
-class EditGPT2LMHeadModel(OriginalGPT2LMHeadModel):
+class GPT2LMHeadModelWithRotary(OriginalGPT2LMHeadModel):
     def __init__(self, config):
         super().__init__(config)
-        self.transformer = EditGPT2Model(config)
+        self.transformer = GPT2ModelWithRotary(config)
 
     @add_code_sample_docstrings(
         checkpoint=_CHECKPOINT_FOR_DOC,
@@ -573,7 +573,7 @@ def make_model(
     ###############################
     # END PREPARE USE ROTARY BY CONFIG
     ###############################
-    model = EditGPT2LMHeadModel(config).to(device)
+    model = GPT2LMHeadModelWithRotary(config).to(device)
 
     GPT2AttentionWithRotary._attn = _attn_orig
     if use_flash:
