@@ -375,7 +375,9 @@ class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
         )
 
 
-def make_model_llama(vocab_size, context_length, use_checkpointing):
+def make_model_llama(
+    vocab_size, context_length, use_checkpointing, checkpoint_only_attentions
+):
     cfg = LlamaConfig(
         vocab_size=vocab_size,
         hidden_size=1024,
@@ -384,14 +386,14 @@ def make_model_llama(vocab_size, context_length, use_checkpointing):
         hidden_act="silu",
         max_position_embeddings=context_length,
     )
-    if use_checkpointing == 2:
+    if use_checkpointing and checkpoint_only_attentions:
         model = LlamaForCausalLMNewCheckpoint(cfg)
+        model.gradient_checkpointing_enable()
         print("use gradient checkpointing only attentions")
     else:
         model = LlamaForCausalLM(cfg)
-    if use_checkpointing:
-        model.gradient_checkpointing_enable()
-        if use_checkpointing == 1:
+        if use_checkpointing:
+            model.gradient_checkpointing_enable()
             print("use gradient checkpointing")
 
     model_size = sum(t.numel() for t in model.parameters())
