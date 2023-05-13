@@ -376,8 +376,18 @@ class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
 
 
 def make_model_llama(
-    vocab_size, context_length, use_checkpointing, checkpoint_only_attention
+    vocab_size: int,
+    context_length: int,
+    use_checkpointing: bool,
+    checkpoint_only_attention: bool,
 ):
+    """
+    Args:
+        vocab_size: vocabulary size
+        context_length: maximum sequence length
+        use_checkpointing: use gradient checkpointing
+        checkpoint_only_attention: gradient checkpointing only attention
+    """
     cfg = LlamaConfig(
         vocab_size=vocab_size,
         hidden_size=1024,
