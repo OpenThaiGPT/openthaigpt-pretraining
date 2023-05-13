@@ -115,7 +115,7 @@ class Trainer:
                 vocab_size=vocab_size,
                 context_length=context_length,
                 use_checkpointing=checkpoint,
-                checkpoint_only_attentions=checkpoint_only_attention,
+                checkpoint_only_attention=checkpoint_only_attention,
             )
 
         elif model_name == "gptj":
