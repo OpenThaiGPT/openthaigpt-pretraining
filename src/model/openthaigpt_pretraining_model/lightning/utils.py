@@ -125,6 +125,7 @@ class Trainer:
                 context_length=context_length,
                 use_xformers=xformers,
                 use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
                 device=self.fabric.device,
             )
         else:
