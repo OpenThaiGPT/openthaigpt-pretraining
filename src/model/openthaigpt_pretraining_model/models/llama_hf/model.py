@@ -231,14 +231,12 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
                 hidden_states,
                 self_attn_weights,
                 present_key_value,
-            ) = torch.utils.checkpoint(
+            ) = torch.utils.checkpoint.checkpoint(
                 create_custom_forward(self.self_attn),
                 hidden_states,
                 attention_mask,
                 position_ids,
                 past_key_value,
-                output_attentions=output_attentions,
-                use_cache=use_cache,
             )  # type: ignore
         else:
             hidden_states, self_attn_weights, present_key_value = self.self_attn(
