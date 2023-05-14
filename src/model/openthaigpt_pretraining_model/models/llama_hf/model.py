@@ -396,6 +396,8 @@ def make_model_llama(
         hidden_act="silu",
         max_position_embeddings=context_length,
     )
+    if use_checkpointing:
+        cfg.use_cache = False
     if use_checkpointing and checkpoint_only_attention:
         model = LlamaForCausalLMNewCheckpoint(cfg)
         model.gradient_checkpointing_enable()
