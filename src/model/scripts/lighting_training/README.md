@@ -18,4 +18,4 @@ argument that can custom
 - lr
 - xformers
 - checkpoint
-- checkpoint_only_attention: False (model) | True (self-attentions only)
+- checkpoint_only_attention
