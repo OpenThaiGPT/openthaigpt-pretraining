@@ -70,3 +70,20 @@ python data_prep/convert_dataset_json.py \
 ```
 
 Where `--path` can be a single json file, or a folder containing json files, and split the intended split (hf defaults to train).
+
+## MultiGPUs
+
+```bash
+composer --world_size 4 --node_rank 0 --master_addr 0.0.0.0 train/train.py \
+  train/yamls/mpt/125m.yaml \
+  data_local=my-copy-c4 \
+  train_loader.dataset.split=train_small \
+  eval_loader.dataset.split=val_small \
+  max_duration=10ba \
+  eval_interval=0 \
+  save_folder=mpt-125m \
+  precision=amp_fp16 \
+  global_train_batch_size=1 \
+  model.attn_config.attn_impl=torch \
+  tokenizer.name=EleutherAI/gpt-neox-20b
+```
