@@ -124,7 +124,7 @@ class Trainer:
             # self.model = model = LlamaForCausalLM(cfg)
             cfg = ModelArgs(
                 dim=512,
-                n_layers=8,
+                n_layers=12,
                 n_heads=8,
                 vocab_size=vocab_size,
                 multiple_of=256,
