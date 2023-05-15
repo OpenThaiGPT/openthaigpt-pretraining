@@ -11,12 +11,10 @@ from transformers.models.llama.modeling_llama import (
 
 import torch
 from torch import nn
-from torch.nn import CrossEntropyLoss
 
 from typing import Optional, Tuple, List, Union
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
-    CausalLMOutputWithPast,
 )
 
 

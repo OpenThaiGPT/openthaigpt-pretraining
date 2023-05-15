@@ -111,7 +111,7 @@ class Trainer:
 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            self.model = model = make_model_llama(
+            self.model = make_model_llama(
                 vocab_size=vocab_size,
                 context_length=context_length,
                 use_checkpointing=checkpoint,
@@ -120,7 +120,7 @@ class Trainer:
 
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
-            self.model = model = make_model_gptj(
+            self.model = make_model_gptj(
                 vocab_size=vocab_size,
                 context_length=context_length,
                 use_xformers=xformers,
@@ -145,14 +145,14 @@ class Trainer:
         if optimizer == "lion":
             print("Use lion optimizer")
             self.opt = Lion(
-                model.parameters(),
+                self.model.parameters(),
                 lr=lr,
                 weight_decay=weight_decay,
             )
         elif optimizer == "adamw":
             print("Use AdamW optimizer")
             self.opt = optim.AdamW(
-                params=model.parameters(),
+                params=self.model.parameters(),
                 lr=lr,
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
@@ -160,7 +160,7 @@ class Trainer:
         else:
             raise NotImplementedError("only support lion or AdamW")
 
-        model, self.opt = self.fabric.setup(model, self.opt)
+        self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
