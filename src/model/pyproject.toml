@@ -25,4 +25,5 @@ dependencies = [
     "zstandard>=0.21.0",
     "protobuf==3.20.0",
     "lightning>=2.0.2",
+    "bitsandbytes-cuda110",
 ]
