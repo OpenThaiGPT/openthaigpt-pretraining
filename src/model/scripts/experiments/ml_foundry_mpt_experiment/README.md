@@ -74,7 +74,7 @@ Where `--path` can be a single json file, or a folder containing json files, and
 ## MultiGPUs
 
 ```bash
-composer --world_size 4 --node_rank 0 --master_addr 0.0.0.0 train/train.py \
+composer --world_size 4 --node_rank 0 --master_addr 0.0.0.0 --master_port 7501 train/train.py \
   train/yamls/mpt/125m.yaml \
   data_local=my-copy-c4 \
   train_loader.dataset.split=train_small \
