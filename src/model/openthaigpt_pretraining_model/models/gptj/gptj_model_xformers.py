@@ -370,6 +370,13 @@ def make_model_gptj(
     checkpoint_only_attention,
     device: str = "cuda",
 ):
+    """
+    Args:
+        vocab_size: vocabulary size
+        context_length: maximum sequence length
+        use_checkpointing: use gradient checkpointing
+        checkpoint_only_attention: gradient checkpointing only attention
+    """
     cfg = GPTJConfig(
         vocab_size=vocab_size,
         n_positions=context_length,
