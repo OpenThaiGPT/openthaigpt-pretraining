@@ -295,15 +295,15 @@ class GPTJBlockWithCheckpointing(GPTJBlock):
         if gradient_checkpointing and self.training:
 
             def create_custom_forward(module):
-                def custom_forward(*inputs):
+                def custom_forward(
+                    hidden_states, layer_past, attention_mask, position_ids, head_mask
+                ):
                     return module(
-                        *inputs,
-                        layer_past,
-                        attention_mask,
-                        position_ids,
-                        head_mask,
-                        use_cache,
-                        output_attentions,
+                        hidden_states,
+                        layer_past=layer_past,
+                        attention_mask=attention_mask,
+                        position_ids=position_ids,
+                        head_mask=head_mask,
                     )
 
                 return custom_forward
@@ -311,12 +311,10 @@ class GPTJBlockWithCheckpointing(GPTJBlock):
             attn_outputs = torch.utils.checkpoint.checkpoint(
                 create_custom_forward(self.attn),
                 hidden_states,
-                layer_past=layer_past,
-                attention_mask=attention_mask,
-                position_ids=position_ids,
-                head_mask=head_mask,
-                use_cache=use_cache,
-                output_attentions=output_attentions,
+                layer_past,
+                attention_mask,
+                position_ids,
+                head_mask,
             )
         else:
             attn_outputs = self.attn(
