@@ -61,13 +61,6 @@ class Attention(nn.Module):
             bias=False,
         )
 
-        self.cache_k = torch.zeros(
-            (args.max_batch_size, args.max_seq_len, self.n_local_heads, self.head_dim)
-        )
-        self.cache_v = torch.zeros(
-            (args.max_batch_size, args.max_seq_len, self.n_local_heads, self.head_dim)
-        )
-
         if not (
             args.attention_mode == ORIGIN_ATTENTION_MODE
             or args.attention_mode == PYTORCH_ATTENTION_MODE  # noqa: W503
@@ -95,14 +88,8 @@ class Attention(nn.Module):
 
         xq, xk = apply_rotary_emb(xq, xk, freqs_cis=freqs_cis)
 
-        self.cache_k = self.cache_k.to(xq)
-        self.cache_v = self.cache_v.to(xq)
-
-        self.cache_k[:bsz, start_pos : start_pos + seqlen] = xk  # noqa: E203
-        self.cache_v[:bsz, start_pos : start_pos + seqlen] = xv  # noqa: E203
-
-        keys = self.cache_k[:bsz, : start_pos + seqlen]
-        values = self.cache_v[:bsz, : start_pos + seqlen]
+        keys = xk
+        values = xv
 
         if self.mode == ORIGIN_ATTENTION_MODE or x.device == torch.device("cpu"):
             xq = xq.transpose(1, 2)
@@ -219,9 +206,9 @@ class Transformer(nn.Module):
         for layer in self.layers:
             h = layer(h, start_pos, freqs_cis, mask)
         h = self.norm(h)
-        # logits = self.output(h[:, -1, :])  # only compute last logits
         logits = self.output(h)
 
+        loss = None
         if labels is not None:
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., :, 1:].contiguous()
@@ -230,9 +217,11 @@ class Transformer(nn.Module):
             loss = loss_fn(
                 shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
             )
-            return OutputModel(logits=logits, loss=loss)
 
-        return logits.float()
+        return OutputModel(logits=logits[:, -1, :], loss=loss)
+
+        # logits = self.output(h[:, -1, :])  # only compute last logits
+        # return logits.float()
 
 
 class OutputModel:
