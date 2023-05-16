@@ -72,8 +72,9 @@ class Attention(nn.Module):
             )
 
         self.mode = args.attention_mode
+        self.checkpoint_only_attention = False
         if args.use_checkpointing and args.checkpoint_only_attention:
-            self.checkpoint_only_attention = True
+            self.checkpoint_only_attention = args.checkpoint_only_attention
 
     def compute_attention(self, xq, keys, values, mask):
         if self.mode == ORIGIN_ATTENTION_MODE or xq.device == torch.device("cpu"):
