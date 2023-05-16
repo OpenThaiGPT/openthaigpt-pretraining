@@ -61,7 +61,13 @@ if __name__ == "__main__":
         "--checkpoint",
         type=bool,
         default=False,
-        help="gradient checkpoint only available for GPTJ",
+        help="gradient checkpointing",
+    )
+    parser.add_argument(
+        "--checkpoint_only_attention",
+        type=bool,
+        default=False,
+        help="False (model) | True (self-attentions only)",
     )
 
     args = parser.parse_args()
@@ -84,5 +90,6 @@ if __name__ == "__main__":
         vocab_size=args.vocab_size,
         xformers=args.xformers,
         checkpoint=args.checkpoint,
+        checkpoint_only_attention=args.checkpoint_only_attention,
     )
     trainer.train()
