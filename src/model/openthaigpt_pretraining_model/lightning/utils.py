@@ -32,7 +32,7 @@ from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
 #     ORIGIN_ATTENTION_MODE,
 # )
 from openthaigpt_pretraining_model.models.llama_hf.model import (
-    make_model_llama,
+    make_model_llama_hf,
 )
 
 
@@ -129,13 +129,15 @@ class Trainer:
             #     attention_mode=ORIGIN_ATTENTION_MODE,
             # )
             # self.model = Transformer(cfg)
-            self.model = make_model_llama(
+
+        elif model_name == "llama_hf":
+            model_name = LLAMA_MODEL  # for tokenizer
+            self.model = make_model_llama_hf(
                 vocab_size=vocab_size,
                 context_length=context_length,
                 use_checkpointing=checkpoint,
                 checkpoint_only_attention=checkpoint_only_attention,
             )
-
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             self.model = make_model_gptj(
@@ -146,7 +148,7 @@ class Trainer:
                 device=self.fabric.device,
             )
         else:
-            raise NotImplementedError("only support LlaMa or GPTJ")
+            raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
         self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
         self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
