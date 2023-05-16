@@ -14,7 +14,7 @@ from llama.model import RMSNorm, apply_rotary_emb, precompute_freqs_cis  # type:
 
 ORIGIN_ATTENTION_MODE = "origin"
 PYTORCH_ATTENTION_MODE = "pytorch"
-XFORMER_ATTENTION_MODE = "xformer"
+XFORMERS_ATTENTION_MODE = "xformers"
 
 
 @dataclass
@@ -29,7 +29,10 @@ class ModelArgs:
     max_batch_size: int = 32
     max_seq_len: int = 2048
 
-    attention_mode: str = ORIGIN_ATTENTION_MODE  # pytorch, xformer
+    attention_mode: str = ORIGIN_ATTENTION_MODE  # pytorch, xformers
+
+    use_checkpointing: bool = False
+    checkpoint_only_attention: bool = False
 
 
 class Attention(nn.Module):
@@ -64,10 +67,10 @@ class Attention(nn.Module):
         if not (
             args.attention_mode == ORIGIN_ATTENTION_MODE
             or args.attention_mode == PYTORCH_ATTENTION_MODE  # noqa: W503
-            or args.attention_mode == XFORMER_ATTENTION_MODE  # noqa: W503
+            or args.attention_mode == XFORMERS_ATTENTION_MODE  # noqa: W503
         ):
             raise KeyError(
-                f'attention mode must be "{ORIGIN_ATTENTION_MODE}", "{XFORMER_ATTENTION_MODE}" or "{PYTORCH_ATTENTION_MODE}"'  # noqa: E501
+                f'attention mode must be "{ORIGIN_ATTENTION_MODE}", "{XFORMERS_ATTENTION_MODE}" or "{PYTORCH_ATTENTION_MODE}"'  # noqa: E501
             )
 
         self.mode = args.attention_mode
@@ -107,7 +110,7 @@ class Attention(nn.Module):
             values = values.transpose(1, 2)
             output = F.scaled_dot_product_attention(xq, keys, values, mask)
             output = output.transpose(1, 2)
-        elif self.mode == XFORMER_ATTENTION_MODE:
+        elif self.mode == XFORMERS_ATTENTION_MODE:
             output = xops.memory_efficient_attention(
                 xq, keys, values, attn_bias=xops.LowerTriangularMask()
             )
@@ -220,9 +223,6 @@ class Transformer(nn.Module):
 
         return OutputModel(logits=logits[:, -1, :], loss=loss)
 
-        # logits = self.output(h[:, -1, :])  # only compute last logits
-        # return logits.float()
-
 
 class OutputModel:
     def __init__(self, logits, loss):
@@ -233,13 +233,15 @@ class OutputModel:
 def make_model_llama(
     vocab_size: int,
     context_length: int,
-    # use_checkpointing: bool,
-    # checkpoint_only_attention: bool,
+    atention_mode: str = ORIGIN_ATTENTION_MODE,
+    use_checkpointing: bool = False,
+    checkpoint_only_attention: bool = False,
 ):
     """
     Args:
         vocab_size: vocabulary size
         context_length: maximum sequence length
+        atention_mode: attention mode support origin pytorch and xformers
         use_checkpointing: use gradient checkpointing
         checkpoint_only_attention: gradient checkpointing only attention
     """
@@ -247,12 +249,14 @@ def make_model_llama(
         dim=512,
         n_layers=8,
         n_heads=8,
-        vocab_size=vocab_size,  # defined later by tokenizer
-        multiple_of=256,  # make SwiGLU hidden layer size multiple of large power of 2
+        vocab_size=vocab_size,
+        multiple_of=256,
         norm_eps=1e-5,
         max_batch_size=2,
         max_seq_len=context_length,
-        attention_mode=ORIGIN_ATTENTION_MODE,  # pytorch, xformer
+        attention_mode=atention_mode,  # pytorch, xformers
+        use_checkpointing=use_checkpointing,
+        checkpoint_only_attention=checkpoint_only_attention,
     )
     model = Transformer(cfg)
 

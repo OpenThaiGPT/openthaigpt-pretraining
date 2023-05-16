@@ -25,12 +25,7 @@ from .constants import (
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     make_model_gptj,
 )
-
-# from openthaigpt_pretraining_model.models.llama.model import (
-#     ModelArgs,
-#     Transformer,
-#     ORIGIN_ATTENTION_MODE,
-# )
+from openthaigpt_pretraining_model.models.llama.model import make_model_llama
 from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama_hf,
 )
@@ -99,7 +94,7 @@ class Trainer:
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
         vocab_size: int = 50400,
-        xformers: bool = False,
+        attention_mode: str = "origin",
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
     ):
@@ -117,19 +112,13 @@ class Trainer:
 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            # cfg = ModelArgs(
-            #     dim=512,
-            #     n_layers=12,
-            #     n_heads=8,
-            #     vocab_size=vocab_size,
-            #     multiple_of=256,
-            #     norm_eps=1e-5,
-            #     max_batch_size=batch_size,
-            #     max_seq_len=context_length,
-            #     attention_mode=ORIGIN_ATTENTION_MODE,
-            # )
-            # self.model = Transformer(cfg)
-
+            self.model = make_model_llama(
+                vocab_size=vocab_size,
+                context_length=context_length,
+                atention_mode=attention_mode,
+                use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
+            )
         elif model_name == "llama_hf":
             model_name = LLAMA_MODEL  # for tokenizer
             self.model = make_model_llama_hf(
@@ -143,7 +132,7 @@ class Trainer:
             self.model = make_model_gptj(
                 vocab_size=vocab_size,
                 context_length=context_length,
-                use_xformers=xformers,
+                attention_mode=attention_mode,
                 use_checkpointing=checkpoint,
                 device=self.fabric.device,
             )

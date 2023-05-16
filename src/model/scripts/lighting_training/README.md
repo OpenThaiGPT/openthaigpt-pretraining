@@ -11,11 +11,11 @@ argument that can custom
 - batch_size
 - grad
 - context_length
-- model_name= llama | gptj
+- model_name= llama | llama_hf | gptj
 - optimizer= adamw | lion
 - weight_decay
 - vocab size
 - lr
-- xformers
+- attention origin | pytorch | xformers (llama_hf only support origin)
 - checkpoint
 - checkpointing_position: False (model) | True (self-attentions only)

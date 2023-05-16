@@ -60,7 +60,7 @@ def _attn_xformers(
 
 
 def make_model_gptj(
-    vocab_size, context_length, use_xformers, use_checkpointing, device: str = "cuda"
+    vocab_size, context_length, attention_mode, use_checkpointing, device: str = "cuda"
 ):
     config = GPTJConfig(
         vocab_size=vocab_size,
@@ -83,14 +83,16 @@ def make_model_gptj(
     )
     model = GPTJForCausalLM(config)
 
-    if use_xformers:
+    if attention_mode == "xformers":
         print("Use xFormers")
         if device == "cpu":
             GPTJAttention._attn = _attn_xformers_cpu
         else:
             GPTJAttention._attn = _attn_xformers
-    else:
+    elif attention_mode == "origin":
         print("Use original")
+    else:
+        print("GPTJ attention mode only support origin and xformers")
 
     # https://www.kaggle.com/code/vad13irt/optimization-approaches-for-transformers
     if use_checkpointing:

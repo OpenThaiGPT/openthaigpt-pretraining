@@ -48,14 +48,14 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         default="llama",
-        help="{llama(7B) | gptj}",
+        help="{llama | llama_hf | gptj}",
     )
-    parser.add_argument("--vocab_size", type=int, default=50400)
+    parser.add_argument("--vocab_size", type=int, default=32000)
     parser.add_argument(
-        "--xformers",
-        type=bool,
-        default=False,
-        help="xformers attention only available for GPTJ",
+        "--attention",
+        type=str,
+        default="origin",
+        help="origin | pytorch (support only llama) | xformers (llama_hf only support origin)",  # noqa
     )
     parser.add_argument(
         "--checkpoint",
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         weight_decay=args.weight_decay,
         lr=args.lr,
         vocab_size=args.vocab_size,
-        xformers=args.xformers,
+        attention_mode=args.attention,
         checkpoint=args.checkpoint,
         checkpoint_only_attention=args.checkpoint_only_attention,
     )
