@@ -228,3 +228,37 @@ class OutputModel:
     def __init__(self, logits, loss):
         self.logits = logits
         self.loss = loss
+
+
+def make_model_llama(
+    vocab_size: int,
+    context_length: int,
+    # use_checkpointing: bool,
+    # checkpoint_only_attention: bool,
+):
+    """
+    Args:
+        vocab_size: vocabulary size
+        context_length: maximum sequence length
+        use_checkpointing: use gradient checkpointing
+        checkpoint_only_attention: gradient checkpointing only attention
+    """
+    cfg = ModelArgs(
+        dim=512,
+        n_layers=8,
+        n_heads=8,
+        vocab_size=vocab_size,  # defined later by tokenizer
+        multiple_of=256,  # make SwiGLU hidden layer size multiple of large power of 2
+        norm_eps=1e-5,
+        max_batch_size=2,
+        max_seq_len=context_length,
+        attention_mode=ORIGIN_ATTENTION_MODE,  # pytorch, xformer
+    )
+    model = Transformer(cfg)
+
+    model_size = sum(t.numel() for t in model.parameters())
+    print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
+    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
+
+    return model
