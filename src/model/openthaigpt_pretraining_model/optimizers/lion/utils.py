@@ -19,6 +19,7 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
 from lion_pytorch import Lion
 from bitsandbytes.optim import Adam8bit
+import deepspeed
 
 from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from .constants import (
@@ -213,6 +214,24 @@ class Trainer:
                 lr=lr,
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
+            )
+        elif optimizer == "adam1bit":
+            print("Use Adam1bit optimizer")
+            config_params = {
+                "train_batch_size": batch_size,
+                "optimizer": {
+                    "type": "OneBitAdam",
+                    "params": {
+                        "lr": lr,
+                        "weight_decay": weight_decay,
+                        "betas": (0.9, 0.95),
+                    },
+                },
+            }
+            self.model, self.opt, _, _ = deepspeed.initialize(
+                model=model,
+                model_parameters=model.parameters(),
+                config_params=config_params,
             )
         else:
             raise NotImplementedError("only support lion or AdamW")
