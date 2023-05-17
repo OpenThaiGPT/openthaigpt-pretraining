@@ -101,8 +101,8 @@ class Trainer:
         xformers: bool = False,
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
+        num_nodes: int = 1,
     ):
-        # self.run = wandb.init(project="fabric_test", entity="t1zz")
         self.wandb = WandbLogger(project="Fabric")
         self.max_tokens = context_length
         self.step = 0
@@ -114,8 +114,10 @@ class Trainer:
             devices=devices,
             precision=precision,
             loggers=self.wandb,
+            num_nodes=num_nodes,
         )
         self.fabric.launch()
+        print(f"device:{self.fabric.device}")
 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer

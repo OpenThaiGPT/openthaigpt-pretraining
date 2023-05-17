@@ -3,6 +3,7 @@ from openthaigpt_pretraining_model.lightning.utils import (
     seed_everything,
     Trainer,
 )
+from typing import List, Union
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -36,6 +37,11 @@ if __name__ == "__main__":
         type=str,
         default="32-true",
         help="32-true | 32 | 16-mixed | bf16-mixed | 64-true",
+    )
+    parser.add_argument(
+        "--num_nodes",
+        type=int,
+        default=1,
     )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=2)
@@ -79,6 +85,7 @@ if __name__ == "__main__":
         strategy=args.strategy,
         devices=args.devices,
         precision=args.precision,
+        num_nodes=args.num_nodes,
         seed=args.seed,
         batch_size=args.batch_size,
         grad=args.grad,
