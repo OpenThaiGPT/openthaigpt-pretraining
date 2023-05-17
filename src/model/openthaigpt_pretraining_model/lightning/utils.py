@@ -30,6 +30,7 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 )
 import wandb
 import os
+from lightning.pytorch.loggers import WandbLogger
 # os.environ["WANDB_API_KEY"] = "<your-api-key>"
 os.environ["WANDB_MODE"] = "offline"
 class DatasetWrapper(IterableDataset):
@@ -101,7 +102,8 @@ class Trainer:
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
     ):
-        self.run = wandb.init(project="my_project", entity="my_entity")
+        # self.run = wandb.init(project="fabric_test", entity="t1zz")
+        self.wandb = WandbLogger(project="Fabric")
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
@@ -111,6 +113,7 @@ class Trainer:
             strategy=strategy,
             devices=devices,
             precision=precision,
+            loggers=self.wandb,
         )
         self.fabric.launch()
 
