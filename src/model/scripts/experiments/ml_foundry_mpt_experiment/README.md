@@ -107,7 +107,7 @@ make container from [openthaigpt/openthaigpt-pretraining:llmfoundry](https://hub
 
 ## Convert dataset to StreamingDataset format
 
-make file for run by sbatch
+make data_prep.sh file for run by sbatch
 
 ```data_prep.sh
   #!/bin/bash
@@ -120,7 +120,7 @@ make file for run by sbatch
 
   ml purge
   ml Apptainer
-  apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry llmfoundry3.sif python3 scripts/data_prep/convert_dataset_json.py \
+  apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry llmfoundry.sif python3 scripts/data_prep/convert_dataset_json.py \
     --path scripts/data_prep/example_data/arxiv.jsonl \
     --out_root my-copy-arxiv --split train \
     --concat_tokens 2048 --tokenizer xlm-roberta-base --eos_text '<|endoftext|>'
@@ -136,7 +136,7 @@ run data_prep file
 
 ## Training
 
-make file for run by srun
+make train_srun.sh file for run by srun
 
 ```train_srun.sh
   ml purge
@@ -146,7 +146,7 @@ make file for run by srun
   mkdir -p $CACHE_DIR
   master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
-  apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry --bind /scratch/lt200056-opgpth/cache_$((SLURM_JOB_ID))_$((SLURM_NODEID)):/cache_$((SLURM_JOB_ID))_$((SLURM_NODEID)) llmfoundry2.sif \
+  apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry --bind /scratch/lt200056-opgpth/cache_$((SLURM_JOB_ID))_$((SLURM_NODEID)):/cache_$((SLURM_JOB_ID))_$((SLURM_NODEID)) llmfoundry.sif \
     composer -n 4 --world_size 8 --node_rank $((SLURM_NODEID)) --base_rank  $((SLURM_NODEID * 4)) --master_addr $master_addr --master_port 7501 \
     scripts/train/train.py \
     scripts/train/yamls/mpt/125m.yaml \
@@ -165,7 +165,7 @@ make file for run by srun
 
 note you will change USERNAME to your username
 
-make file for run by sbatch
+make train.sh file for run by sbatch
 
 ```train.sh
   #!/bin/bash
