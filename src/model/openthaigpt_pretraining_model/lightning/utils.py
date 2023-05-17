@@ -28,8 +28,10 @@ from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
 from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama,
 )
-
-
+import wandb
+import os
+# os.environ["WANDB_API_KEY"] = "<your-api-key>"
+os.environ["WANDB_MODE"] = "offline"
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, model, max_tokens=256):
         if model != "decapoda-research/llama-7b-hf":
@@ -76,6 +78,8 @@ def seed_everything(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+def compute_perplexity(loss):
+    return torch.exp(loss).item()
 
 class Trainer:
     def __init__(
@@ -97,6 +101,7 @@ class Trainer:
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
     ):
+        self.run = wandb.init(project="my_project", entity="my_entity")
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
@@ -173,6 +178,8 @@ class Trainer:
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
                 loss = self.model(batch, labels=batch).loss
+                perplexity = compute_perplexity(loss)
+                wandb.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
         return loss
@@ -183,6 +190,8 @@ class Trainer:
 
         for i, batch in enumerate(progress_bar):
             loss = self.train_step(batch)
+            perplexity = compute_perplexity(loss)
+            wandb.log({"train_loss": loss.item(), "train_perplexity": perplexity})
 
             progress_bar.set_description(f"loss: {loss.item():.3f}")
             self.fabric.backward(loss)
@@ -192,3 +201,5 @@ class Trainer:
 
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
+        
+        self.run.finish()
