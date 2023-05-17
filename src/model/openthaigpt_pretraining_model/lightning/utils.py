@@ -103,6 +103,8 @@ class Trainer:
         checkpoint_only_attention: bool = False,
         num_nodes: int = 1,
     ):
+        if(torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB"):
+            torch.set_float32_matmul_precision('medium') # high
         self.wandb = WandbLogger(project="Fabric")
         self.max_tokens = context_length
         self.step = 0
