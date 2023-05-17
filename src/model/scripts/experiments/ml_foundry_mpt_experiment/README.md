@@ -98,7 +98,7 @@ clone tokenizer in this example use xlm-roberta-base
   git clone xlm-roberta-base
 ```
 
-make container from [openthaigpt/openthaigpt-pretraining:llmfoundry](https://hub.docker.com/layers/openthaigpt/openthaigpt-pretraining/llmfoundry/images/sha256-3d56b25d90f75977cc84e34ef12a12f3a5c557c941644e8a0edb9b07bca2fb95?context=repo)
+make container from [openthaigpt/openthaigpt-pretraining:llmfoundry](https://hub.docker.com/layers/openthaigpt/openthaigpt-pretraining/llmfoundry/images/sha256-3d56b25d90f75977cc84e34ef12a12f3a5c557c941644e8a0edb9b07bca2fb95?context=repo) (but now this cannot use)
 
 ```bash
   ml Apptainer
