@@ -104,7 +104,7 @@ class Trainer:
     ):
         if(torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB"):
             torch.set_float32_matmul_precision('medium') # high
-        self.wandb = wandb.init(project="Fabric")
+        self.wandb = None
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
@@ -119,6 +119,8 @@ class Trainer:
         )
         self.fabric.launch()
         print(f"device:{self.fabric.device}")
+        if self.fabric.global_rank == 0:
+            self.wandb = wandb.init(project="Fabric")
 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
@@ -174,6 +176,10 @@ class Trainer:
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
+    def log(self, data):
+        if self.wandb is not None:
+            self.self.log(data)
+            
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
         return loss
@@ -185,7 +191,7 @@ class Trainer:
             for i, batch in enumerate(progress_bar):
                 loss = self.model(batch, labels=batch).loss
                 perplexity = compute_perplexity(loss)
-                wandb.log({"val_loss": loss.item(), "val_perplexity": perplexity})
+                self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
         return loss
@@ -197,7 +203,7 @@ class Trainer:
         for i, batch in enumerate(progress_bar):
             loss = self.train_step(batch)
             perplexity = compute_perplexity(loss)
-            wandb.log({"train_loss": loss.item(), "train_perplexity": perplexity})
+            self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
 
             if self.fabric.global_rank == 0:
                 progress_bar.set_description(f"loss: {loss.item():.3f}")
