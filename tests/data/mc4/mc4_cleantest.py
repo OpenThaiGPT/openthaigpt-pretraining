@@ -2,15 +2,15 @@
 #
 # Clean Thai langage part of mC4
 # ------------------------------
-# Make sure you have installed datasets to read mC4 data 
+# Make sure you have installed datasets to read mC4 data
 # with stream method from Huggingface mC4
 #
 # -- pip install datasets
 #
-# This version: ~42% of mC4 rows are removed as irrelevant information, 
-# like gamble, ads, etc. 
+# This version: ~43% of mC4 rows are removed as irrelevant information,
+# like gamble, ads, etc.
 #
-# The rest is cleaned by many patterns of messages and useless words 
+# The rest is cleaned by many patterns of messages and useless words
 # as regular expressions and replace them with blank.
 #
 # It seems that mC4 appears to have a repeating pattern. Maybe it's
@@ -21,23 +21,26 @@
 #
 # output: 1.output.txt, 2.datasets for huggingface
 #
+# You can use 'less' command-line tool to view large output.txt file.
+#
 
 
-
+# flake8: noqa
+from typing import List
 import re
 import datetime
 from datasets import load_dataset, Dataset
 import pandas as pd
 
 ################ Setting
-print("\nClean mC4 dataset:") 
+print("\nClean mC4 dataset:")
 
 while True:
     try:
         otype = int(input("Output type (0=txt, 1=dataset): "))
     except ValueError:
         print("That's not a valid number. Try again.")
-    if otype in [0,1]:
+    if otype in [0, 1]:
         break
 
 while True:
@@ -58,398 +61,564 @@ while True:
         print("That's not a valid number. Try again.")
 
 
-
 ############# Start process
 
 t0 = datetime.datetime.now()
-dataset = load_dataset('mc4','th',split='train', streaming=True)
+dataset = load_dataset("mc4", "th", split="train", streaming=True)
 
 #### Gamble Clean Words
-gamble_words = ['พนัน','แทง','แทงบอล','บาคารา','บา คา รา','เกมพนัน','คาสิโน','คา สิ โน','หวย','สล็อต','กาสิโน','casino','slot','เลขเด็ด','สูตรหวย','a s i n o','sbobet','fun88','ufabet','บาคาร่า','บา คา ร่า','รูเล็ต','ทำนายฝัน','เลขเด่น','สรุปผลบอล','ไฮไลท์ฟุตบอล','วิเคราะห์บอล','ดูบอลสด','พรีเมียร์ลีก','บอลประจำวัน','บอลเต็ง','บอลเด็ด','องค์ลงรวย','สูตรปลาตะเพียน','สามตัวตรง','วิเคราะห์ข้อมูลล่าง','ต่อ ครึ่งลูก','ครึ่งลูกลบ','เสมอควบครึ่ง','ครึ่งควบลูก']
+gamble_words = [
+    "พนัน",
+    "แทงบอล",
+    "แทง",
+    "บาคารา",
+    "บา คา รา",
+    "เกมพนัน",
+    "คาสิโน",
+    "คา สิ โน",
+    "หวย",
+    "สล็อต",
+    "กาสิโน",
+    "casino",
+    "slot",
+    "เลขเด็ด",
+    "สูตรหวย",
+    "a s i n o",
+    "sbobet",
+    "fun88",
+    "ufabet",
+    "บาคาร่า",
+    "บา คา ร่า",
+    "รูเล็ต",
+    "ทำนายฝัน",
+    "เลขเด่น",
+    "สรุปผลบอล",
+    "ไฮไลท์ฟุตบอล",
+    "วิเคราะห์บอล",
+    "ดูบอลสด",
+    "พรีเมียร์ลีก",
+    "บอลประจำวัน",
+    "บอลเต็ง",
+    "บอลเด็ด",
+    "องค์ลงรวย",
+    "สูตรปลาตะเพียน",
+    "สามตัวตรง",
+    "วิเคราะห์ข้อมูลล่าง",
+    "ต่อ ครึ่งลูก",
+    "ครึ่งลูกลบ",
+    "เสมอควบครึ่ง",
+    "ครึ่งควบลูก",
+]
 
 #### Sale Clean Words
-sale_skip_words = ['สอบราคา','จัดซื้อจัดจ้าง','ชมรม','สมาคม','นักลงทุน','นักการตลาด','ของกลาง','การลงทุน','นักวิเคราะห์','ขายให้แก่ประชาชน','การลดต้นทุน','การเสนอราคา','กระทรวง','ตลาดหลักทรัพย์','ยอดขายไม่ดี','ยอดขายไม่ค่อยดี','ผู้ประกอบการธุรกิจ','ออกใบอนุญาต','ผู้ประกอบกิจการ']
-sale_url_words = ['alibaba.com','shopee.co.th','lazada.com','DocPlayer.net','Alibaba','AliExpress','Aliexpress','TripAdvisor','jobbkk.com']
-sale_words = ['ขาย','ซ่อม','ราคา','มือสอง','เช่า','ครีม','ฝ้ากระ','จุดด่างดำ','รับส่วนลด','โปรโมชั่น','กวดวิชา','ติวเตอร์','SEO','คอร์สเรียน SEO','จำหน่าย','ทัวร์','สินค้ามาใหม่','สินค้าทั้งหมด','รีวิวสินค้า','เคสกันกระแทก','ประกาศ','ลงขายของ','เลือกขนาด','บริการจัดส่ง','จัดอันดับ','คาราโอเกะ','จำหน่าย','หาเงินออนไลน์','สั่งซื้อ','ลดกระหนำ่','รหัส','ลงประกาศฟรี','หยิบใส่ตะกร้า','สนใจ','ซื้อ','สินค้า','ผลิตภัณฑ์']
+sale_skip_words = [
+    "สอบราคา",
+    "จัดซื้อจัดจ้าง",
+    "ชมรม",
+    "สมาคม",
+    "นักลงทุน",
+    "นักการตลาด",
+    "ของกลาง",
+    "การลงทุน",
+    "นักวิเคราะห์",
+    "ขายให้แก่ประชาชน",
+    "การลดต้นทุน",
+    "การเสนอราคา",
+    "กระทรวง",
+    "ตลาดหลักทรัพย์",
+    "ยอดขายไม่ดี",
+    "ยอดขายไม่ค่อยดี",
+    "ผู้ประกอบการธุรกิจ",
+    "ออกใบอนุญาต",
+    "ผู้ประกอบกิจการ",
+]
+sale_url_words = [
+    "alibaba.com",
+    "shopee.co.th",
+    "lazada.com",
+    "DocPlayer.net",
+    "Alibaba",
+    "AliExpress",
+    "Aliexpress",
+    "TripAdvisor",
+    "jobbkk.com",
+]
+sale_words = [
+    "ขาย",
+    "ซ่อม",
+    "ราคา",
+    "มือสอง",
+    "เช่า",
+    "ครีม",
+    "ฝ้ากระ",
+    "จุดด่างดำ",
+    "รับส่วนลด",
+    "โปรโมชั่น",
+    "กวดวิชา",
+    "ติวเตอร์",
+    "SEO",
+    "คอร์สเรียน SEO",
+    "จำหน่าย",
+    "ทัวร์",
+    "สินค้ามาใหม่",
+    "สินค้าทั้งหมด",
+    "รีวิวสินค้า",
+    "เคสกันกระแทก",
+    "ประกาศ",
+    "ลงขายของ",
+    "เลือกขนาด",
+    "บริการจัดส่ง",
+    "จัดอันดับ",
+    "คาราโอเกะ",
+    "จำหน่าย",
+    "หาเงินออนไลน์",
+    "สั่งซื้อ",
+    "ลดกระหนำ่",
+    "รหัส",
+    "ลงประกาศฟรี",
+    "หยิบใส่ตะกร้า",
+    "สนใจ",
+    "ซื้อ",
+    "สินค้า",
+    "ผลิตภัณฑ์",
+]
 
 #### Rent Clean Words
-skip_words = ['สอบราคา','จัดซื้อจัดจ้าง','ชมรม','สมาคม','นักลงทุน','นักการตลาด','ของกลาง','การลงทุน','นักวิเคราะห์','ขายให้แก่ประชาชน','การลดต้นทุน','การเสนอราคา','กระทรวง','ตลาดหลักทรัพย์']
-rent_words = ['บ้านมือสอง','ให้เช่า','เช่า','บ้านเดี่ยว','อพาร์ทเม้นท์','อสังหาริมทรัพย์','เพนท์เฮ้าส์','ทาวน์เฮ้าส์']
+rent_skip_words = [
+    "สอบราคา",
+    "จัดซื้อจัดจ้าง",
+    "ชมรม",
+    "สมาคม",
+    "นักลงทุน",
+    "นักการตลาด",
+    "ของกลาง",
+    "การลงทุน",
+    "นักวิเคราะห์",
+    "ขายให้แก่ประชาชน",
+    "การลดต้นทุน",
+    "การเสนอราคา",
+    "กระทรวง",
+    "ตลาดหลักทรัพย์",
+]
+rent_words = [
+    "บ้านมือสอง",
+    "ให้เช่า",
+    "เช่า",
+    "บ้านเดี่ยว",
+    "อพาร์ทเม้นท์",
+    "อสังหาริมทรัพย์",
+    "เพนท์เฮ้าส์",
+    "ทาวน์เฮ้าส์",
+]
 
 #### Script Clean Words
-script_words = ['function','var','click','margin','width','height','return','else','alert','<br>','href']
+script_words = [
+    "function",
+    "var",
+    "click",
+    "margin",
+    "width",
+    "height",
+    "return",
+    "else",
+    "alert",
+    "<br>",
+    "href",
+]
 
 #### Garbage Clean Words
-garbage_words = ['โหงวเฮ้ง','ครีมฟอกสี','ครีมผิวขาว','ฟอกสี','ไวท์เทนนิ่งครีม','ครีมไวท์เทนนิ่ง','ครีมลบฝ้ากระ','รับสร้างบ้าน','ครีมโรคสะเก็ดเงิน','บริการจองตั๋ว','บริการรีดผ้า','อาหารเสริมลดน้ำหนัก','ยาลดน้ำหนัก','ลดไขมัน','ผิงโซดา','สร้างบ้าน','ช่างกุญแจ','ช่างโลหะ','ช่างโยธา','ช่างเครื่องยนต์','ช่างไม้','ช่างกลโรงงาน','ช่างไฟฟ้า','ปรสิต','หนอน','เวิร์ม']
+garbage_words = [
+    "โหงวเฮ้ง",
+    "ครีมฟอกสี",
+    "ครีมผิวขาว",
+    "ฟอกสี",
+    "ไวท์เทนนิ่งครีม",
+    "ครีมไวท์เทนนิ่ง",
+    "ครีมลบฝ้ากระ",
+    "รับสร้างบ้าน",
+    "ครีมโรคสะเก็ดเงิน",
+    "บริการจองตั๋ว",
+    "บริการรีดผ้า",
+    "อาหารเสริมลดน้ำหนัก",
+    "ยาลดน้ำหนัก",
+    "ลดไขมัน",
+    "ผิงโซดา",
+    "สร้างบ้าน",
+    "ช่างกุญแจ",
+    "ช่างโลหะ",
+    "ช่างโยธา",
+    "ช่างเครื่องยนต์",
+    "ช่างไม้",
+    "ช่างกลโรงงาน",
+    "ช่างไฟฟ้า",
+    "ปรสิต",
+    "หนอน",
+    "เวิร์ม",
+]
 
 #### Football teams
-football_teams = ['ยูเวนตุส','อินเตอร์ มิลาน','นาโปลี','เอซี มิลาน','ลาซิโอ','โรม่า','กัลโซ่','เอฟเวอร์ตัน','ซันเดอร์แลนด์','ลิเวอร์พูล','แมนเชสเตอร์','นิวคาสเซิล','เชลซี','อาร์เซนอล','คลิสตัลพาเลช','เซาแทมป์ตัน','เซาแธมป์ตัน','ไฮไลท์ฟุตบอล']
+football_teams = [
+    "ยูเวนตุส",
+    "อินเตอร์ มิลาน",
+    "นาโปลี",
+    "เอซี มิลาน",
+    "ลาซิโอ",
+    "โรม่า",
+    "กัลโซ่",
+    "เซเรีย",
+    "ปาร์ม่า",
+    "เอฟเวอร์ตัน",
+    "ซันเดอร์แลนด์",
+    "ลิเวอร์พูล",
+    "แมนเชสเตอร์",
+    "นิวคาสเซิล",
+    "เชลซี",
+    "อาร์เซนอล",
+    "คลิสตัลพาเลช",
+    "เซาแทมป์ตัน",
+    "เซาแธมป์ตัน",
+    "เชฟฟิลด์",
+    "ฟอเรสต์",
+    "เบอร์ตัน",
+    "เบรนท์ฟอร์ด",
+    "ฟูแล่ม",
+    "ไฮไลท์ฟุตบอล",
+    "เลบันเต้",
+    "บาร์เซโลน่า",
+    "เรอัล มาดริด",
+    "เอสปันญ่อล",
+]
 
 #### Hotels Advertising
-hotel_ad = ['โรงแรมอันดับ','ที่พักแบบพิเศษอันดับ','สถานที่พักอันดับ','สถานที่พักคุ้มค่าอันดับ','โรงแรมใกล้กับ','โรงแรมที่ใกล้']
+hotel_ad = [
+    "โรงแรมอันดับ",
+    "ที่พักแบบพิเศษอันดับ",
+    "สถานที่พักอันดับ",
+    "สถานที่พักคุ้มค่าอันดับ",
+    "โรงแรมใกล้กับ",
+    "โรงแรมที่ใกล้",
+    "โรงแรม 4ดาว",
+    "โรงแรม 3ดาว",
+    "ที่พักพร้อมอาหารเช้า",
+    "โรงแรมราคาถูก",
+]
 
 #########
 # PRE-COMPILE REGEX to object for speed up processing.
 #########
-#-----------------------------------------------------
+# -----------------------------------------------------
 # Remove useless row that make overhead in regex processing
 
 # Unusual row - line size too large
 # if there are 3 large lines ( 500 characters each)
-toolarge_line_pattern = '.{1500}'
+toolarge_line_pattern = ".{1500}"
 toolarge_re = re.compile(toolarge_line_pattern, re.MULTILINE)
 
-sidebar_pattern = '.{0,40}(?:(?:\[|\()\d{0,9}(?:\]|\))(?:[ ]{0,2})?,?)'
-sidebar_re = re.compile(sidebar_pattern, re.MULTILINE)
-
-nonechar_pattern = '๮|๞|๨|๡|๷|๻|๫'
+nonechar_pattern = "๮|๞|๨|๡|๷|๻|๫|͹"
 nonechar_re = re.compile(nonechar_pattern, re.MULTILINE)
 
-none_tone_mark_pattern = 'ก าหนด|เป าหมาย|พ ฒนา|ค ณภาพ|ว จ ย|ค ณล กษณะ|ต างๆ|เป น |ให |บร หาร|ปร บปร ง|ใหม|อย าง|เง น'
+none_tone_mark_pattern = "ก าหนด|เป าหมาย|พ ฒนา|ค ณภาพ|ว จ ย|ค ณล กษณะ|ต างๆ|เป น |ให |บร หาร|ปร บปร ง|ใหม|อย าง|เง น"
 none_tone_mark_re = re.compile(none_tone_mark_pattern, re.MULTILINE)
 
-#-----------------------------------------------------
+# -----------------------------------------------------
 
-gamble_pattern = '|'.join(gamble_words)
+gamble_pattern = "|".join(gamble_words)
 gamble_re = re.compile(gamble_pattern, re.MULTILINE)
 
-football_pattern = '|'.join(football_teams)
+football_pattern = "|".join(football_teams)
 football_re = re.compile(football_pattern, re.MULTILINE)
 
-hotel_ad_pattern = '|'.join(hotel_ad)
+hotel_ad_pattern = "|".join(hotel_ad)
 hotel_ad_re = re.compile(hotel_ad_pattern, re.MULTILINE)
 
-sale_pattern = '|'.join(sale_words)
+sale_url_pattern = "|".join(sale_url_words)
+sale_url_re = re.compile(sale_url_pattern, re.MULTILINE)
+sale_skip_pattern = "|".join(sale_skip_words)
+sale_skip_re = re.compile(sale_skip_pattern, re.MULTILINE)
+sale_pattern = "|".join(sale_words)
 sale_re = re.compile(sale_pattern, re.MULTILINE)
 
-rent_pattern = '|'.join(rent_words)
+rent_skip_pattern = "|".join(rent_skip_words)
+rent_skip_re = re.compile(rent_skip_pattern, re.MULTILINE)
+rent_pattern = "|".join(rent_words)
 rent_re = re.compile(rent_pattern, re.MULTILINE)
 
-json_pattern = "\s*\"(?:\w)*\"\s*:"
+json_pattern = '\s*"(?:\w)*"\s*:'
 json_re = re.compile(json_pattern, re.MULTILINE)
 
-script_pattern = r'\b' + '|'.join(script_words) + r'\b'
+script_pattern = r"\b" + "|".join(script_words) + r"\b"
 script_re = re.compile(script_pattern, re.MULTILINE)
 
-garbage_pattern = '|'.join(garbage_words)
+garbage_pattern = "|".join(garbage_words)
 garbage_re = re.compile(garbage_pattern, re.MULTILINE)
 
-ghost_pattern = 'เธฃเน|เธเธญ|เธเน|เธฐเธ|เธฅเธฐ|เธซเธฒ|เธญเธฒ|เธดเธ|เธตเธข|เธญเน|เธญเธ|เธดเน|เธฑเธ|เธกเน|เธฒเธ|เธชเน|เน€เธ'
+ghost_pattern = "เธฃเน|เธเธญ|เธเน|เธฐเธ|เธฅเธฐ|เธซเธฒ|เธญเธฒ|เธดเธ|เธตเธข|เธญเน|เธญเธ|เธดเน|เธฑเธ|เธกเน|เธฒเธ|เธชเน|เน€เธ"
 ghost_re = re.compile(ghost_pattern, re.MULTILINE)
 
-url_pattern = '\\b(?:(?:https?|ftp)://[^\s/$\.\?#].[^\s]*)\\b|\\b(?:www\.?)?(?:(?:[\w-]*)\.)*(?:com|net|org|info|biz|me|io|co|asia|xyz|th|cn|in|uk|jp|ru)\\b'
+url_pattern = "\\b(?:(?:https?|ftp)://[^\s/$\.\?#].[^\s]*)\\b|\\b(?:www\.?)?(?:(?:[\w-]*)\.)*(?:com|net|org|info|biz|me|io|co|asia|xyz|th|cn|in|uk|jp|ru)\\b"
 url_re = re.compile(url_pattern, re.MULTILINE)
 
-menu1_pattern = '\|(?:[^\|\n]*\|)+.*'
+menu1_pattern = "\|(?:[^\|\n]*\|)+.*"
 menu1_re = re.compile(menu1_pattern, re.MULTILINE)
 
-menu2_pattern = '\|(?:[^\|\n]*\|)+'
+menu2_pattern = "\|(?:[^\|\n]*\|)+"
 menu2_re = re.compile(menu2_pattern, re.MULTILINE)
 
-menu3_pattern = '(?:(?:[^/\n]*/){4,}.*)'
+menu3_pattern = "(?:(?:[^/\n]*/){4,}.*)"
 menu3_re = re.compile(menu3_pattern, re.MULTILINE)
 
-menu4_pattern = '[^\n]{0,20}[ ]{0,2}[>»\\\\].*'
+menu4_pattern = "[^\n]{0,20}[ ]{0,2}[>»\\\\].*"
 menu4_re = re.compile(menu4_pattern, re.MULTILINE)
 
-hashtag_pattern = '#\d*[ ].{0,300}|#(?:(?:[^ \n]*)[ ]?)+|^Tag Archives[ ]{0,2}:.{0,300}|^Posts Tagged[ ]{0,2}:.{0,300}|^HASTAG[ ]{0,2}:.{0,300}|^Tag[s]?[ ]{0,2}:.{0,300}|^Tagged[ ].{0,300}'
+hashtag_pattern = "#\d*[ ].{0,300}|#(?:(?:[^ \n]*)[ ]?)+|Tag Archives[ ]{0,2}:.{0,300}|Posts Tagged[ ]{0,2}:.{0,300}|HASTAG[ ]{0,2}:.{0,300}|Tag[s]?[ ]{0,2}:.{0,300}|Tagged[ ].{0,300}"
 hashtag_re = re.compile(hashtag_pattern, re.MULTILINE)
 
-page_pattern = '(?:<<[ ])?(?:ก่อนหน้า|ย้อนกลับ)[ ]{0,2}(?:\[[ ]?\d{0,6}[ ]?\]|[ ]?\d{0,6}[ ]?)*(?:ต่อไป|หน้าถัดไป|ถัดไป)?(?:[ ]?>>)?|<<(?:[ ]\d{0,6}[ ]\-[ ]\d{0,6})+[ ].{0,100}'
+page_pattern = "(?:<<[ ])?(?:ก่อนหน้า|ย้อนกลับ)[ ]{0,2}(?:\[[ ]?\d{0,6}[ ]?\]|[ ]?\d{0,6}[ ]?)*(?:ต่อไป|หน้าถัดไป|ถัดไป)?(?:[ ]?>>)?|<<(?:[ ]\d{0,6}[ ]\-[ ]\d{0,6})+[ ].{0,100}"
 page_re = re.compile(page_pattern, re.MULTILINE)
 
-markup_pattern = '\{\{[^\}]*\}\}|\{\{.*'
+sidebar_pattern = ".{0,40}(?:(?:\[|\()\d{0,9}(?:\]|\))(?:[ ]{0,2})?,?)"
+sidebar_re = re.compile(sidebar_pattern, re.MULTILINE)
+
+markup_pattern = "\{\{[^\}]*\}\}|\{\{.*"
 markup_re = re.compile(markup_pattern, re.MULTILINE)
 
-embeded_java_pattern = '<%[ ]*[^%]*%>|<%.*'
-embeded_java_re = re.compile(embeded_java_pattern, re.MULTILINE)
+embedded_server_pattern = "<%[ ]*[^%]*%>|<%.*"
+embedded_server_re = re.compile(embedded_server_pattern, re.MULTILINE)
 
-u_pattern = '(?:\uFEFF|\u00AD|[\u200A-\u200F]|\uFFFD|[\uE000-\uF8FF]|[\u202A-\u202C]|\u0092|[\u0091-\u0096]|\u2028|\u2066|\u2069|\u008d|\u0081|\u008E)'
+u_pattern = "\uFEFF|\u00AD|[\u200A-\u200F]|\uFFFD|[\uE000-\uF8FF]|[\u202A-\u202C]|\u0092|[\u0091-\u0096]|\u2028|\u2066|\u2069|\u008d|\u0081|\u008E|<U\+[0-9A-Fa-f]{4}>"
 u_re = re.compile(u_pattern, re.MULTILINE)
 
-iframe_pattern = '<iframe.*?<\/iframe>\s*|<iframe.*'
+iframe_pattern = "<iframe.*?<\/iframe>\s*|<iframe.*"
 iframe_re = re.compile(iframe_pattern, re.MULTILINE)
 
-block_pattern = '(?:\[[^\]]*\])|(?:«[^»]*»)|(?:<<([^>]*)>>)'
+block_pattern = "(?:\[[^\]]*\])|(?:«[^»]*»)|(?:<<([^>]*)>>)"
 block_re = re.compile(block_pattern, re.MULTILINE)
 
-email_pattern = '(?:(?:([Ee]?mail|อีเมล์)[ ]{0,2}:?[ ]{0,5})?)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+email_pattern = "(?:(?:([Ee]?mail|อีเมล์)[ ]{0,2}:?[ ]{0,5})?)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 email_re = re.compile(email_pattern, re.MULTILINE)
 
-ip_pattern = '\((?:\d{0,3}\.)+\d{0,3}\)|\(?IP:(?:\d{0,3}\.)+\d{0,3}\)?'
+ip_pattern = "\((?:(?:X{1,3}|\d{1,3})\.){3}(?:X{1,3}|\d{1,3})\)|\(?IP:?[ ]?(?:(?:X{1,3}|\d{1,3})\.){3}(?:X{1,3}|\d{1,3})\)?"
 ip_re = re.compile(ip_pattern, re.MULTILINE)
 
-tel_pattern = '(?:(?:[Pp]hone|[Mm]obile|มือถือ|Tel|TEL|Fax|FAX|เบอร์โทรศัพท์|เลขโทรศัพท์|เบอร์ติดต่อ|โทรศัพท์|โทรสาร[ ]{0,2}:|เบอร์โทร|โทร[ ]{0,2}:|โทร\.|โทร[ ]|ติดต่อที่[ ]{0,2}:?|ติดต่อ[ ]{0,2}:?)[ ]{0,2}):?(?:(?:[ ]{0,2})?(?:(?:\d{3}-\d{7})|(?:\d{4}-\d{6})|(?:\d{3}-\d{3}-\d{4}|(?:\d{3}-\d{3}-\d{3})|(?:\d{1}-\d{4}-\d{4})|(?:\d{2}-\d{3}-\d{4})|(?:\d{2}\s\d{3}\s\d{4})|(?:\d{2}-\d{7})|(?:\d{3}\s\d{3}\s\d{4})|(?:\d{3}\s\d{3}\s\d{3})|(?:\d{10})))[ ]{0,2},?)+'
+tel_pattern = "(?:(?:[Pp]hone|[Mm]obile|มือถือ|Tel|TEL|Fax|FAX|เบอร์โทรศัพท์|เลขโทรศัพท์|เบอร์ติดต่อ|โทรศัพท์|โทรสาร[ ]{0,2}:|เบอร์โทร|โทร[ ]{0,2}:|โทร\.|โทร[ ]|ติดต่อที่[ ]{0,2}:?|ติดต่อ[ ]{0,2}:?)[ ]{0,2}):?(?:(?:[ ]{0,2})?(?:(?:\d{3}-\d{7})|(?:\d{4}-\d{6})|(?:\d{3}-\d{3}-\d{4}|(?:\d{3}-\d{3}-\d{3})|(?:\d{1}-\d{4}-\d{4})|(?:\d{2}-\d{3}-\d{4})|(?:\d{2}\s\d{3}\s\d{4})|(?:\d{2}-\d{7})|(?:\d{3}\s\d{3}\s\d{4})|(?:\d{3}\s\d{3}\s\d{3})|(?:\d{10})))[ ]{0,2},?)+|02\d{7}|0[3-7][2-9]\d{6}|0[6-9][0-9]\d{7}"
 tel_re = re.compile(tel_pattern, re.MULTILINE)
 
-date1_pattern = '(?:(?:การปรับปรุงปัจจุบัน|ตั้งแต่|ลงประกาศเมื่อ|อัพเดทล่าสุด|แก้ไขครั้งสุดท้าย|แก้ไขครั้งล่าสุด|เผยแพร่เมื่อ|เผยแพร่|เขียนเมื่อ|ตอบเมื่อ|เมื่อ|เขียนวันที่|วันที่|วัน)?(?:[ ]{0,2}:[ ]{0,2})?(?:จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัสฯ?\.?|ศุกร์|เสาร์|อาทิตย์|จ\.|อ\.|พ\.|พฤ\.|ศ\.|ส\.|อา\.?)?(?:[ ]{0,2}ที่)?(?:[ ]{0,2}[\w\u0E01-\u0E5B]*[ ]{0,2}(?:,|(?:-|\u2013)))?(?:\d{1,4}[ ]{0,2}-)?[ ]{0,2}\d{0,4}(?:-|[ ]{0,2})(?:เดือน[ ]{0,2})?(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม|ม\.?ค\.?|ก\.?พ\.?|มี\.?ค\.?|เม\.?ย\.?|พ\.?ค\.?|มิ\.?ย\.?|ก\.?ค\.?|ส\.?ค\.?|ก\.?ย\.?|ต\.?ค\.?|พ\.?ย\.?|ธ\.?ค\.?|January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|/)(?:-|[ ]|,]){0,2}(?:[ ]{0,2})?(?:\d{4}|\d{2})?,?(?:(?:[ ]{0,2}\d{4}|\d{2}:\d{2}:\d{2})|(?:[ ]{0,2}\d{1,2}:\d{2}(?::\d{2})?[ ]*(?:(?:(?:p|P|a|A)(?:m|M)))?)|[ ]{0,2}เวลา[ ]{0,2}\d{1,2}:\d{2}:\d{2})?(?:[ ]{0,2}น\.)?(?:[ ]{0,2}:[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}น\.)?(?:[ ]{0,2}เวลา[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}[pPaA][mM][ ]{0,2}(?:PDT)?)?(?:[ ]{0,2}เวลา[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:น\.)?)?(?:[ ]*\d*[ ]{0,9}ผู้ชม[ ]{0,2}\d)?(?:[ ]{0,2}เวลา[ ]{0,2}:[ ]{0,2}\d{1,2}:\d{2}:\d{2}[ ](?:น\.)?)?(?:[ ]{0,2}เข้าชม[ ]{0,2}\d*[ ]{0,8}ครั้ง)?(?:[ ]{0,2}ที่[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}(?:[pPaA][mM])?)?(?:[ ]{0,2}Views:[ ]{0,2}(?:\d{0,3},?){0,3})?(?:[ ]{0,2}\(\d{1,2}:\d{2}[ ](?:น\.)?[ ]{0,2}\)(?:[ ]{0,2}ความคิดเห็น[ ]{0,2}\d)?)?(?:[ ]{0,2}-[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?)?(?:[ ]{0,2}จำนวนเข้าชม:(?:[ ]{0,2}\d{0,9},?)*)?(?:[ ]*พ\.ศ\.[ ]{0,2}\d{4}[ ]{0,2}(?:\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?)?)?(?:(?:\d{0,3},?){0,3}[ ]{0,2}ครั้ง)?(?:[ ]{0,2}-\d{1,2}(?:\.|:)?\d{2}[ ]{0,2}(?:น\.)?)?(?:เวลา[ ]{0,2}\d{1,2}:\d{2}:\d{2})?(?:[ ]{0,2}(?:ถึง|จนถึง))?)(?:,[ ]{0,2})?(?:[ ]{0,2}(?:[pPaA][mM])?)?|(?:(?:[ ]{0,2}(?:\d{4}|\d{2})-\d{1,2}-(?:\d{4}|\d{1,2}))(?:[ ]{0,2},[ ]{0,2})?(?:\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:#\d*)?(?:น\.)?)?(?:[ ]{0,2}\d{1,2}:\d{2}:\d{2})?)|(?:(?:เปิดบริการ[ ]{0,2})?(?:เวลา[ ]{0,2}\d{1,2}:\d{2}-\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?))|(?:(?:Time[ ]Online[ ]:[ ]{0,2})?(?:\d{1,2}:\d{2}:\d{2})(?:[ ]{0,2}น\.)?(?:[ ]{0,2}[pPaA][mM])?)|(?:\(\d{1,2}:\d{2}[ ]{0,2}-[ ]{0,2}\d{1,2}:\d{2}(?:[ ]*น\.)?(?:[ ]{0,2}[pPaA][mM])?\))|(?:นี้[ ]{0,2}เวลา[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:น\.)?)|(?:\d{1,2}[ ]{0,2}(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม))'
+date1_pattern = "(?:(?:การปรับปรุงปัจจุบัน|ตั้งแต่|ลงประกาศเมื่อ|อัพเดทล่าสุด|แก้ไขครั้งสุดท้าย|แก้ไขครั้งล่าสุด|เผยแพร่เมื่อ|เผยแพร่|เขียนเมื่อ|ตอบเมื่อ|เมื่อ|เขียนวันที่|วันที่|วัน)?(?:[ ]{0,2}:[ ]{0,2})?(?:จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัสฯ?\.?|ศุกร์|เสาร์|อาทิตย์|จ\.|อ\.|พ\.|พฤ\.|ศ\.|ส\.|อา\.?)?(?:[ ]{0,2}ที่)?(?:[ ]{0,2}[\w\u0E01-\u0E5B]*[ ]{0,2}(?:,|(?:-|\u2013)))?(?:\d{1,4}[ ]{0,2}-)?[ ]{0,2}\d{0,4}(?:-|[ ]{0,2})(?:เดือน[ ]{0,2})?(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม|ม\.?ค\.?|ก\.?พ\.?|มี\.?ค\.?|เม\.?ย\.?|พ\.?ค\.?|มิ\.?ย\.?|ก\.?ค\.?|ส\.?ค\.?|ก\.?ย\.?|ต\.?ค\.?|พ\.?ย\.?|ธ\.?ค\.?|January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|/)(?:-|[ ]|,]){0,2}(?:[ ]{0,2})?(?:\d{4}|\d{2})?,?(?:(?:[ ]{0,2}\d{4}|\d{2}:\d{2}:\d{2})|(?:[ ]{0,2}\d{1,2}:\d{2}(?::\d{2})?[ ]*(?:(?:(?:p|P|a|A)(?:m|M)))?)|[ ]{0,2}เวลา[ ]{0,2}\d{1,2}:\d{2}:\d{2})?(?:[ ]{0,2}น\.)?(?:[ ]{0,2}:[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}น\.)?(?:[ ]{0,2}เวลา[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}[pPaA][mM][ ]{0,2}(?:PDT)?)?(?:[ ]{0,2}เวลา[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:น\.)?)?(?:[ ]*\d*[ ]{0,9}ผู้ชม[ ]{0,2}\d)?(?:[ ]{0,2}เวลา[ ]{0,2}:[ ]{0,2}\d{1,2}:\d{2}:\d{2}[ ](?:น\.)?)?(?:[ ]{0,2}เข้าชม[ ]{0,2}\d*[ ]{0,8}ครั้ง)?(?:[ ]{0,2}ที่[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}(?:[pPaA][mM])?)?(?:[ ]{0,2}Views:[ ]{0,2}(?:\d{0,3},?){0,3})?(?:[ ]{0,2}\(\d{1,2}:\d{2}[ ](?:น\.)?[ ]{0,2}\)(?:[ ]{0,2}ความคิดเห็น[ ]{0,2}\d)?)?(?:[ ]{0,2}-[ ]{0,2}\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?)?(?:[ ]{0,2}จำนวนเข้าชม:(?:[ ]{0,2}\d{0,9},?)*)?(?:[ ]*พ\.ศ\.[ ]{0,2}\d{4}[ ]{0,2}(?:\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?)?)?(?:(?:\d{0,3},?){0,3}[ ]{0,2}ครั้ง)?(?:[ ]{0,2}-\d{1,2}(?:\.|:)?\d{2}[ ]{0,2}(?:น\.)?)?(?:เวลา[ ]{0,2}\d{1,2}:\d{2}:\d{2})?(?:[ ]{0,2}(?:ถึง|จนถึง))?)(?:,[ ]{0,2})?(?:[ ]{0,2}(?:[pPaA][mM])?)?|(?:(?:[ ]{0,2}(?:\d{4}|\d{2})-\d{1,2}-(?:\d{4}|\d{1,2}))(?:[ ]{0,2},[ ]{0,2})?(?:\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:#\d*)?(?:น\.)?)?(?:[ ]{0,2}\d{1,2}:\d{2}:\d{2})?)|(?:(?:เปิดบริการ[ ]{0,2})?(?:เวลา[ ]{0,2}\d{1,2}:\d{2}-\d{1,2}:\d{2}[ ]{0,2}(?:น\.)?))|(?:(?:Time[ ]Online[ ]:[ ]{0,2})?(?:\d{1,2}:\d{2}:\d{2})(?:[ ]{0,2}น\.)?(?:[ ]{0,2}[pPaA][mM])?)|(?:\(\d{1,2}:\d{2}[ ]{0,2}-[ ]{0,2}\d{1,2}:\d{2}(?:[ ]*น\.)?(?:[ ]{0,2}[pPaA][mM])?\))|(?:นี้[ ]{0,2}เวลา[ ]{0,2}\d{1,2}(?:\.|:)\d{2}[ ]{0,2}(?:น\.)?)|(?:\d{1,2}[ ]{0,2}(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม))"
 date1_re = re.compile(date1_pattern, re.MULTILINE)
-date2_pattern = '[พค]\.?ศ\.?[ ]{0,2}\d{4}|\d{4}[ ]{0,2}เวลา[ ]{0,2}\d{2}:?\.?\d{2}(?:[ ][Pp][Mm])|[พค]\.?ศ\.'
+date2_pattern = "[พค]\.?ศ\.?[ ]{0,2}\d{4}|\d{4}[ ]{0,2}เวลา[ ]{0,2}\d{2}:?\.?\d{2}(?:[ ][Pp][Mm])|[พค]\.?ศ\."
 date2_re = re.compile(date2_pattern, re.MULTILINE)
 
-html_pattern = '<br>?|&nbsp|{\s*document\..*|SELECT.*FROM.*WHERE.*|<a\s*href=.*|<img\s*src=.*'
+html_pattern = (
+    "<br>?|&nbsp|{\s*document\..*|SELECT.*FROM.*WHERE.*|<a\s*href=.*|<img\s*src=.*"
+)
 html_re = re.compile(html_pattern, re.MULTILINE)
 
+hex_pattern = "(?<![A-Za-z0-9\-ก-๙])(?:[0-9A-Fa-f]{2,})(?![0-9A-Za-z\-ก-๙])"
+hex_re = re.compile(hex_pattern, re.MULTILINE)
 
-final1_pattern = '^(?:[฿$]?\d{0,9}\.?,?\d{0,9}-?–?:?/?(?:[ ]{0,2}x[ ]{0,2}\d{0,8})?(?:\\bกม\\b\.?)?(?:\\bน\\b\.?)?(?:ล้าน|แสน|หมื่น|พัน|ร้อย|สิบ|บาท|[ ])?){0,5}'
-final1_re = re.compile(final1_pattern, re.MULTILINE)
+refine1_pattern = "^[ ]?ตอนที่[ ]*\d{0,3}(?:[-–]?\d{0,3})?[ ]{0,2}.{0,100}|^สั่ง.{0,50}บาท|^[ ]?เลขจดแจ้ง[ ]{0,2}.{0,13}|^.{0,100}\.jpg[ ]{0,2}\(.{0,50}|^.{0,20}รายการ|^[ ]?สนใจ[ ]{0,2}.{0,15}โทร[ ]{0,2}.{0,12}|^[ ]?ผู้แสดงความคิดเห็น.{0,60}|^\(.{0,40}[ ]{0,2}\d{0,5}[ ]{0,2}.{0,10}\).{0,200}|^[ ]?ผู้เข้าชมทั้งหมด.{0,30}|^[ ]?ฉบับที่[ ]{0,2}\d{0,7}[^-–]{0,30}-?–?[ ]|^[ ]?โพสต์ที่แชร์โดย.{0,200}|^[ ]?Copyright.{0,200}|กำลังแสดงหน้าที.{0,200}|[ ]{0,2}รีวิว.{0,100}|^[ ]?ข้อที่ \d{0,4}|^เข้าชม/ผู้ติดตาม.{0,13}"
+refine1_re = re.compile(refine1_pattern, re.MULTILINE)
 
-final2_pattern = '^[ ]?ตอนที่[ ]*\d{0,3}(?:[-–]?\d{0,3})?[ ]{0,2}.{0,100}|^สั่ง.{0,50}บาท|^[ ]?เลขจดแจ้ง[ ]{0,2}.{0,13}|^.{0,100}\.jpg[ ]{0,2}\(.{0,50}|^.{0,20}รายการ|^[ ]?สนใจ[ ]{0,2}.{0,15}โทร[ ]{0,2}.{0,12}|^[ ]?ผู้แสดงความคิดเห็น.{0,60}|^\(.{0,40}[ ]{0,2}\d{0,5}[ ]{0,2}.{0,10}\).{0,200}|^[ ]?ผู้เข้าชมทั้งหมด.{0,30}|^[ ]?ฉบับที่[ ]{0,2}\d{0,7}[^-–]{0,30}-?–?[ ]|^[ ]?โพสต์ที่แชร์โดย.{0,200}|^[ ]?Copyright.{0,200}|กำลังแสดงหน้าที.{0,200}|[ ]{0,2}รีวิว.{0,100}|^[ ]?ข้อที่ \d{0,4}|^เข้าชม/ผู้ติดตาม.{0,13}'
-final2_re = re.compile(final2_pattern, re.MULTILINE)
+refine2_pattern = "Submitted[ ]by.{0,100}|^เขียนโดย.{0,100}|^Poste?d?[ ]{0,2}(?:by|on){0,2}.{0,100}|^เมื่อวาน[ ]{0,2}\d.{0,100}|^อาทิตย์นี้[ ]{0,2}\d.{0,100}|^อาทิตย์ที่แล้ว[ ]{0,2}\d.{0,100}|^เดือนนี้[ ]{0,2}\d.{0,100}|^เดือนที่แล้ว[ ]{0,2}\d.{0,100}|^รวมผู้เยี่ยมชม[ ]{0,2}\d.{0,100}|^จำนวนผู้ชมโดยประมาณ[ ]{0,2}\d.{0,100}|^รหัสสินค้า[ ]{0,2}\d.{0,100}|^บาร์โค้ด[ ]{0,2}\d.{0,100}|^[ ]โดย[ ]{0,2}.{0,100}|^เข้าชม[ ]{0,2}\d.{0,100}|^โหวต[ ]{0,2}\d.{0,100}|^มุมมอง[ ]{0,2}\d.{0,100}"
+refine2_re = re.compile(refine2_pattern, re.MULTILINE)
 
-final3_pattern = 'Submitted[ ]by.{0,100}|^เขียนโดย.{0,100}|^Poste?d?[ ]{0,2}(?:by|on){0,2}.{0,100}|^เมื่อวาน[ ]{0,2}\d.{0,100}|^อาทิตย์นี้[ ]{0,2}\d.{0,100}|^อาทิตย์ที่แล้ว[ ]{0,2}\d.{0,100}|^เดือนนี้[ ]{0,2}\d.{0,100}|^เดือนที่แล้ว[ ]{0,2}\d.{0,100}|^รวมผู้เยี่ยมชม[ ]{0,2}\d.{0,100}|^จำนวนผู้ชมโดยประมาณ[ ]{0,2}\d.{0,100}|^รหัสสินค้า[ ]{0,2}\d.{0,100}|^บาร์โค้ด[ ]{0,2}\d.{0,100}|^[ ]โดย[ ]{0,2}.{0,100}|^เข้าชม[ ]{0,2}\d.{0,100}|^โหวต[ ]{0,2}\d.{0,100}|^มุมมอง[ ]{0,2}\d.{0,100}'
-final3_re = re.compile(final3_pattern, re.MULTILINE)
+refine3_pattern = "^[^@\n]{0,30}@\d{0,10}.{0,30}|.{0,100}[-]$|\d*[ ]*x[ ]\d*[^ ][ ]?|^ดูหนัง[ ]?(?:ออนไลน์)?[ ].{0,60}|^คุ้มค่าที่สุดอันดับ[ ]{0,2}\d{0,2}.{0,80}|^เปิด[^\d\n]+.{0,10}"
+refine3_re = re.compile(refine3_pattern, re.MULTILINE)
 
-final4_pattern = '^[^@\n]{0,30}@\d{0,10}.{0,30}|.{0,100}[-]$|\d*[ ]*x[ ]\d*[^ ][ ]?|^ดูหนัง[ ]?(?:ออนไลน์)?[ ].{0,60}|^คุ้มค่าที่สุดอันดับ[ ]{0,2}\d{0,2}.{0,80}|^เปิด[^\d\n]+.{0,10}'
-final4_re = re.compile(final4_pattern, re.MULTILINE)
+refine4_pattern = "^[^\n]{0,50}คลิก\)|[Ff]acebook[ ]{0,2}(?:\d{0,3},?\d{0,3})[ ]{0,2}เข้าชม|^[ ]{0,2}[^ ]{0,20}[ ]{0,2}\d{0,9}[ ]{0,2}ความเห็น|\[url=.{0,100}|^ผู้ชม[ ]{0,2}(?:\d{0,3},?)+|\([ ]?\)"
+refine4_re = re.compile(refine4_pattern, re.MULTILINE)
 
-final5_pattern = '^[^\n]{0,50}คลิก\)|[Ff]acebook[ ]{0,2}(?:\d{0,3},?\d{0,3})[ ]{0,2}เข้าชม|^[ ]{0,2}[^ ]{0,20}[ ]{0,2}\d{0,9}[ ]{0,2}ความเห็น|\[url=.{0,100}|^ผู้ชม[ ]{0,2}(?:\d{0,3},?)+|\([ ]?\)'
-final5_re = re.compile(final5_pattern, re.MULTILINE)
+refine5_pattern = "^[^\d]{0,30}\d{0,10}[ ]{0,2}views.{0,100}|^Prev.{0,100}Next|^สินค้าติดต่อที่.{0,100}|^อ่านต่อคลิก.{0,100}|^สินค้าโปรโมชั่น.{0,200}|^US[ ]?\$\d{0,3},?\d{0,3}.?\d{0,3}.{0,50}"
+refine5_re = re.compile(refine5_pattern, re.MULTILINE)
 
-final6_pattern = '^[^\d]{0,30}\d{0,10}[ ]{0,2}views.{0,100}|^Prev.{0,100}Next|^สินค้าติดต่อที่.{0,100}|^อ่านต่อคลิก.{0,100}|^สินค้าโปรโมชั่น.{0,200}|^US[ ]?\$\d{0,3},?\d{0,3}.?\d{0,3}.{0,50}'
-final6_re = re.compile(final6_pattern, re.MULTILINE)
+refine6_pattern = "^เจ้าหน้าที่ฝ่ายขาย:\n.{0,80}|^(?:\*+[ ]{0,2}[^\*\n]{0,50}[ ]{0,2}\*+)[ ]{0,2}[\+]?(?:(?:\d{0,3},?)+)?|[\*\+]{2,5}|^(?:[^:\n]{0,30}:).{0,200}"
+refine6_re = re.compile(refine6_pattern, re.MULTILINE)
 
-final7_pattern = '^เจ้าหน้าที่ฝ่ายขาย:\n.{0,80}|^(?:\*+[ ]{0,2}[^\*\n]{0,50}[ ]{0,2}\*+)[ ]{0,2}[\+]?(?:(?:\d{0,3},?)+)?|[\*\+]{2,5}|^(?:[^:\n]{0,30}:).{0,100}'
-final7_re = re.compile(final7_pattern, re.MULTILINE)
+refine7_pattern = "\(?อ่าน[ ]{0,2}\d{0,3},?\d{0,3}[ ]{0,2}(?:ครั้ง[ ]{0,2})?\)?|โพสต์[ ].{0,100}|Read[ ]{0,2}\d{0,9}[ ]{0,2}times|[^ \n]{0,20}[ ]{0,2}pantip|^Previous (?:Post|article).{0,150}|^Next (?:Post|article).{0,150}|^ตอบกลับ[ ]{0,2}.{0,200}"
+refine7_re = re.compile(refine7_pattern, re.MULTILINE)
 
-final8_pattern = '\(?อ่าน[ ]{0,2}\d{0,3},?\d{0,3}[ ]{0,2}(?:ครั้ง[ ]{0,2})?\)?|โพสต์[ ].{0,100}|Read[ ]{0,2}\d{0,9}[ ]{0,2}times|[^ \n]{0,20}[ ]{0,2}pantip|^Previous (?:Post|article).{0,150}|^Next (?:Post|article).{0,150}|^ตอบกลับ[ ]{0,2}.{0,200}'
-final8_re = re.compile(final8_pattern, re.MULTILINE)
+refine8_pattern = "^[ ]?(?:[Pp]ostby|[Pp]osted[ ](?:by|on)).*|^[ ]?เข้าชม/ผู้ติดตาม.*|^[ ]?จำนวนผู้ชมโดยประมาณ[ :]?.*|^[ ]?ลงประกาศฟรี[ ].*|^\|[ ]|^[ ]?จาก[ ].*|^[ ]?By.*|^[ ]{0,2}?โดย[ ]{0,2}?.*"
+refine8_re = re.compile(refine8_pattern, re.MULTILINE)
 
-final9_pattern = '^[ ]?(?:[Pp]ostby|[Pp]osted[ ](?:by|on)).*|^[ ]?เข้าชม/ผู้ติดตาม.*|^[ ]?จำนวนผู้ชมโดยประมาณ[ :]?.*|^[ ]?ลงประกาศฟรี[ ].*|^\|[ ]|^[ ]?จาก[ ].*|^[ ]?By.*'
-final9_re = re.compile(final9_pattern, re.MULTILINE)
+refine9_pattern = "^[^\n\.]{0,60}\.{3}$|^[^\n]{0,30}ฉบับที่[ ].*|^Home[ ]/[ ].{100}|^[^\n\|]{0,60}\|.{0,60}"
+refine9_re = re.compile(refine9_pattern, re.MULTILINE)
 
-final10_pattern = '^[^\n\.]{0,60}\.{3}$|^[^\n]{0,30}ฉบับที่[ ].*|^Home[ ]/[ ].{100}|^[^\n\|]{0,60}\|.{0,60}'
-final10_re = re.compile(final10_pattern, re.MULTILINE)
+refine10_pattern = "^[ ]?(?:\)|↑|►|←|«)[ ]?|^[-_]+"
+refine10_re = re.compile(refine10_pattern, re.MULTILINE)
 
-# ---- IP address
-final11_pattern = '\(?(?:\d{0,3}\.)+\d{0,3}\)?|\(?IP[: ](?:\d{0,3}\.)+\d{0,3}\)?'
-final11_re = re.compile(final11_pattern, re.MULTILINE)
+refine11_pattern = "^สถิติ(?:วันนี้|สัปดาห์นี้|เมื่อวาน(?:นี้)?|เดือนนี้)[ ]{0,2}.{0,50}|Online[ ]สถิติ.{0,50}"
+refine11_re = re.compile(refine11_pattern, re.MULTILINE)
 
-final12_pattern = '^[ ]?(?:\)|↑|►|←|«)[ ]?'
-final12_re = re.compile(final12_pattern, re.MULTILINE)
+refine12_pattern = (
+    "^[^\n\(]{0,80}\(รายละเอียด\)[ ]\(แจ้งลิงก์เสีย\)|^ด[\. ][ชญ][\. ].*|\.{5,}"
+)
+refine12_re = re.compile(refine12_pattern, re.MULTILINE)
 
-final13_pattern = '^สถิติ(?:วันนี้|สัปดาห์นี้|เมื่อวาน(?:นี้)?|เดือนนี้)[ ]{0,2}.{0,50}|Online[ ]สถิติ.{0,50}'
-final13_re = re.compile(final13_pattern, re.MULTILINE)
+refine13_pattern = "^[ ]?(?:เรื่องย่อ[ ].{0,100}|คุ้มค่าที่สุดอันดับ.{0,100}|คุ้[ ]่าที่สุดอันดับ.{0,100}|\(?ลงโฆษณาฟรี[ ].{0,200}|\(free[ ]online[ ].{0,100}|\(คลิกเพื่อดูต้นฉบับ\)[ ].{0,100}|แก้ไขครั้งสุดท้ายโดย[ ].{0,100})|^[^\d\n]{0,30}[ ]\d{0,3},?\d{0,3}[ ]ครั้ง.{0,50}"
+refine13_re = re.compile(refine13_pattern, re.MULTILINE)
 
-final14_pattern = '^[^\n\(]{0,80}\(รายละเอียด\)[ ]\(แจ้งลิงก์เสีย\)'
-final14_re = re.compile(final14_pattern, re.MULTILINE)
+refine14_pattern = "^(?:[฿$]?\d{0,9}\.?,?\d{0,9}-?–?:?/?(?:[ ]{0,2}x[ ]{0,2}\d{0,8})?(?:\\bกม\\b\.?)?(?:\\bน\\b\.?)?(?:ล้าน|แสน|หมื่น|พัน|ร้อย|สิบ|บาท|[ ])?){0,5}"
+refine14_re = re.compile(refine14_pattern, re.MULTILINE)
 
-final15_pattern = '^[ ]?(?:เรื่องย่อ[ ].{0,100}|คุ้มค่าที่สุดอันดับ.{0,100}|คุ้[ ]่าที่สุดอันดับ.{0,100}|\(?ลงโฆษณาฟรี[ ].{0,200}|\(free[ ]online[ ].{0,100}|\(คลิกเพื่อดูต้นฉบับ\)[ ].{0,100}|แก้ไขครั้งสุดท้ายโดย[ ].{0,100})|^[^\d\n]{0,30}[ ]\d{0,3},?\d{0,3}[ ]ครั้ง.{0,50}'
-final15_re = re.compile(final15_pattern, re.MULTILINE)
-
-# ---- Hex Characters
-final16_pattern = '(?<![A-Za-z0-9\-ก-๙])(?:[0-9A-Fa-f]{2,})(?![0-9A-Za-z\-ก-๙])'
-final16_re = re.compile(final16_pattern, re.MULTILINE)
-
-#------------------------ 
+# ------------------------
 last_row = last_row_num
 start_row = stnum
-#------------------------
+# ------------------------
 removed_rows = 0
 stream = dataset.skip(start_row)
 current_row = 0
 
-print('Please Wait...\n')
+print("Please Wait...\n")
 
 if otype == 0:
-	fw = open("output.txt","w")
+    fw = open("output.txt", "w")
 else:
-	clrows = []
-	df = pd.DataFrame(clrows)
+    clrows: List[str] = []
+    df = pd.DataFrame(clrows)
 
 
 for i, row in enumerate(stream):
-		
-	rownum = start_row + i
-	if last_row != 0:  # last_row = 0 (read from the start row to end)
-		if rownum > last_row:
-			break
-	# current row
-	current_row = rownum
-	
-	# ---- Progressive monitor and any infomation
-	# Can be adjusted as you want (print at row = 1000,2000,3000,...)
-	if rownum % 1000 == 0 and rownum != 0 and rownum > start_row:
-		print('row=',rownum)
 
-	text = row['text'] 
-	found = False
-	# ---- if you want to monitor row number, remove comment below.
-	#print("i=",rownum)
+    rownum = start_row + i
+    if last_row != 0:  # last_row = 0 (read from the start row to end)
+        if rownum > last_row:
+            break
+    # current row
+    current_row = rownum
 
+    # ---- Progressive monitor and any infomation
+    # Can be adjusted as you want (print at row = 1000,2000,3000,...)
+    if rownum % 1000 == 0 and rownum != 0 and rownum > start_row:
+        print("row=", rownum)
 
-	# ---- Clean too large unused lines 
-	# Limit matches list to 2 items only, enough
-	matches = toolarge_re.findall(text)[:2]
-	# Classify as toolarge row if number of matches >= 2
-	if len(matches) >= 2:
-		removed_rows += 1
-		found = True
-		continue
+    text = row["text"]
+    # ---- if you want to monitor row number, remove comment below.
+    # print("i=",rownum)
 
-	# ---- Clean none characters row
-	# Limit matches list to 30 items 
-	matches = nonechar_re.findall(text)[:30]
-	# Classify as none character row if number of matches >= 30
-	if len(matches) >= 30:
-		removed_rows += 1
-		found = True
-		continue
-		
-	# ---- Clean none tone mark row
-	# Limit matches list to 30 items 
-	matches = none_tone_mark_re.findall(text)[:30]
-	# Classify as none tone mark row if number of matches >= 30
-	if len(matches) >= 30:
-		removed_rows += 1
-		found = True
-		continue
+    # ---- Clean too large unused lines
+    # Limit matches list to 2 items only, enough
+    matches = toolarge_re.findall(text)[:2]
+    # Classify as toolarge row if number of 2 matches
+    if len(matches) == 2:
+        removed_rows += 1
+        continue
 
-	# ---- Clean Gamble ~ 9.2% of mC4 data
-	# if found gamble word 2 times in a row, classify as gamble row 
-	# remove the row
+    # ---- Clean none characters row
+    # Limit matches list to 25 items
+    matches = nonechar_re.findall(text)[:25]
+    # Classify as none character row if number of 25 matches
+    if len(matches) == 25:
+        removed_rows += 1
+        continue
 
-	# Limit matches list to 2 items only, enough
-	matches = gamble_re.findall(text)[:2]
-	# Classify as gamble if number of matches >= 2
-	if len(matches) >= 2:
-		removed_rows += 1
-		found = True
-		continue
+    # ---- Clean none tone mark row
+    # Limit matches list to 25 items
+    matches = none_tone_mark_re.findall(text)[:25]
+    # Classify as none tone mark row if number of matches = 5
+    if len(matches) == 25:
+        removed_rows += 1
+        continue
 
-	# ---- Clean Football data 
-	# if found gamble word 4 times in a row, classify as football data
-	# remove the row
+    # ---- Clean Gamble ~ 9.2% of mC4 data
+    # if found gamble word 2 times in a row, classify as gamble row
+    # remove the row
+    # Limit matches list to 2 items only, enough
+    matches = gamble_re.findall(text)[:2]
+    # Classify as gamble if number of 2 matches
+    if len(matches) == 2:
+        removed_rows += 1
+        continue
 
-	# Limit matches list to 4 items only
-	matches = football_re.findall(text)[:4]
-	if len(matches) >= 4:
-		removed_rows += 1
-		found = True
-		continue
+    # ---- Clean Football data
+    # if found gamble word 4 times in a row, classify as football data
+    # remove the row
+    # Limit matches list to 4 items only
+    matches = football_re.findall(text)[:4]
+    if len(matches) == 4:
+        removed_rows += 1
+        continue
 
-	# ---- Clean Hotel Advertising
-	# if found word 4 times in a row, classify as Hotel Ad. data
-	# remove the row
+    # ---- Clean Hotel Advertising
+    # if found word 4 times in a row, classify as Hotel Ad. data
+    # remove the row
+    # Limit matches list to 4 items only, enough
+    matches = hotel_ad_re.findall(text)[:4]
+    if len(matches) == 4:
+        removed_rows += 1
+        continue
 
-	# Limit matches list to 4 items only, enough
-	matches = hotel_ad_re.findall(text)[:4]
-	if len(matches) >= 4:
-		removed_rows += 1
-		found = True
-		continue
-	
-	# ----  Clean Sale ~26% of mC4 data
-	# Sale row data is diverse, 
-	# so the regex is not used in this case.
-	# Rules:
-	# 1. Remove row if it contains common specific Sale's URL
-	# 2. Skip this row if it contains specific keywords, eg. "สอบราคา", "จัดซื้อจัดจ้าง, etc."
-	# 3. Scan the row with sale keywords, if there are at leat 3 sale kewords found then remove the row.
-	
-	# url
-	for w in sale_url_words:
-		ix = text.find(w)
-		if ix != -1:
-			removed_rows += 1
-			found = True
-			break
-	if found:
-		continue # next row
-	
-	# skip specific sale data (not clean out)
-	skip = False
-	for w in sale_skip_words:
-		ix = text.find(w)
-		if ix != -1:
-			skip = True
-			break
+    # ----  Clean Sale ~26% of mC4 data
+    # Sale row data is diverse,
+    # so the regex is not used in this case.
+    # Rules:
+    # 1. Remove row if it contains common specific Sale's URL
+    # 2. Skip this row if it contains specific keywords, eg. "สอบราคา", "จัดซื้อจัดจ้าง, etc."
+    # 3. Scan the row with sale keywords, if there are at leat 3 sale kewords found then remove the row.
 
-	if not skip:
-		# Classify as Sale data ( matches >= 3, can be adjusted)
-		matches = sale_re.findall(text)[:3]
-		if len(matches) >= 3:
-			removed_rows += 1
-			found = True
-			continue
+    if sale_url_re.search(text):
+        removed_rows += 1
+        continue
 
-	
-	# ---- Clean Rent (พวกเช่า ~2% of mC4 data)
-	# Rent use another rules
-	# 1. find skip words in the row. If found, get next row (not remove)
-	# 2. if found rent word 2 times in a row, classify as rent row 
-	#    remove the row
+    if not sale_skip_re.search(text):
+        # Classify as Sale data ( 3 matches, can be adjusted)
+        matches = sale_re.findall(text)[:3]
+        if len(matches) == 3:
+            removed_rows += 1
+            continue
 
-	# skip 
-	for w in skip_words:
-		ix = text.find(w)
-		if ix != -1:
-			found = True
-			break
-	if found:
-		continue # not count but skip to next row
+    # ---- Clean Rent (พวกเช่า ~2% of mC4 data)
+    # Rent use another rules
+    # 1. find skip words in the row. If found, get next row (not remove)
+    # 2. if found rent word 2 times in a row, classify as rent row
+    #    remove the row
 
+    if not rent_skip_re.search(text):
+        # Limit matches list to 2 items only, enough
+        matches = rent_re.findall(text)[:2]
+        if len(matches) == 2:
+            removed_rows += 1
+            continue
 
-	# Limit matches list to 2 items only, enough
-	matches = rent_re.findall(text)[:2]
-	# Classify as rent if number of matches >= 2
-	if len(matches) >= 2:
-		removed_rows += 1
-		found = True
-		continue
+    # ---- Clean pattern (json like -> "abc": ~.5-1% )
+    # 99% can classify as gabage: so remove them
+    # match n items to make sure they are garbages n=20, can change
+    matches = json_re.findall(text)[:20]
+    # if match only 20+, classify as garbage
+    if len(matches) == 20:
+        removed_rows += 1
+        continue
 
-		
-	# ---- Clean pattern (json like -> "abc": ~.5-1% )
-	# 99% can classify as gabage: so remove them
+    # ---- Clean script (Javascript, etc. ~.5% )
+    # 99% can classify as gabage: so remove them
+    # Classify as script if number of matches = 10
+    matches = script_re.findall(text)[:10]
+    if len(matches) == 10:
+        removed_rows += 1
+        continue
 
-	# match n items to make sure they are garbages n=20, can change
-	matches = json_re.findall(text)[:20]
-	# if match only 20+, classify as garbage
-	if len(matches) >= 20:
-		removed_rows += 1
-		found = True
-		continue
+    # ---- Clean garbage (useless or not necessary ~.45%)
+    # Classify as garbage if number of matches = 4
+    matches = garbage_re.findall(text)[:4]
+    if len(matches) == 4:
+        removed_rows += 1
+        continue
 
+    # ---- Clean ghost language (~0.008% can cancel this clean)
+    # Classify as ghost if number of matches = 4
+    matches = ghost_re.findall(text)[:4]
+    if len(matches) == 4:
+        removed_rows += 1
+        continue
 
-	# ---- Clean script (Javascript, etc. ~.5% )
-	# 99% can classify as gabage: so remove them
-	matches = script_re.findall(text)[:10]
-	# Classify as script if number of matches > 10
-	if len(matches) >= 10:
-		removed_rows += 1
-		found = True
-		continue
+    # ---------------------------------------------------------------
+    # The row that falls down here is
+    # the row that passed all romove filters.
+    # Now, we will scan and REPLACE unwanted characters and patterns
+    # with ' ' (blank)
+    # ---------------------------------------------------------------
 
-
-	# ---- Clean garbage (useless or not necessary ~.45%)
-	# classify as gabage: so remove them
-	matches = garbage_re.findall(text)[:4]
-	# Classify as garbage if number of matches >= 4
-	if len(matches) >= 4:
-		removed_rows += 1
-		found = True
-		continue
-
-
-	# ---- Clean ghost language (~0.008% can cancel this clean) 
-	# classify as ghost : so remove them
-	matches = ghost_re.findall(text)[:4]
-	# Classify as ghost if number of matches >= 4
-	if len(matches) >= 4:
-		removed_rows += 1
-		found = True
-		continue
-
-
-# --------------------------------------------------------------- 
-# The row that falls down here is 
-# the row that passed all romove filters.
-# Now, we will scan and REPLACE unwanted characters and patterns
-# with ' ' (blank)  
-# --------------------------------------------------------------- 
-
-# -- พวก URL
-	"""
+    # -- พวก URL
+    """
 text = '''http://www.dobrolubie.ru/forum/index.php?showuser=59153
 http://www.uzsat.net/index.php?showuser=22989  ตัวหนังสือแทรก
 http://www.prevedrussia.ru/projectrussiaclub/forum/index.php?showuser=17747
@@ -473,11 +642,10 @@ alibaba.com  shopee.co.th   look.mp4  data.pdf
 ห้อง.เดี่ยว  ปลาทอง.jp
 '''
 	"""
-	text = url_re.sub(' ',text)
+    text = url_re.sub(" ", text)
 
-
-# -- พวก Menu pattern '|' (1)
-	"""
+    # -- พวก Menu pattern '|' (1)
+    """
 text = '''| 18/05/61 | เปิดดู 2285 | หมวด คอนโดมิเนียม | กรุงเทพมหานคร | ดูแผนที่
 | 18/05/61 | เปิดดู 3125 | หมวด คอนโดมิเนียม | กรุงเทพมหานคร | ดูแผนที่
 | 18/05/61 | เปิดดู 1974 | หมวด คอนโดมิเนียม | ชลบุรี | ดูแผนที่
@@ -488,21 +656,19 @@ text = '''| 18/05/61 | เปิดดู 2285 | หมวด คอนโดม
 ข้อความทดสอบ|ab/d|de fg
      เริ่มข้อความ |20/05/62| 22/05/63 | สิ้นสุดข้อความ'''
 	"""
-	text = menu1_re.sub(' ',text)
+    text = menu1_re.sub(" ", text)
 
-
-# -- พวก Menu pattern '|' อีกแบบ (2)
-	"""
+    # -- พวก Menu pattern '|' อีกแบบ (2)
+    """
 text = '''อาไวเกมส์เยือนแพ้รวด ทีเด็ดบอลวางฟลูมิเนนเซเบาๆ
       |23 ก.ย 2562| 22 ก.ย 2562| 21 ก.ย 2562| 20 ก.ย 2562| 19 ก.ย 2562| 18 ก.ย 2562| 17 ก.ย 2562| 16 ก.ย 2562| 15 ก.ย 2562| 14 ก.ย 2562| 13 ก.ย 2562| 12 ก.ย 2562| 11 ก.ย 2562| 10 ก.ย 2562| 9 ก.ย 2562| 8 ก.ย 2562| 7 ก.ย 2562| 6 ก.ย 2562| 5 ก.ย 2562| 4 ก.ย 2562| 3 ก.ย 2562|
 
 |abcde|ddffadf kkljlj| abcdef '''
 	"""
-	text = menu2_re.sub(' ',text)
+    text = menu2_re.sub(" ", text)
 
-
-# -- พวก Menu pattern '/' (3)
-	"""
+    # -- พวก Menu pattern '/' (3)
+    """
 text = '''คำค้น หมวดหมู่ ทุกหมวดหมู่ - APPLE - iPhone X - iPhone 8 Plus / 7 Plus - iPhone 8 / 7 - iPhone 6 Plus / 6S Plus - iPhone 6 / 6S - iPhone 5 / 5S / SE- SAMSUNG - Galaxy Note FE / Note 7 - Galaxy J7+ - Galaxy Note 8 - Galaxy J7 PRO (2017) / J730 - Galaxy J5 PRO (2017) / J530 - Galaxy S8 Plus - Galaxy S8 - Galaxy A7 (2017) - Galaxy A5 (2017) - Galaxy A3 (2017) - Galaxy J5 Prime - Galaxy J7 Prime - Galaxy S7 Edge - Galaxy S7 - Galaxy Note 5 - Galaxy S6 Edge - Galaxy S6- HUAWEI - Mate 10 PRO - Mate 10 - Nova 2i - P10 Plus - P10 - Mate 9 PRO - Mate 9 - GR5 2017 / Honor 6X - P9 Plus - P9 - P9 Lite - Mate 8 - Nova Plus - Y6II - Y5II - P8 - P8 Lite - Mate 7 - MediaPad M3 8.4 - MediaPad M2 10.0 - MediaPad M2 8.0- LG - G6- GOOGLE - Pixel 2 XL - Pixel 2- ONEPLUS (1+) - 1+5 - 1+3 / 3T- XIAOMI - Mi Max 2 - Mi 6 - Mi 5S Plu
 เพื่อทดสอบ
 
@@ -510,24 +676,22 @@ text = '''คำค้น หมวดหมู่ ทุกหมวดหม�
 
 (1) 400 กรัม/น้ำหนึ่งลิตร  (2) 300 กม./ชม.  (3) 50บาท/กก.  (4) อัตราส่วน 3/8  <- ต้องมี 4 ชุดขึ้นไปใน 1 line ถึงจะนับว่าเป็นเมนู'''
 	"""
-	text = menu3_re.sub(' ',text)
+    text = menu3_re.sub(" ", text)
 
-
-# -- พวก Menu pattern '>','»','\' -  (4)
-	"""
+    # -- พวก Menu pattern '>','»','\' -  (4)
+    """
 text = '''บ้าน > ผลิตภัณฑ์ > ผงเคลือบ Ral9006 
 --- เริ่ม 
  บ้าน > ฟิมล์ > กล้อง > เลนส์
  หลังห้องดอทคอม » เคล็ดลับสู่ความสำเร็จ » 5 วิธีเสพติดความสำเร็จที่ยิ่งใหญ่
 Home \ อุตสาหกรรม \ โรงงานผลิตเคมีภัณฑ์ \ บริษัท ยูไนเต็ด ซิลิกา (สยาม) จำกัด
---- สิ้นสุด่
+--- สิ้นสุด
 '''
 	"""
-	text = menu4_re.sub(' ',text)
+    text = menu4_re.sub(" ", text)
 
-
-# -- พวก Hashtag
-	"""
+    # -- พวก Hashtag
+    """
 text = '''เมกเกอร์หญิงรุ่นเล็กขอแสดงฝีมือ        3,947 views     More +#จัดปาร์ตี้สละโสด #แต่งงาน #มาร์กี้ #ดาราแต่งงาน #นางเอง #มาร์กี้แต่งงาน #ว่าที่สะไภ้หมื่นล้าน #มิ้นคิมร่วมปาร์ตี้ #ราศี
 #มาร์กี้แต่งงาน #ดาราแต่งงาน #มาร์กี้ #แต่งงาน #ฉลองวันครบรอบ 
 หลังจากที่ประกาศแต่งงานว่าจะแต่งกันในช่วงปลายปี ในเดือนธันวาคมที่จะถึงนี้ ซึ้งทั้งคู่มีเวลาเปลี่ยมตัวและเตรียมการ ไม่มากนัก
@@ -551,80 +715,91 @@ Tag: แยกสุขุมวิท
 Tagged ฝรั่งเศส,เก้าอี้,Elementcommun
 '''
 	"""
-	text = hashtag_re.sub(' ',text)
+    text = hashtag_re.sub(" ", text)
 
-
-# -- พวก Pagination
-	"""
+    # -- พวก Pagination
+    """
 พบ 1,023 ตำแหน่ง << 1 - 20 21 - 40 41 - 60 61 - 80 81 - 100 101 - 120 121 - 140 141 - 160 161 - 180 181 - 200 201 - 220 221 - 240 241 - 260 261 - 280 281 - 300 301 - 320 321 - 340 341 - 360 361 - 380 381 - 400 401 - 420 421 - 440 441 - 460 461 - 480 481 - 500 501 - 520 521 - 540 541 - 560 561 - 580 581 - 600 601 - 620 621 - 640 641 - 660 661 - 680 681 - 700 701 - 720 721 - 740 741 - 760 761 - 780 781 - 800 801 - 820 821 - 840 841 - 860 861 - 880 881 - 900 901 - 920 921 - 940 941 - 960 961 - 980 981 - 1000 100 
 งานสิทธิบัตรและประกันสังคม
 ข่าวประกวดราคาจัดซื้อ/จัดจ้างทั้งหมด 921 รายการ : 47 หน้า : << ย้อนกลับ [ 1 ][ 2 ][ 3 ][ 4 ][ 5 ][ 6 ][ 7 ][ 8 ][ 9 ][ 10 ][ 11 ] 12 [ 13 ][ 14 ][ 15 ][ 16 ][ 17 ][ 18 ][ 19 ][ 20 ][ 21 ][ 22 ][ 23 ][ 24 ][ 25 ][ 26 ][ 27 ][ 28 ][ 29 ][ 30 ][ 31 ][ 32 ][ 33 ][ 34 ][ 35 ][ 36 ][ 37 ][ 38 ][ 39 ][ 40 ][ 41 ][ 42 ][ 43 ][ 44 ][ 45 ][ 46 ][ 47 ] หน้าถัดไป>>
 text= '''<< ก่อนหน้า 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 1147 1148 1149 1150 1151 1152 1153 1154 1155 1156 1157 1158 1159 1160 1161 1162 1163 1164 1165 1166 1167 1168 1169 1170 1171 1172 1173 1174 1175 1176 1177 1178 1179 1180 ถัดไป>>วันที่ 18 กรกฎาคม 2562 ชม 99564 ครั้ง'''
 text = '''ก่อนหน้า 1 2 3 4 [5] 6 7 8 9 10 11 12 ต่อไป<U+FEFF><U+FEFF> โครงการบ้านศรุตาปา	"""
-	text = page_re.sub(' ',text)
+    text = page_re.sub(" ", text)
 
-
-# -- พวก Pattern หมวดหมู่ (เช่นพวก sidebar ของ Wordpress)
-	"""
+    # -- พวก Pattern หมวดหมู่ (เช่นพวก sidebar ของ Wordpress)
+    """
 text = '''วันเกิด: dolceCliny (31), okzizNeeby (42), GlaydsiMop (30), biolaBapsSaups (32), tertuSer (41), KlemenVap (33), Michaelerymn (30), DouglasZek (33), matbewotly (32), entnived (40), maslinAL (29), sivatVAL (29), alminTIM (28), sumPAVV (29), iganYUR (29), dejinHycle (37), ssurvgoabbedia (32), laveyKnino (32), Robertorifs (42), nisDENN (29), Bradleyfluow (41), MorganTox (33), dismIVAN (29), semNIKK (29), gisVALL (29), LarryNat (38), felmetix (39)
 วันเกิด: DanielLam (40), sunliPhank (32), rioriJiP (35), Miguelnom (31), nikitendug (34), matmureend (42), FrancuaCiz (42), DavidordEd (33), countoxync (32), RigelTal (40), ThomasVed (38), spinpVaf (39), EtelJoips (33), TerryPrupt (41), Edahagind (33), Aroztum (42), remtekes (40), GeorgeDit (31), WileyDup (33), ForeSuich (32), Berkezes (43), Angersuity (30), Mylorek (36), ShawnToF (39), Larryceafe (37), RezanNus (39), rencoloasy (40), lamodBip (35), talogrob (33), EugeneWen (38), Igorjus (43), Michaelimicy (37)  kljlj;jljljljk (25),kjkljlj(37) lsjfljljljl'''
 text = '''สินค้าทั้งหมด [194]
 ลำโพง/Speaker [173]ลำโพง Audioengine [11]ลำโพง Audioengine A2+ Powered Speaker [4]ลำโพง Audioengine B2 Bluetooth Speaker [3]ลำโพง Audioengine A5+ Powered Speaker [4]ลำโพง B&O Bang & Olufsen [3]ลำโพงพกพา B&O BeoPlay A2 [3]ลำโพง Creative [2]ลำโพง Creative SoundBlaster Roar [1]ลำโพง SOUND BLASTER ROAR PRO [1]ลำโพงพกพา Dreamwave [2]Dreamwave TREMOR [1]ลำโพง Dreamwave Explorer [1]ลำโพงพกพา Divoom [2]ลำโพง Divoom Onbeat 500 Gen2 [2]ลำโพง Dope [2]ลำโพงพกพา Dope Duo link [1]ลำโพง Dope Billionaire [1]ลำโพง EDIFIER [10]ลำโพง Edifier R1700BT [1] abcdefg hijklmnopq$
 '''
 	"""
-	text = sidebar_re.sub(' ',text)
+    text = sidebar_re.sub(" ", text)
 
-
-# -- พวก Markup Language (Django,Jinja2,Liquid template, etc.)
-	"""
+    # -- พวก Markup Language (Django,Jinja2,Liquid template, etc.)
+    """
 text = '''{{ kv.owner.preferred_name | truncate:25 }}{{ kv.owner.fullname | truncate:40 }} ผู้ติดตาม: {{ kv.owner.follower_count | number }} ติดตาม: {{ kv.owner.followee_count | number }} ติดต่อ ติดตาม เลิกติดตาม {{ kv.owner.preferred_name | truncate:25 }}{{ kv.owner.fullname | truncate:40 }}
 เห็นชื่ออีเมลส่งอีเมลแจ้งด้วยเมื่อรายการนี้มีความเห็นเพิ่มเติม ใส่รูปหรือไฟล์คลิกใส่รูปหรือไฟล์ใหม่คลิกเพื่อใส่ไฟล์ที่มีอยู่แล้ว {{ file.asset_file_name โบนัสฟรี 500 _เล่นพนัน ภาษาอังกฤษ_เว็บบอลแจกเครดิตฟรี
 Toronto, ON M3B2X5
 #B107 -1396 DON MILLS RD , Toronto, ON M3B2X5
 To: #B107 -1396 Don Mills Rd, Toronto, ON'''
 	"""
-	text = markup_re.sub(' ',text)
+    text = markup_re.sub(" ", text)
 
+    # -- พวก Embedded Server-side code ( like Node.js, Express.js, etc.)
+    """
+text = '''<% if ( total_view > 0 ) { %> <%= total_view > 1 ? "total views" : "total view" %> <% if ( today_view > 0 ) { %> <%= today_view > 1 ? "views today" : "view today" %> no views today       No views yet <% uncompleted format'''
+	"""
+    text = embedded_server_re.sub(" ", text)
 
-# -- พวก Embedded Javascript ( like Node.js, Express.js, etc.)
+    # -- พวก <U+....>
+    """
+text = '''ต่อไป<U+FEFF><U+FEFF> โครงการบ้านศรุตาปา
+โตเกียวเป็นเมืองหลวงที่ทันสมัย<U+200B><U+200B>และเต็มไปด้วยแสงสี และมีสถานที่ท่องเที่ยวที่น่าสนใจหลายแห่ง ส่วนที่ไหนที่ควรจัดอยู่ในโปรแกรมเที่ยวญี่ปุ่นครับ ในระยะยาวกับผู้ป่วยที่มีจุดกลางรับภาพจอประสาทตาบวม
+<U+200B> Dr Hykin กล่าวเสริมว่าอย่างไรก็ดีเขาเชื่อว่าการใช้เลเซอร์รักษายังมีบทบาทสำคัญในการรักษาผู้ป่วยที่มีจุดกลางรับภาพจอประสาทตาบวมจากเบาหวาน(DME) ล่นแล้วอาจจะติดใจก็ได้ เอาล่ะงั้นเราจะเสียเวลากันทำไมเลือกเล่นแบบโต๊ะใหญ่แล้วต่อด้วยสนุ๊กระเบิดกันเลยดีกว่า
+ยะลา<U+200B>-ซาไกเข้าเมืองขอเมล็ดพันธุ์พืชทางการเกษตรไปปลูก (ชมคลิป) - หนังสือพิมพ์ ดี ดี โพสต์นิวส์
+ยะลา<U+200B>-ซาไกเข้าเมืองขอเมล็ดพันธุ์พืชทางการเกษตรไปปลูก (ชมคลิป)
+ข่าว ศน.สพม.8<U+200E> > <U+200E>
+นักเรียนแชมป์โลกโครงงานวิทยาศาสตร์'''
 	"""
-text = '''<% if ( total_view > 0 ) { %> <%= total_view > 1 ? "total views" : "total view" %>, <% if ( today_view > 0 ) { %> <%= today_view > 1 ? "views today" : "view today" %> no views today       No views yet <% uncompleted format'''
-	"""
-	text = embeded_java_re.sub(' ',text)
+    text = u_re.sub(" ", text)
 
-
-# -- พวก <U+....>
-	"""
-text = '''ต่อไป<U+FEFF><U+FEFF> โครงการบ้านศรุตาปา'''
-	"""
-	text = u_re.sub(' ',text)
-
-# -- พวก iframe
-	"""
+    # -- พวก iframe
+    """
 text = '''<iframe src='https://vod.thaipbs.or.th/videos/Qnm8mDJnNHJf/embedded?title=%E0%B8%97%E0%B8%B1%E0%B9%88%E0%B8%A7%E0%B8%96%E0%B8%B4%E0%B9%88%E0%B8%99%E0%B9%81%E0%B8%94%E0%B8%99%E0%B9%84%E0%B8%97%E0%B8%A2+-+%E0%B8%AD%E0%B8%B4%E0%B9%88%E0%B8%A1%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%9A%E0%B9%89%E0%B8%B2%E0%B8%99%E0%B8%9A%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%9A%E0%B9%89%E0%B8%B2+%E0%B8%AB%E0%B8%B8%E0%B8%9A%E0%B9%80%E0%B8%82%E0%B8%B2%E0%B8%A5%E0%B9%89%E0%B8%AD%E0%B8%A1%E0%B8%97%E0%B8%B0%E0%B9%80%E0%B8%A5+%E0%B8%88.%E0%B8%95%E0%B8%A3%E0%B8%B2%E0%B8%94&image=https%3A%2F%2Fthaipbs-program.s3-ap-southeast-1.amazonaws.com%2Fcontent%2Fimages%2Fepisode%2F1%2FF1%2F2F%2F1F12F0bpOUtP-large.jpg&tags=%7B%22video_category%22%3A%22show%22%2C%22program%22%3A%22tuathin%22%2C%22category%22%3A%22lifestyle%22%7D' border='0' width='640px;' height='360px;' allowfullscreen allow='autoplay; fullscreen' class='watch-embedded-player'></iframe> มีข้อความต่อเนื่อง  ที่มีประโยชน์   <iframe kljlj </iframe>       นี่ก็อีกข้อความหนึ่งที่มีประโยชน์ เช่นกัน    <iframe abcdef ghijk</iframe>klkjkljklj    <iframe hello world   </iframe>  มีข้อมูลต่อ  <iframe width="560" height="315" src=" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen allowtransparency><  เจาะลึกโทรศัพท์มือถือสำหรับเล่นเกม (Gaming Mobile) ที่มาพร้อมสเปกแรงจัดเต็ม โดยความเป็นจริงแล้วแตกต่   <iframe      
 เจาะลึกโทรศัพท์มือถือสำหรับเล่นเกม (Gaming Mobile) ที่มาพร้อมสเปกแรงจัดเต็ม โดยความเป็นจริงแล้วแตกต่    <iframe อากาศร้อนมาก </iframe>  ดื่มน้ำมากๆนะ
 '''
 	"""
-	text = iframe_re.sub(' ',text)
+    text = iframe_re.sub(" ", text)
 
-# -- พวก [...] , <<...>> และ «...»
-	"""
+    # -- พวก [...] , <<...>> และ «...»
+    """
 text = 'สวัสดีครับ [abcdefghi] วันนี้อากาศร้อน [asdfgsgsdg] ระวังโรคลมแดด [abcdefg][...]« ตอบ ข้อความที่อยู่ระหว่าง » เดี๋ยวไม่สบาย << ก็มันร้อนจริงๆ  >>'
 	"""
-	text = block_re.sub(' ',text)
+    text = block_re.sub(" ", text)
 
-	# -- พวก Email
-	"""
+    # -- พวก Email
+    """
 text = '''Email : r_faisu@hotmail.comเครื่องบดสมุนไพร เพื่อทำยาป้องกันโรคต่างๆ - เครื่องบดยาสมุนไพร คุณภาพเยี่ยมราคาถูก ได้มาตรฐานระดับสากล ISO จัดส่งฟรีทั่วประเทศ : Inspired by LnwShop.com
 เครื่องบดสมุนไพร เพื่อทำยาป้อง…
-มาที่อีเมล์ zonedara@gmail.com ข่าวข
+มาที่อีเมล์ zonedara@gmail.com เพื่อเรื่องราวที่น่าสนใจ
 mail : nongluck_joy@hotmail.com  email i17bkk@gmail.com  ok ใช้ได้ดี'''
 	"""
-	text = email_re.sub(' ',text)
+    text = email_re.sub(" ", text)
 
-
-#--- Tel
+    # -- IP
+    """
+text = '''By dallas zip code (210.1.31.28) on 14:15
+ตอบข้อ 3 bill (IP:125.27.82.213) ความเห็นเพิ่มเติมที่ 148 (20:05) พี่ค่ะข้อสอบของป.5จริงๆใช่ไหนค่ะหนูอยู่ป.5หนูยังจะหงายเลยค่ะ (IP:111.84.78.112) ความเห็นเพิ่มเติมที่ 149 (15:50) ยากว่ะทําไม่ได้ยากๆ Quote Reply Posted at 14:49 - IP: 203.209.101.161
+ดีมาก ดี พอใช้ ควรปรับปรุง แย่มากๆ    ออนไลน์ทั้งหมด 3 คน หมายเลข IP 54.147.241.117
+IP: 183.89.11.XX
+IP: XXX.XX.X.XX
+'''
 	"""
+    text = ip_re.sub(" ", text)
+
+    # --- Tel
+    """
 text = '''
 เบอร์โทรศัพท์ : 063-9547533
 เบอร์โทรศัพท์ : 063-9547533  สำนักงาน เบอร์โทรศัพท์ : 063-9547533  Fax : 063-9998888
@@ -632,8 +807,8 @@ text = '''
 TEL : 0832-741706              4500   9,000 บาท
 โทร: 045-612-611
 Fax: 045-613-088
-โทรสาร : 0-2370-2700         089623333  ประเทศไทย  0123456789
-เบอร์ติดต่อ 02 185 2865
+โทรสาร : 0-2370-2700         089623333 <- ไม่ตัดเพราะ 089 ต้องตามด้วยตัวเลข 7 ตัว
+เบอร์ติดต่อ 02 185 2865             0123456789 <- ไม่ใช่เบอร์โทร
 เบอร์ติดต่อ 02-305-6652 , 084-4523432
 โทร. 077 975 522, 098 016 6775
 โทรศัพท์ : 084 469 8604, 091 756 7763
@@ -648,12 +823,16 @@ Fax: 045-613-088
   phone : 02-2581122
 มือถือ: 084-554-4444            เอามือถือ ไปวาง
 ติดต่อ: 02-2605549      เดินทางติดต่อ
+022587799
+032123456
+077123456
+0603442123
 '''
 	"""
-	text = tel_re.sub(' ',text)
+    text = tel_re.sub(" ", text)
 
-# --- พวกวันที่ รูปแบบหลากหลาย
-	"""
+    # --- Date patterns - พวกวันที่ รูปแบบหลากหลาย
+    """
 โดย Teetawat » พุธ 19 มิ.ย. 2019 11:51 am
 โดย Teetawat » พฤหัสฯ. 20 มิ.ย. 2019 3:49 pm
 Saber, 28 กรกฎาคม 2018
@@ -753,12 +932,11 @@ Posted by driftworm , ผู้อ่าน : 1958 , 12:32:29 น.
 วันศุกร์ (เว้นวันพุธ) 9.00 – 16.00น.
 '''
 	"""
-	text = date1_re.sub(' ',text)
-	text = date2_re.sub(' ',text)
+    text = date1_re.sub(" ", text)
+    text = date2_re.sub(" ", text)
 
-
-#— html, script, sql  — try to sweep up leftover again .09% + .04% = 0.13%
-	"""
+    # — html, script, sql  — try to sweep up leftover again .09% + .04% = 0.13%
+    """
 text = '''
 <br
 1.&nbspขนมปังฝรั่งเศสหั่นชิ้น&nbsp100&nbspกรัม
@@ -773,24 +951,31 @@ text = '''
 SELECT `AttachFile`.`id`, `AttachFile`.`lesson_id`, `AttachFile`.`title`, `AttachFile`.`description`, `AttachFile`.`created`, `AttachFile`.`modified` FROM `ln_learnsquare`.`ln_attach_files` AS `AttachFile` WHERE `AttachFile`.`lesson_id` IN (636, 637, 638, 639, 939, 940, 941, 2066, 2067, 2068, 2069, 2404, 2405, 2406, 6119, 6120, 6121) 0 0 0
 '''
 	"""
-	text = html_re.sub(' ',text)
+    text = html_re.sub(" ", text)
 
-
-#--- final refinement (พวกเก็บกวาดสุดท้าย)
-# Methods:
-# 1. replace patterns with blanks.
-# 2. found specific pattern remove that line.
-# Patterns:
-# 1. Start with number and only numbers in the line.
-# 2. Start with words + ' ' + NUMBER.
-# 3. Statistic information and common web/social statistic patterns.
-# 4. Start with single meaning word/words only in a line. 
-# 5. Start with characters + ":" + any/none characters.
-# 6. Start with some common/popular social media keywords.
-# 7. Contains common/pupular keywords
-# 8. Pagination keywords ( not specify in previous filter, can be rewrite and put to pagination filter above. 
-# ... etc.
+    """
+#---- Hex characters
+E0B89F Tesla-E0 B9 89 E0 miniB8 B2 ระบบเครื่องยนต์E0 B9 E0-version
+Angry Bird E0 B9 80 E0 B8 81 E0 B8 A1 E0 B8 AA E0 B9 8C E0 B8 82 E0 B8 B1 E0 B8 9A E0 B8 A3 E0 B8 96 E0 B8 8A E0 B8 99 E0 B8 9C E0 B8 B5 E0 B8 8B E0 B8 AD E0 B8 A1 E0 B8 9A E0 B9 80 E0 B8 81 E0 B8 A1 E0 B8 AA E0 B9 8C E0 B8 97 E0 B8 B3 E0 B9 80 E0 B8 84 E0 B9 89 E0 B8 81 E0 B8 81 E0 B8 A5 E0 B9 89 E0 B8 A7 E0 B8 A2 E0 B8 AB E0 B8 AD% E0 B9 80 E0 B8 81 E0 B8 A1 E0 B9 81 E0 B8 95 E0 B9 88 E0 B8 87 E0 B8 95 E0 B8 B1 E0 B8 A7 E0 B8 99 E0 B8 B2 E0 B8 87 E0 B8 9F E0 B9 89 E0 B8 B2 E0 B9 81 E0 B8 AA E0 B8 99 E0 B8 AA E0 B8 A7 E0 B8 A2 
+(D8d6047fe50d166b3f755429c6d0cfbc รวมผลิตภัณฑ์สำหรับ a Core 8 0 สำหรับ E46)
 	"""
+    text = hex_re.sub(" ", text)
+
+    # --- Refinement (พวกเก็บกวาดสุดท้าย)
+    # Methods:
+    # 1. replace patterns with blanks.
+    # 2. found specific pattern remove that line.
+    # Patterns:
+    # 1. Start with number and only numbers in the line.
+    # 2. Start with words + ' ' + NUMBER.
+    # 3. Statistic information and common web/social statistic patterns.
+    # 4. Start with single meaning word/words only in a line.
+    # 5. Start with characters + ":" + any/none characters.
+    # 6. Start with some common/popular social media keywords.
+    # 7. Contains common/pupular keywords
+    # 8. Pagination keywords ( not specify in previous filter, can be rewrite and put to pagination filter above.
+    # ... etc.
+    """
 text = '''2.00 72.1
 5.00 180.2
 10.00 360.5
@@ -943,8 +1128,6 @@ arexy13 วันที่ : 11 เห็นด้วยกับคำว่า
 เดือนนี้ 5755
 เดือนที่แล้ว 12003
 รวมผู้เยี่ยมชม 660583
-ต้นไทร หญิง อายุ 61 ปี 5 เดือน (52,8 คลิก)
-ต้นไทร หญิง อายุ 61 ปี 5 เดือน 
 จำนวนผู้ชมโดยประมาณ฿ 327.75
 ความคิดเห็น: 3,770
 คะแนนสะสม: 10583 แต้ม
@@ -1013,74 +1196,78 @@ CaseMonster (รายละเอียด) (แจ้งลิงก์เส�
 (คลิกเพื่อดูต้นฉบับ) สงขลาว~2.JPG (32.89 kB, 368x256 - ดู 3271 ครั้ง.)
 แก้ไขครั้งสุดท้ายโดย รถเต่าเมืองแป้ : เมื่อ 13:42
 ได้รับอนุโมทนา 554,750 ครั้ง ใน 7,607 โพสต์
-ลิงเจี๊ยก ก 117.47.15.231
-(IP:111.84.78.112) ความเห็นเพิ่มเติมที่ 149 (15:50) ยากว่ะทําไม่ได้ยากๆ
 '''
 	"""
-	text = final1_re.sub(' ',text)
-	text = final2_re.sub(' ',text)
-	text = final3_re.sub(' ',text)
-	text = final4_re.sub(' ',text)
-	text = final5_re.sub(' ',text)
-	text = final6_re.sub(' ',text)
-	text = final7_re.sub(' ',text)
-	text = final8_re.sub(' ',text)
-	text = final9_re.sub(' ',text)
-	text = final10_re.sub(' ',text)
-	text = final11_re.sub(' ',text)
-	text = final12_re.sub(' ',text)
-	text = final13_re.sub(' ',text)
-	text = final14_re.sub(' ',text)
-	text = final15_re.sub(' ',text)
+    text = refine1_re.sub(" ", text)
+    text = refine2_re.sub(" ", text)
+    text = refine3_re.sub(" ", text)
+    text = refine4_re.sub(" ", text)
+    text = refine5_re.sub(" ", text)
+    text = refine6_re.sub(" ", text)
+    text = refine7_re.sub(" ", text)
+    text = refine8_re.sub(" ", text)
+    text = refine9_re.sub(" ", text)
+    text = refine10_re.sub(" ", text)
+    text = refine11_re.sub(" ", text)
+    text = refine12_re.sub(" ", text)
+    text = refine13_re.sub(" ", text)
+    text = refine14_re.sub(" ", text)
 
-	"""
-#---- Hex characters
-E0B89F Tesla-E0 B9 89 E0 miniB8 B2 ระบบเครื่องยนต์E0 B9 E0-version
-Angry Bird E0 B9 80 E0 B8 81 E0 B8 A1 E0 B8 AA E0 B9 8C E0 B8 82 E0 B8 B1 E0 B8 9A E0 B8 A3 E0 B8 96 E0 B8 8A E0 B8 99 E0 B8 9C E0 B8 B5 E0 B8 8B E0 B8 AD E0 B8 A1 E0 B8 9A E0 B9 80 E0 B8 81 E0 B8 A1 E0 B8 AA E0 B9 8C E0 B8 97 E0 B8 B3 E0 B9 80 E0 B8 84 E0 B9 89 E0 B8 81 E0 B8 81 E0 B8 A5 E0 B9 89 E0 B8 A7 E0 B8 A2 E0 B8 AB E0 B8 AD% E0 B9 80 E0 B8 81 E0 B8 A1 E0 B9 81 E0 B8 95 E0 B9 88 E0 B8 87 E0 B8 95 E0 B8 B1 E0 B8 A7 E0 B8 99 E0 B8 B2 E0 B8 87 E0 B8 9F E0 B9 89 E0 B8 B2 E0 B9 81 E0 B8 AA E0 B8 99 E0 B8 AA E0 B8 A7 E0 B8 A2 
-(D8d6047fe50d166b3f755429c6d0cfbc รวมผลิตภัณฑ์สำหรับ a Core 8 0 สำหรับ E46)
-	"""
-	text = final16_re.sub(' ',text)
+    # Split the text into lines and remove any empty lines
+    lines = [line for line in text.split("\n") if line]
 
-	# Clean short lines
-	# ( len(line) <= 30 characters , cut this line off)
-	lines = text.split("\n")
-	tmptext = ''
-	for line in lines:
-		if len(line) > 30:
-			tmptext += line + '\n' 
+    # Initialize the list with the first line
+    deduplicated_list = [lines[0]]
 
-	text = tmptext
+    # Iterate over the rest of the lines
+    for i in range(1, len(lines)):
+        # Find the common prefix between this line and the previous line
+        common_prefix = ""
+        for char1, char2 in zip(lines[i], lines[i - 1]):
+            if char1 == char2:
+                common_prefix += char1
+            else:
+                break
 
-	# ---- The scan row that passes all filter is written to disk
-	# before write to disk, get rid of spaces by change them to single space (' ').
+        # Remove the common prefix from this line and add it to the list
+        deduplicated_list.append(lines[i][len(common_prefix) :])
 
-	text = re.sub("[' ']+",' ',text, 0, re.MULTILINE)
-	text = re.sub("\n\s*",'\n',text, 0, re.MULTILINE)
+    text = "\n".join(deduplicated_list)
 
-	if otype == 0:
-		fw.write(text)
-	else:
-		row['text'] = text
-		new_df = pd.DataFrame([row])
-		df = pd.concat([df, new_df], ignore_index=True)
+    # Clean short lines
+    # ( len(line) <= 30 characters , cut this line off)
+    text = "\n".join(line for line in text.split("\n") if len(line) > 30)
 
-	
+    # ---- The scan row that passes all filter is written to disk
+    # before write to disk, get rid of spaces by change them to single space (' ').
+
+    text = re.sub("[ ]+", " ", text, 0, re.MULTILINE)
+    text = re.sub("\n\s*", "\n", text, 0, re.MULTILINE)
+
+    if otype == 0:
+        fw.write(text)
+    else:
+        row["text"] = text
+        new_df = pd.DataFrame([row])
+        df = pd.concat([df, new_df], ignore_index=True)
+
+
 total_read_rows = last_row - start_row + 1
 print()
-print('last row=', current_row, ' total read=',total_read_rows) 
-percentrm  = removed_rows / total_read_rows * 100
-percentstr = str(round(percentrm,4))
+print("last row=", current_row, " total read=", total_read_rows)
+percentrm = removed_rows / total_read_rows * 100
+percentstr = str(round(percentrm, 4))
 summarystr = f"total removed row= {removed_rows} / {total_read_rows} ( {percentstr}% )"
 print(summarystr)
 
 if otype == 0:
-	fw.close()
+    fw.close()
 else:
-	dataset = Dataset.from_pandas(df)
-	dataset.save_to_disk('output.d')
+    dataset = Dataset.from_pandas(df)
+    dataset.save_to_disk("output.d")
 
 # time spent
 t1 = datetime.datetime.now()
 tdelta = t1 - t0
-print('Time Spent:',tdelta)
-print('\n')
+print("Time Spent:", tdelta)
+print("\n")
