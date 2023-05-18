@@ -13,8 +13,6 @@ from typing import List, Union
 from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
-    LlamaConfig,
-    LlamaForCausalLM,
 )
 from .constants import (
     DATASET_NAME,
@@ -26,6 +24,9 @@ from .constants import (
 )
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     make_model_gptj,
+)
+from openthaigpt_pretraining_model.models.llama_hf.model import (
+    make_model_llama,
 )
 
 
@@ -94,6 +95,7 @@ class Trainer:
         vocab_size: int = 50400,
         xformers: bool = False,
         checkpoint: bool = False,
+        checkpoint_only_attention: bool = False,
     ):
         self.max_tokens = context_length
         self.step = 0
@@ -106,20 +108,19 @@ class Trainer:
             precision=precision,
         )
         self.fabric.launch()
+
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
-            cfg = LlamaConfig(
+            self.model = make_model_llama(
                 vocab_size=vocab_size,
-                hidden_size=1024,
-                num_hidden_layers=8,
-                num_attention_heads=8,
-                hidden_act="silu",
-                max_position_embeddings=context_length,
+                context_length=context_length,
+                use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
             )
-            self.model = model = LlamaForCausalLM(cfg)
+
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
-            self.model = model = make_model_gptj(
+            self.model = make_model_gptj(
                 vocab_size=vocab_size,
                 context_length=context_length,
                 use_xformers=xformers,
@@ -143,14 +144,14 @@ class Trainer:
         if optimizer == "lion":
             print("Use lion optimizer")
             self.opt = Lion(
-                model.parameters(),
+                self.model.parameters(),
                 lr=lr,
                 weight_decay=weight_decay,
             )
         elif optimizer == "adamw":
             print("Use AdamW optimizer")
             self.opt = optim.AdamW(
-                params=model.parameters(),
+                params=self.model.parameters(),
                 lr=lr,
                 weight_decay=weight_decay,
                 betas=(0.9, 0.95),
@@ -158,7 +159,7 @@ class Trainer:
         else:
             raise NotImplementedError("only support lion or AdamW")
 
-        model, self.opt = self.fabric.setup(model, self.opt)
+        self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 

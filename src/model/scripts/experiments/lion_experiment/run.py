@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_steps", type=int, default=400, help="eval steps")
     parser.add_argument("--warmup_steps", type=int, default=20, help="warmup steps")
     parser.add_argument("--use_flash", default=False, action="store_true")
+    parser.add_argument("--use_rotary", default=False, action="store_true")
     parser.add_argument("--use_checkpointing", default=False, action="store_true")
     parser.add_argument(
         "--model_name",
@@ -62,5 +63,6 @@ if __name__ == "__main__":
         use_flash=args.use_flash,
         use_checkpointing=args.use_checkpointing,
         dtype=args.dtype,
+        use_rotary=args.use_rotary,
     )
     trainer.train()
