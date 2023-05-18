@@ -1,4 +1,5 @@
 # coding: utf-8
+# flake8: noqa
 #
 # Clean Thai langage part of mC4
 # ------------------------------
@@ -25,7 +26,6 @@
 #
 
 
-# flake8: noqa
 from typing import List
 import re
 import datetime
