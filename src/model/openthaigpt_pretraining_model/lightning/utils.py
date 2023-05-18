@@ -30,7 +30,6 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 )
 import wandb
 import os
-from lightning.pytorch.loggers import WandbLogger
 # os.environ["WANDB_API_KEY"] = "<your-api-key>"
 os.environ["WANDB_MODE"] = "offline"
 class DatasetWrapper(IterableDataset):
@@ -105,7 +104,7 @@ class Trainer:
     ):
         if(torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB"):
             torch.set_float32_matmul_precision('medium') # high
-        self.wandb = WandbLogger(project="Fabric")
+        self.wandb = wandb.init(project="Fabric")
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
@@ -192,7 +191,7 @@ class Trainer:
         return loss
 
     def train(self):
-        progress_bar = tqdm(self.dataloader)
+        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
 
         for i, batch in enumerate(progress_bar):
@@ -200,7 +199,8 @@ class Trainer:
             perplexity = compute_perplexity(loss)
             wandb.log({"train_loss": loss.item(), "train_perplexity": perplexity})
 
-            progress_bar.set_description(f"loss: {loss.item():.3f}")
+            if self.fabric.global_rank == 0:
+                progress_bar.set_description(f"loss: {loss.item():.3f}")
             self.fabric.backward(loss)
             if (i + 1) % self.grad == 0:
                 self.opt.step()
