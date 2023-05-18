@@ -28,6 +28,7 @@ from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
 from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama,
 )
+from lightning.fabric.strategies import DeepSpeedStrategy
 
 
 class DatasetWrapper(IterableDataset):
@@ -82,6 +83,9 @@ class Trainer:
         self,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
+        stage: int = 2,
+        offload_optimizer: bool = False,
+        offload_parameters: bool = False,
         devices: Union[List[int], str, int] = "auto",
         precision: Union[str, int] = "32-true",
         seed: int = 42,
@@ -101,6 +105,12 @@ class Trainer:
         self.step = 0
         self.seed = seed
         self.grad = grad
+        if strategy == "deepspeed":
+            strategy = DeepSpeedStrategy(
+                stage=stage,
+                offload_optimizer=offload_optimizer,
+                offload_parameters=offload_parameters,
+            )
         self.fabric = L.Fabric(
             accelerator=accelerator,
             strategy=strategy,

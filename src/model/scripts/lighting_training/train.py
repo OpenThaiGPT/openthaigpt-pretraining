@@ -30,6 +30,14 @@ if __name__ == "__main__":
         default="auto",
         help="dp | ddp | ddp_spawn | xla | deepspeed | fsdp",
     )
+    parser.add_argument("--stage", type=int, default=2, help="stage of deepspeed")
+    parser.add_argument(
+        "--offload_opt", action="store_true", help="offload optimizer of deepspeed"
+    )
+    parser.add_argument(
+        "--offload_par", action="store_true", help="offload parameters of deepspeed"
+    )
+
     parser.add_argument("--devices", type=int, default=1, help="number of GPUS")
     parser.add_argument(
         "--precision",
