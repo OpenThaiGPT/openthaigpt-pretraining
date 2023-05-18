@@ -3,7 +3,6 @@ from openthaigpt_pretraining_model.lightning.utils import (
     seed_everything,
     Trainer,
 )
-from typing import List, Union
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

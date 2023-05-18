@@ -30,8 +30,11 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 )
 import wandb
 import os
+
 # os.environ["WANDB_API_KEY"] = "<your-api-key>"
 os.environ["WANDB_MODE"] = "offline"
+
+
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, model, max_tokens=256):
         if model != "decapoda-research/llama-7b-hf":
@@ -78,8 +81,10 @@ def seed_everything(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+
 def compute_perplexity(loss):
     return torch.exp(loss).item()
+
 
 class Trainer:
     def __init__(
@@ -102,8 +107,8 @@ class Trainer:
         checkpoint_only_attention: bool = False,
         num_nodes: int = 1,
     ):
-        if(torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB"):
-            torch.set_float32_matmul_precision('medium') # high
+        if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
+            torch.set_float32_matmul_precision("medium")  # high
         self.wandb = None
         self.max_tokens = context_length
         self.step = 0
@@ -179,7 +184,7 @@ class Trainer:
     def log(self, data):
         if self.wandb is not None:
             self.self.log(data)
-            
+
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
         return loss
@@ -214,5 +219,5 @@ class Trainer:
 
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
-        
+
         self.run.finish()
