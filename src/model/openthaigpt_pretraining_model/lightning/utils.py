@@ -90,6 +90,7 @@ class Trainer:
         precision: Union[str, int] = "32-true",
         seed: int = 42,
         batch_size: int = 8,
+        num_workers: int = 2,
         grad: int = 4,
         context_length: int = 256,
         model_name: str = "llama",
@@ -146,7 +147,7 @@ class Trainer:
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
-            num_workers=2,
+            num_workers=num_workers,
         )
 
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
