@@ -59,14 +59,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--checkpoint",
-        type=bool,
-        default=False,
+        action="store_true",
         help="gradient checkpointing",
     )
     parser.add_argument(
         "--checkpoint_only_attention",
-        type=bool,
-        default=False,
+        action="store_true",
         help="False (model) | True (self-attentions only)",
     )
 

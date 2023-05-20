@@ -18,4 +18,4 @@ argument that can custom
 - lr
 - attention origin | pytorch | xformers (llama_hf only support origin)
 - checkpoint
-- checkpointing_position: False (model) | True (self-attentions only)
+- checkpoint_only_attention

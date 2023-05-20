@@ -134,6 +134,7 @@ class Trainer:
                 context_length=context_length,
                 attention_mode=attention_mode,
                 use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
                 device=self.fabric.device,
             )
         else:
