@@ -9,6 +9,8 @@ DATASET_NAME = "mc4"
 SPLIT_VAL = "validation"
 SPLIT_TRAIN = "train"
 LANGUAGE_DATASET = "th"
+ROTARY_PCT = 0.25
+ROTARY_EMB_BASE = 10000
 
 DTYPE_CHOICE = {
     "float32": torch.float32,
