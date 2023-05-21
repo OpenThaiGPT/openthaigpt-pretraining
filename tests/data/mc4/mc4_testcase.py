@@ -1,89 +1,85 @@
 # flake8: noqa
 from headers.test_texts import (
-    none_character_text,
-    none_tone_mark_text,
-    gamble_text,
-    football_text,
-    hotel_ad_text,
-    sale_text,
-    rent_text,
-    json_text,
-    javascript_text,
-    garbage_text,
-    ghost_text,
-    url_text,
-    menu1_text,
-    menu2_text,
-    menu3_text,
-    menu4_text,
-    hashtag_text,
-    page_text,
-    sidebar_text,
-    markup_text,
-    embedded_server_text,
-    u_text,
-    iframe_text,
-    block_text,
-    email_text,
-    ip_text,
-    tel_text,
-    date_text,
-    html_text,
-    hex_text,
-    refine_text,
-    dedup_text,
-    output,
+    NONE_CHARACTER_TEXT,
+    NONE_TONE_MARK_TEXT,
+    GAMBLE_TEXT,
+    FOOTBALL_TEXT,
+    HOTEL_AD_TEXT,
+    SALE_TEXT,
+    RENT_TEXT,
+    JSON_TEXT,
+    JAVASCRIPT_TEXT,
+    GARBAGE_TEXT,
+    GHOST_TEXT,
+    URL_TEXT,
+    MENU1_TEXT,
+    MENU2_TEXT,
+    MENU3_TEXT,
+    MENU4_TEXT,
+    HASHTAG_TEXT,
+    PAGE_TEXT,
+    SIDEBAR_TEXT,
+    MARKUP_TEXT,
+    EMBEDDED_SERVER_TEXT,
+    U_TEXT,
+    IFRAME_TEXT,
+    BLOCK_TEXT,
+    EMAIL_TEXT,
+    IP_TEXT,
+    TEL_TEXT,
+    DATE_TEXT,
+    HTML_TEXT,
+    HEX_TEXT,
+    REFINE_TEXT,
+    DEDUP_TEXT,
+    OUTPUT,
 )
-from headers.pattern import (
-    toolarge_re,
-    nonechar_re,
-    none_tone_mark_re,
-    gamble_re,
-    football_re,
-    hotel_ad_re,
-    sale_url_re,
-    sale_skip_re,
-    sale_re,
-    rent_skip_re,
-    rent_re,
-    json_re,
-    script_re,
-    garbage_re,
-    ghost_re,
-    url_re,
-    menu1_re,
-    menu2_re,
-    menu3_re,
-    menu4_re,
-    hashtag_re,
-    page_re,
-    sidebar_re,
-    markup_re,
-    embedded_server_re,
-    u_re,
-    iframe_re,
-    block_re,
-    email_re,
-    ip_re,
-    tel_re,
-    date1_re,
-    date2_re,
-    html_re,
-    hex_re,
-    refine1_re,
-    refine2_re,
-    refine3_re,
-    refine4_re,
-    refine5_re,
-    refine6_re,
-    refine7_re,
-    refine8_re,
-    refine9_re,
-    refine10_re,
-    refine11_re,
-    refine12_re,
-    refine13_re,
-    refine14_re,
+from openthaigpt_pretraining_data.mc4.pattern import (
+    NONECHAR_RE,
+    NONE_TONE_MARK_RE,
+    GAMBLE_RE,
+    FOOTBALL_RE,
+    HOTEL_AD_RE,
+    SALE_RE,
+    RENT_RE,
+    JSON_RE,
+    SCRIPT_RE,
+    GARBAGE_RE,
+    GHOST_RE,
+    URL_RE,
+    MENU1_RE,
+    MENU2_RE,
+    MENU3_RE,
+    MENU4_RE,
+    HASHTAG_RE,
+    PAGE_RE,
+    SIDEBAR_RE,
+    MARKUP_RE,
+    EMBEDDED_SERVER_RE,
+    U_RE,
+    IFRAME_RE,
+    BLOCK_RE,
+    EMAIL_RE,
+    IP_RE,
+    TEL_RE,
+    DATE1_RE,
+    DATE2_RE,
+    HTML_RE,
+    HEX_RE,
+    REFINE1_RE,
+    REFINE2_RE,
+    REFINE3_RE,
+    REFINE4_RE,
+    REFINE5_RE,
+    REFINE6_RE,
+    REFINE7_RE,
+    REFINE8_RE,
+    REFINE9_RE,
+    REFINE10_RE,
+    REFINE11_RE,
+    REFINE12_RE,
+    REFINE13_RE,
+    REFINE14_RE,
 )
 import re
 
@@ -138,125 +134,125 @@ while True:
         break
 
     if n == 0:
-        print(none_character_text)
-        matches = nonechar_re.findall(none_character_text)[:25]
+        print(NONE_CHARACTER_TEXT)
+        matches = NONECHAR_RE.findall(NONE_CHARACTER_TEXT)[:25]
         print("\nremove row=", True if len(matches) == 25 else False)
     elif n == 1:
-        print(none_tone_mark_text)
-        matches = none_tone_mark_re.findall(none_tone_mark_text)[:25]
+        print(NONE_TONE_MARK_TEXT)
+        matches = NONE_TONE_MARK_RE.findall(NONE_TONE_MARK_TEXT)[:25]
         print("\nremove row=", True if len(matches) == 25 else False)
     elif n == 2:
-        print(gamble_text)
-        matches = gamble_re.findall(gamble_text)[:2]
+        print(GAMBLE_TEXT)
+        matches = GAMBLE_RE.findall(GAMBLE_TEXT)[:2]
         print("\nremove row=", True if len(matches) == 2 else False)
     elif n == 3:
-        print(football_text)
-        matches = football_re.findall(football_text)[:4]
+        print(FOOTBALL_TEXT)
+        matches = FOOTBALL_RE.findall(FOOTBALL_TEXT)[:4]
         print("\nremove row=", True if len(matches) == 4 else False)
     elif n == 4:
-        print(hotel_ad_text)
-        matches = hotel_ad_re.findall(hotel_ad_text)[:4]
+        print(HOTEL_AD_TEXT)
+        matches = HOTEL_AD_RE.findall(HOTEL_AD_TEXT)[:4]
         print("\nremove row=", True if len(matches) == 4 else False)
     elif n == 5:
-        print(sale_text)
-        matches = sale_re.findall(sale_text)[:3]
+        print(SALE_TEXT)
+        matches = SALE_RE.findall(SALE_TEXT)[:3]
         print("\nremove row=", True if len(matches) == 3 else False)
     elif n == 6:
-        print(rent_text)
-        matches = rent_re.findall(rent_text)[:2]
+        print(RENT_TEXT)
+        matches = RENT_RE.findall(RENT_TEXT)[:2]
         print("\nremove row=", True if len(matches) == 2 else False)
     elif n == 7:
-        print(json_text)
-        matches = json_re.findall(json_text)[:20]
+        print(JSON_TEXT)
+        matches = JSON_RE.findall(JSON_TEXT)[:20]
         print("\nremove row=", True if len(matches) == 20 else False)
     elif n == 8:
-        print(javascript_text)
-        matches = script_re.findall(javascript_text)[:10]
+        print(JAVASCRIPT_TEXT)
+        matches = SCRIPT_RE.findall(JAVASCRIPT_TEXT)[:10]
         print("\nremove row=", True if len(matches) == 10 else False)
     elif n == 9:
-        print(garbage_text)
-        matches = garbage_re.findall(garbage_text)[:4]
+        print(GARBAGE_TEXT)
+        matches = GARBAGE_RE.findall(GARBAGE_TEXT)[:4]
         print("\nremove row=", True if len(matches) == 4 else False)
     elif n == 10:
-        print(ghost_text)
-        matches = ghost_re.findall(ghost_text)[:4]
+        print(GHOST_TEXT)
+        matches = GHOST_RE.findall(GHOST_TEXT)[:4]
         print("\nremove row=", True if len(matches) == 4 else False)
     elif n == 11:
-        print(url_text)
-        print(output + url_re.sub(" ", url_text))
+        print(URL_TEXT)
+        print(OUTPUT + URL_RE.sub(" ", URL_TEXT))
     elif n == 12:
-        print(menu1_text + "\n" + menu2_text + "\n" + menu3_text + "\n" + menu4_text)
-        text1 = menu1_re.sub(" ", menu1_text)
-        text2 = menu2_re.sub(" ", menu2_text)
-        text3 = menu3_re.sub(" ", menu3_text)
-        text4 = menu4_re.sub(" ", menu4_text)
-        print(output + text1 + "\n" + text2 + "\n" + text3 + "\n" + text4)
+        print(MENU1_TEXT + "\n" + MENU2_TEXT + "\n" + MENU3_TEXT + "\n" + MENU4_TEXT)
+        text1 = MENU1_RE.sub(" ", MENU1_TEXT)
+        text2 = MENU2_RE.sub(" ", MENU2_TEXT)
+        text3 = MENU3_RE.sub(" ", MENU3_TEXT)
+        text4 = MENU4_RE.sub(" ", MENU4_TEXT)
+        print(OUTPUT + text1 + "\n" + text2 + "\n" + text3 + "\n" + text4)
     elif n == 13:
-        print(hashtag_text)
-        print(output + hashtag_re.sub(" ", hashtag_text))
+        print(HASHTAG_TEXT)
+        print(OUTPUT + HASHTAG_RE.sub(" ", HASHTAG_TEXT))
     elif n == 14:
-        print(page_text)
-        print(output + page_re.sub(" ", page_text))
+        print(PAGE_TEXT)
+        print(OUTPUT + PAGE_RE.sub(" ", PAGE_TEXT))
     elif n == 15:
-        print(sidebar_text)
-        print(output + sidebar_re.sub(" ", sidebar_text))
+        print(SIDEBAR_TEXT)
+        print(OUTPUT + SIDEBAR_RE.sub(" ", SIDEBAR_TEXT))
     elif n == 16:
-        print(markup_text)
-        print(output + markup_re.sub(" ", markup_text))
+        print(MARKUP_TEXT)
+        print(OUTPUT + MARKUP_RE.sub(" ", MARKUP_TEXT))
     elif n == 17:
-        print(embedded_server_text)
-        print(output + embedded_server_re.sub(" ", embedded_server_text))
+        print(EMBEDDED_SERVER_TEXT)
+        print(OUTPUT + EMBEDDED_SERVER_RE.sub(" ", EMBEDDED_SERVER_TEXT))
     elif n == 18:
-        print(u_text)
-        print(output + u_re.sub(" ", u_text))
+        print(U_TEXT)
+        print(OUTPUT + U_RE.sub(" ", U_TEXT))
     elif n == 19:
-        print(iframe_text)
-        print(output + iframe_re.sub(" ", iframe_text))
+        print(IFRAME_TEXT)
+        print(OUTPUT + IFRAME_RE.sub(" ", IFRAME_TEXT))
     elif n == 20:
-        print(block_text)
-        print(output + block_re.sub(" ", block_text))
+        print(BLOCK_TEXT)
+        print(OUTPUT + BLOCK_RE.sub(" ", BLOCK_TEXT))
     elif n == 21:
-        print(email_text)
-        print(output + email_re.sub(" ", email_text))
+        print(EMAIL_TEXT)
+        print(OUTPUT + EMAIL_RE.sub(" ", EMAIL_TEXT))
     elif n == 22:
-        print(ip_text)
-        print(output + ip_re.sub(" ", ip_text))
+        print(IP_TEXT)
+        print(OUTPUT + IP_RE.sub(" ", IP_TEXT))
     elif n == 23:
-        print(tel_text)
-        print(output + tel_re.sub(" ", tel_text))
+        print(TEL_TEXT)
+        print(OUTPUT + TEL_RE.sub(" ", TEL_TEXT))
     elif n == 24:
-        print(date_text)
-        text = date1_re.sub(" ", date_text)
-        text = date2_re.sub(" ", text)
-        print(output + text)
+        print(DATE_TEXT)
+        text = DATE1_RE.sub(" ", DATE_TEXT)
+        text = DATE2_RE.sub(" ", text)
+        print(OUTPUT + text)
     elif n == 25:
-        print(html_text)
-        print(output + html_re.sub(" ", html_text))
+        print(HTML_TEXT)
+        print(OUTPUT + HTML_RE.sub(" ", HTML_TEXT))
     elif n == 26:
-        print(hex_text)
-        print(output + hex_re.sub(" ", hex_text))
+        print(HEX_TEXT)
+        print(OUTPUT + HEX_RE.sub(" ", HEX_TEXT))
     elif n == 27:
-        print(refine_text)
-        text = refine1_re.sub(" ", refine_text)
-        text = refine2_re.sub(" ", text)
-        text = refine3_re.sub(" ", text)
-        text = refine4_re.sub(" ", text)
-        text = refine5_re.sub(" ", text)
-        text = refine6_re.sub(" ", text)
-        text = refine7_re.sub(" ", text)
-        text = refine8_re.sub(" ", text)
-        text = refine9_re.sub(" ", text)
-        text = refine10_re.sub(" ", text)
-        text = refine11_re.sub(" ", text)
-        text = refine12_re.sub(" ", text)
-        text = refine13_re.sub(" ", text)
-        text = refine14_re.sub(" ", text)
+        print(REFINE_TEXT)
+        text = REFINE1_RE.sub(" ", REFINE_TEXT)
+        text = REFINE2_RE.sub(" ", text)
+        text = REFINE3_RE.sub(" ", text)
+        text = REFINE4_RE.sub(" ", text)
+        text = REFINE5_RE.sub(" ", text)
+        text = REFINE6_RE.sub(" ", text)
+        text = REFINE7_RE.sub(" ", text)
+        text = REFINE8_RE.sub(" ", text)
+        text = REFINE9_RE.sub(" ", text)
+        text = REFINE10_RE.sub(" ", text)
+        text = REFINE11_RE.sub(" ", text)
+        text = REFINE12_RE.sub(" ", text)
+        text = REFINE13_RE.sub(" ", text)
+        text = REFINE14_RE.sub(" ", text)
         text = "\n".join(line for line in text.split("\n") if len(line) > 30)
-        print(output + text)
+        print(OUTPUT + text)
     elif n == 28:
-        print(dedup_text)
+        print(DEDUP_TEXT)
         # Split the text into lines and remove any empty lines
-        lines = [line for line in dedup_text.split("\n") if line]
+        lines = [line for line in DEDUP_TEXT.split("\n") if line]
         # Initialize the list with the first line
         deduplicated_list = [lines[0]]
         # Iterate over the rest of the lines
@@ -271,6 +267,6 @@ while True:
             # Remove the common prefix from this line and add it to the list
             deduplicated_list.append(lines[i][len(common_prefix) :])
         text = "\n".join(deduplicated_list)
-        print(output + text)
+        print(OUTPUT + text)
 
     input("Press any key --->")

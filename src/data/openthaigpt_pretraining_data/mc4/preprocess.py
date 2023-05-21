@@ -1,54 +1,54 @@
 # flake8: noqa
-from pattern import (
-    toolarge_re,
-    nonechar_re,
-    none_tone_mark_re,
-    gamble_re,
-    football_re,
-    hotel_ad_re,
-    sale_url_re,
-    sale_skip_re,
-    sale_re,
-    rent_skip_re,
-    rent_re,
-    json_re,
-    script_re,
-    garbage_re,
-    ghost_re,
-    url_re,
-    menu1_re,
-    menu2_re,
-    menu3_re,
-    menu4_re,
-    hashtag_re,
-    page_re,
-    sidebar_re,
-    markup_re,
-    embedded_server_re,
-    u_re,
-    iframe_re,
-    block_re,
-    email_re,
-    ip_re,
-    tel_re,
-    date1_re,
-    date2_re,
-    html_re,
-    hex_re,
-    refine1_re,
-    refine2_re,
-    refine3_re,
-    refine4_re,
-    refine5_re,
-    refine6_re,
-    refine7_re,
-    refine8_re,
-    refine9_re,
-    refine10_re,
-    refine11_re,
-    refine12_re,
-    refine13_re,
-    refine14_re,
+from .pattern import (
+    TOOLARGE_RE,
+    NONECHAR_RE,
+    NONE_TONE_MARK_RE,
+    GAMBLE_RE,
+    FOOTBALL_RE,
+    HOTEL_AD_RE,
+    SALE_URL_RE,
+    SALE_SKIP_RE,
+    SALE_RE,
+    RENT_SKIP_RE,
+    RENT_RE,
+    JSON_RE,
+    SCRIPT_RE,
+    GARBAGE_RE,
+    GHOST_RE,
+    URL_RE,
+    MENU1_RE,
+    MENU2_RE,
+    MENU3_RE,
+    MENU4_RE,
+    HASHTAG_RE,
+    PAGE_RE,
+    SIDEBAR_RE,
+    MARKUP_RE,
+    EMBEDDED_SERVER_RE,
+    U_RE,
+    IFRAME_RE,
+    BLOCK_RE,
+    EMAIL_RE,
+    IP_RE,
+    TEL_RE,
+    DATE1_RE,
+    DATE2_RE,
+    HTML_RE,
+    HEX_RE,
+    REFINE1_RE,
+    REFINE2_RE,
+    REFINE3_RE,
+    REFINE4_RE,
+    REFINE5_RE,
+    REFINE6_RE,
+    REFINE7_RE,
+    REFINE8_RE,
+    REFINE9_RE,
+    REFINE10_RE,
+    REFINE11_RE,
+    REFINE12_RE,
+    REFINE13_RE,
+    REFINE14_RE,
 )
 from typing import List
 import re
@@ -58,21 +58,21 @@ def clean_text(text: str) -> str:
 
     # ---- Clean too large unused lines
     # Limit matches list to 2 items only, enough
-    matches = toolarge_re.findall(text)[:2]
+    matches = TOOLARGE_RE.findall(text)[:2]
     # Classify as toolarge row if number of matches = 2
     if len(matches) == 2:
         return ""
 
     # ---- Clean none characters row
     # Limit matches list to 25 items
-    matches = nonechar_re.findall(text)[:25]
+    matches = NONECHAR_RE.findall(text)[:25]
     # Classify as none character row if number of matches = 25
     if len(matches) == 25:
         return ""
 
     # ---- Clean none tone mark row
     # Limit matches list to 25 items
-    matches = none_tone_mark_re.findall(text)[:25]
+    matches = NONE_TONE_MARK_RE.findall(text)[:25]
     # Classify as none tone mark row if number of matches = 25
     if len(matches) == 25:
         return ""
@@ -81,7 +81,7 @@ def clean_text(text: str) -> str:
     # if found gamble word 2 times in a row, classify as gamble row
     # remove the row
     # Limit matches list to 2 items only, enough
-    matches = gamble_re.findall(text)[:2]
+    matches = GAMBLE_RE.findall(text)[:2]
     # Classify as gamble if number of matches = 2
     if len(matches) == 2:
         return ""
@@ -90,7 +90,7 @@ def clean_text(text: str) -> str:
     # if found gamble word 4 times in a row, classify as football data
     # remove the row
     # Limit matches list to 4 items only
-    matches = football_re.findall(text)[:4]
+    matches = FOOTBALL_RE.findall(text)[:4]
     if len(matches) == 4:
         return ""
 
@@ -98,7 +98,7 @@ def clean_text(text: str) -> str:
     # if found hotel word 4 times in a row, classify as Hotel Ad. data
     # remove the row
     # Limit matches list to 4 items only, enough
-    matches = hotel_ad_re.findall(text)[:4]
+    matches = HOTEL_AD_RE.findall(text)[:4]
     if len(matches) == 4:
         return ""
 
@@ -110,12 +110,12 @@ def clean_text(text: str) -> str:
     # 2. Skip to next clean rule if it contains specific keywords, eg. "สอบราคา", "จัดซื้อจัดจ้าง, etc."
     # 3. If not found keywords in (2) then scan the row with sale keywords, if there are at leat 3 sale kewords found then remove the row.
 
-    if sale_url_re.search(text):
+    if SALE_URL_RE.search(text):
         return ""
 
-    if not sale_skip_re.search(text):
+    if not SALE_SKIP_RE.search(text):
         # Classify as Sale data ( 3 matches, can be adjusted)
-        matches = sale_re.findall(text)[:3]
+        matches = SALE_RE.findall(text)[:3]
         if len(matches) == 3:
             return ""
 
@@ -125,37 +125,37 @@ def clean_text(text: str) -> str:
     # 2. if found rent word 2 times in a row, classify as rent row
     #    remove the row
 
-    if not rent_skip_re.search(text):
+    if not RENT_SKIP_RE.search(text):
         # Limit matches list to 2 items only, enough
-        matches = rent_re.findall(text)[:2]
+        matches = RENT_RE.findall(text)[:2]
         if len(matches) == 2:
             return ""
 
     # ---- Clean pattern (json like -> "abc": ~.5-1% )
     # 99% can classify as gabage: so remove them
     # match n items to make sure they are garbages n=20, can change
-    matches = json_re.findall(text)[:20]
+    matches = JSON_RE.findall(text)[:20]
     # if match only 20+, classify as garbage
     if len(matches) == 20:
         return ""
 
     # ---- Clean script (Javascript, etc. ~.5% )
     # 99% can classify as gabage: so remove them
-    matches = script_re.findall(text)[:10]
+    matches = SCRIPT_RE.findall(text)[:10]
     # Classify as script if number of matches > 10
     if len(matches) == 10:
         return ""
 
     # ---- Clean garbage (useless or not necessary ~.45%)
     # classify as gabage: so remove them
-    matches = garbage_re.findall(text)[:4]
+    matches = GARBAGE_RE.findall(text)[:4]
     # Classify as garbage if number of matches >= 4
     if len(matches) == 4:
         return ""
 
     # ---- Clean ghost language (~0.008% can cancel this clean)
     # classify as ghost : so remove them
-    matches = ghost_re.findall(text)[:4]
+    matches = GHOST_RE.findall(text)[:4]
     # Classify as ghost if number of matches >= 4
     if len(matches) == 4:
         return ""
@@ -167,42 +167,42 @@ def clean_text(text: str) -> str:
     # with ' ' (blank)
     # ---------------------------------------------------------------
 
-    text = url_re.sub(" ", text)
-    text = menu1_re.sub(" ", text)
-    text = menu2_re.sub(" ", text)
-    text = menu3_re.sub(" ", text)
-    text = menu4_re.sub(" ", text)
-    text = hashtag_re.sub(" ", text)
-    text = page_re.sub(" ", text)
-    text = sidebar_re.sub(" ", text)
-    text = markup_re.sub(" ", text)
-    text = embedded_server_re.sub(" ", text)
-    text = u_re.sub(" ", text)
-    text = iframe_re.sub(" ", text)
-    text = block_re.sub(" ", text)
-    text = email_re.sub(" ", text)
-    text = ip_re.sub(" ", text)
-    text = tel_re.sub(" ", text)
-    text = date1_re.sub(" ", text)
-    text = date2_re.sub(" ", text)
-    text = html_re.sub(" ", text)
-    text = hex_re.sub(" ", text)
+    text = URL_RE.sub(" ", text)
+    text = MENU1_RE.sub(" ", text)
+    text = MENU2_RE.sub(" ", text)
+    text = MENU3_RE.sub(" ", text)
+    text = MENU4_RE.sub(" ", text)
+    text = HASHTAG_RE.sub(" ", text)
+    text = PAGE_RE.sub(" ", text)
+    text = SIDEBAR_RE.sub(" ", text)
+    text = MARKUP_RE.sub(" ", text)
+    text = EMBEDDED_SERVER_RE.sub(" ", text)
+    text = U_RE.sub(" ", text)
+    text = IFRAME_RE.sub(" ", text)
+    text = BLOCK_RE.sub(" ", text)
+    text = EMAIL_RE.sub(" ", text)
+    text = IP_RE.sub(" ", text)
+    text = TEL_RE.sub(" ", text)
+    text = DATE1_RE.sub(" ", text)
+    text = DATE2_RE.sub(" ", text)
+    text = HTML_RE.sub(" ", text)
+    text = HEX_RE.sub(" ", text)
 
     # --- Refinements (in sequence)
-    text = refine1_re.sub(" ", text)
-    text = refine2_re.sub(" ", text)
-    text = refine3_re.sub(" ", text)
-    text = refine4_re.sub(" ", text)
-    text = refine5_re.sub(" ", text)
-    text = refine6_re.sub(" ", text)
-    text = refine7_re.sub(" ", text)
-    text = refine8_re.sub(" ", text)
-    text = refine9_re.sub(" ", text)
-    text = refine10_re.sub(" ", text)
-    text = refine11_re.sub(" ", text)
-    text = refine12_re.sub(" ", text)
-    text = refine13_re.sub(" ", text)
-    text = refine14_re.sub(" ", text)
+    text = REFINE1_RE.sub(" ", text)
+    text = REFINE2_RE.sub(" ", text)
+    text = REFINE3_RE.sub(" ", text)
+    text = REFINE4_RE.sub(" ", text)
+    text = REFINE5_RE.sub(" ", text)
+    text = REFINE6_RE.sub(" ", text)
+    text = REFINE7_RE.sub(" ", text)
+    text = REFINE8_RE.sub(" ", text)
+    text = REFINE9_RE.sub(" ", text)
+    text = REFINE10_RE.sub(" ", text)
+    text = REFINE11_RE.sub(" ", text)
+    text = REFINE12_RE.sub(" ", text)
+    text = REFINE13_RE.sub(" ", text)
+    text = REFINE14_RE.sub(" ", text)
 
     # Split the text into lines and remove any empty lines
     lines = [line for line in text.split("\n") if line]
@@ -233,7 +233,8 @@ def clean_text(text: str) -> str:
     # before write to disk, get rid of spaces by change them to single space (' ').
 
     text = re.sub("[ ]+", " ", text, 0, re.MULTILINE)
-    text = re.sub("\n\s*", "\n", text, 0, re.MULTILINE)
+    text = re.sub("^[ ]", "", text, 0, re.MULTILINE)
+    text = re.sub(r"\n\s*", "\n", text, 0, re.MULTILINE)
 
     return text
 
