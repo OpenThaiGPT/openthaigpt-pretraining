@@ -8,7 +8,8 @@
 
 ml purge
 ml Apptainer
-apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry llmfoundry.sif python3 scripts/data_prep/convert_dataset_json.py \
-  --path oscar100rows.jsonl.zst \
-  --out_root my-copy-oscar --split train \
+apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry  \
+  llmfoundry.sif python3 scripts/data_prep/convert_dataset_json.py \
+  --path scripts/data_prep/example_data/arxiv.jsonl \
+  --out_root my-copy-arxiv --split train \
   --concat_tokens 2048 --tokenizer xlm-roberta-base --eos_text '<|endoftext|>'
