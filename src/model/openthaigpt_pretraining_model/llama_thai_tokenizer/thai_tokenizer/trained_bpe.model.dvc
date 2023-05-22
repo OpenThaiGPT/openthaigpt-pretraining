@@ -1,0 +1,4 @@
+outs:
+- md5: c1919a2ae9d78990df3d96170345dd43
+  size: 736711
+  path: trained_bpe.model
