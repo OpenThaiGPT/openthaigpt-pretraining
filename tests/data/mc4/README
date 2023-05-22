@@ -1,4 +1,0 @@
-# Note:
-# my4_cleantest.py: need to install Huggingface datasets module by: pip install datasets
-# Please use 'pytest -s' to test mc4_testcase.py and mc4_cleantest.py 
-#

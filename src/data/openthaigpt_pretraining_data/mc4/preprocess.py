@@ -1,4 +1,4 @@
-# flake8: noqa
+# flake8: noqa:
 from .pattern import (
     TOOLARGE_RE,
     NONECHAR_RE,
@@ -15,26 +15,26 @@ from .pattern import (
     SCRIPT_RE,
     GARBAGE_RE,
     GHOST_RE,
+    HEX_RE,
+    PAGE_RE,
+    EMBEDDED_SERVER_RE,
+    U_RE,
+    EMAIL_RE,
     URL_RE,
     MENU1_RE,
     MENU2_RE,
     MENU3_RE,
     MENU4_RE,
-    HASHTAG_RE,
-    PAGE_RE,
     SIDEBAR_RE,
-    MARKUP_RE,
-    EMBEDDED_SERVER_RE,
-    U_RE,
-    IFRAME_RE,
     BLOCK_RE,
-    EMAIL_RE,
+    HASHTAG_RE,
+    MARKUP_RE,
+    IFRAME_RE,
     IP_RE,
     TEL_RE,
     DATE1_RE,
     DATE2_RE,
     HTML_RE,
-    HEX_RE,
     REFINE1_RE,
     REFINE2_RE,
     REFINE3_RE,
@@ -54,28 +54,28 @@ from typing import List
 import re
 
 
-def clean_text(text: str) -> str:
+def clean_with_remove_document(text: str) -> bool:
 
     # ---- Clean too large unused lines
     # Limit matches list to 2 items only, enough
     matches = TOOLARGE_RE.findall(text)[:2]
     # Classify as toolarge row if number of matches = 2
     if len(matches) == 2:
-        return ""
+        return True
 
     # ---- Clean none characters row
     # Limit matches list to 25 items
     matches = NONECHAR_RE.findall(text)[:25]
     # Classify as none character row if number of matches = 25
     if len(matches) == 25:
-        return ""
+        return True
 
     # ---- Clean none tone mark row
     # Limit matches list to 25 items
     matches = NONE_TONE_MARK_RE.findall(text)[:25]
     # Classify as none tone mark row if number of matches = 25
     if len(matches) == 25:
-        return ""
+        return True
 
     # ---- Clean Gamble ~ 9.2% of mC4 data
     # if found gamble word 2 times in a row, classify as gamble row
@@ -84,7 +84,7 @@ def clean_text(text: str) -> str:
     matches = GAMBLE_RE.findall(text)[:2]
     # Classify as gamble if number of matches = 2
     if len(matches) == 2:
-        return ""
+        return True
 
     # ---- Clean Football data
     # if found gamble word 4 times in a row, classify as football data
@@ -92,7 +92,7 @@ def clean_text(text: str) -> str:
     # Limit matches list to 4 items only
     matches = FOOTBALL_RE.findall(text)[:4]
     if len(matches) == 4:
-        return ""
+        return True
 
     # ---- Clean Hotel Advertising
     # if found hotel word 4 times in a row, classify as Hotel Ad. data
@@ -100,7 +100,7 @@ def clean_text(text: str) -> str:
     # Limit matches list to 4 items only, enough
     matches = HOTEL_AD_RE.findall(text)[:4]
     if len(matches) == 4:
-        return ""
+        return True
 
     # ----  Clean Sale ~26% of mC4 data
     # Sale row data is diverse,
@@ -111,13 +111,13 @@ def clean_text(text: str) -> str:
     # 3. If not found keywords in (2) then scan the row with sale keywords, if there are at leat 3 sale kewords found then remove the row.
 
     if SALE_URL_RE.search(text):
-        return ""
+        return True
 
     if not SALE_SKIP_RE.search(text):
         # Classify as Sale data ( 3 matches, can be adjusted)
         matches = SALE_RE.findall(text)[:3]
         if len(matches) == 3:
-            return ""
+            return True
 
     # ---- Clean Rent (พวกเช่า ~2% of mC4 data)
     # Rent use another rules
@@ -129,7 +129,7 @@ def clean_text(text: str) -> str:
         # Limit matches list to 2 items only, enough
         matches = RENT_RE.findall(text)[:2]
         if len(matches) == 2:
-            return ""
+            return True
 
     # ---- Clean pattern (json like -> "abc": ~.5-1% )
     # 99% can classify as gabage: so remove them
@@ -137,56 +137,60 @@ def clean_text(text: str) -> str:
     matches = JSON_RE.findall(text)[:20]
     # if match only 20+, classify as garbage
     if len(matches) == 20:
-        return ""
+        return True
 
     # ---- Clean script (Javascript, etc. ~.5% )
     # 99% can classify as gabage: so remove them
     matches = SCRIPT_RE.findall(text)[:10]
-    # Classify as script if number of matches > 10
+    # Classify as script if number of matches = 10
     if len(matches) == 10:
-        return ""
+        return True
 
     # ---- Clean garbage (useless or not necessary ~.45%)
     # classify as gabage: so remove them
     matches = GARBAGE_RE.findall(text)[:4]
-    # Classify as garbage if number of matches >= 4
+    # Classify as garbage if number of matches = 4
     if len(matches) == 4:
-        return ""
+        return True
 
     # ---- Clean ghost language (~0.008% can cancel this clean)
     # classify as ghost : so remove them
     matches = GHOST_RE.findall(text)[:4]
-    # Classify as ghost if number of matches >= 4
+    # Classify as ghost if number of matches = 4
     if len(matches) == 4:
-        return ""
+        return True
 
-    # ---------------------------------------------------------------
-    # The row that falls down here is
-    # the row that passed all romove filters.
-    # Now, we will scan and REPLACE unwanted characters and patterns
-    # with ' ' (blank)
-    # ---------------------------------------------------------------
+    # ---- Clean HEX code
+    # classify as HEX : so remove them
+    matches = HEX_RE.findall(text)[:25]
+    # Classify as HEX if number of matches = 25
+    if len(matches) == 25:
+        return True
 
+    return False
+
+
+def clean_text(text: str) -> str:
+
+    text = PAGE_RE.sub(" ", text)
+    text = EMBEDDED_SERVER_RE.sub(" ", text)
+    text = U_RE.sub(" ", text)
+    text = EMAIL_RE.sub(" ", text)
     text = URL_RE.sub(" ", text)
     text = MENU1_RE.sub(" ", text)
     text = MENU2_RE.sub(" ", text)
     text = MENU3_RE.sub(" ", text)
     text = MENU4_RE.sub(" ", text)
-    text = HASHTAG_RE.sub(" ", text)
-    text = PAGE_RE.sub(" ", text)
     text = SIDEBAR_RE.sub(" ", text)
-    text = MARKUP_RE.sub(" ", text)
-    text = EMBEDDED_SERVER_RE.sub(" ", text)
-    text = U_RE.sub(" ", text)
-    text = IFRAME_RE.sub(" ", text)
     text = BLOCK_RE.sub(" ", text)
-    text = EMAIL_RE.sub(" ", text)
+    text = HASHTAG_RE.sub(" ", text)
+    text = MARKUP_RE.sub(" ", text)
+    text = IFRAME_RE.sub(" ", text)
     text = IP_RE.sub(" ", text)
     text = TEL_RE.sub(" ", text)
     text = DATE1_RE.sub(" ", text)
     text = DATE2_RE.sub(" ", text)
     text = HTML_RE.sub(" ", text)
-    text = HEX_RE.sub(" ", text)
 
     # --- Refinements (in sequence)
     text = REFINE1_RE.sub(" ", text)
