@@ -224,8 +224,7 @@ class Trainer:
                 self.fabric.backward(loss)
                 perplexity = compute_perplexity(loss)
                 self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
-                if self.fabric.global_rank == 0:
-                    progress_bar.set_description(f"loss: {loss.item():.3f}")
+                progress_bar.set_description(f"loss: {loss.item():.3f}")
 
             if not is_accumulating:
                 self.opt.step()
