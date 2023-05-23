@@ -277,7 +277,7 @@ class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
         self.post_init()
 
 
-def make_model_llama(
+def make_model_llama_hf(
     vocab_size: int,
     context_length: int,
     use_checkpointing: bool,

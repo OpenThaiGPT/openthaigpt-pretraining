@@ -35,8 +35,8 @@ def test_llama_efficient_for_torch():
         for test_case in LLAMA_TEST_CASES:
             assert torch.all(
                 torch.abs(
-                    base_model(test_case.to(device), 0)
-                    - torch_model(test_case.to(device), 0)
+                    base_model(test_case.to(device), 0).logits
+                    - torch_model(test_case.to(device), 0).logits
                 )
                 <= 1e-6
             )
@@ -56,8 +56,8 @@ def test_llama_efficient_for_xformer():
         for test_case in LLAMA_TEST_CASES:
             assert torch.all(
                 torch.abs(
-                    base_model(test_case.to(device), 0)
-                    - xformer_model(test_case.to(device), 0)
+                    base_model(test_case.to(device), 0).logits
+                    - xformer_model(test_case.to(device), 0).logits
                 )
                 <= 1e-6
             )

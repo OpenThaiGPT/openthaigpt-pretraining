@@ -45,6 +45,11 @@ if __name__ == "__main__":
         default="32-true",
         help="32-true | 32 | 16-mixed | bf16-mixed | 64-true",
     )
+    parser.add_argument(
+        "--num_nodes",
+        type=int,
+        default=1,
+    )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=2)
@@ -57,25 +62,23 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         default="llama",
-        help="{llama(7B) | gptj}",
+        help="{llama | llama_hf | gptj}",
     )
-    parser.add_argument("--vocab_size", type=int, default=50400)
+    parser.add_argument("--vocab_size", type=int, default=32000)
     parser.add_argument(
-        "--xformers",
-        type=bool,
-        default=False,
-        help="xformers attention only available for GPTJ",
+        "--attention",
+        type=str,
+        default="origin",
+        help="origin | pytorch (support only llama) | xformers (llama_hf only support origin)",  # noqa
     )
     parser.add_argument(
         "--checkpoint",
-        type=bool,
-        default=False,
+        action="store_true",
         help="gradient checkpointing",
     )
     parser.add_argument(
         "--checkpoint_only_attention",
-        type=bool,
-        default=False,
+        action="store_true",
         help="False (model) | True (self-attentions only)",
     )
 
@@ -88,6 +91,7 @@ if __name__ == "__main__":
         strategy=args.strategy,
         devices=args.devices,
         precision=args.precision,
+        num_nodes=args.num_nodes,
         seed=args.seed,
         batch_size=args.batch_size,
         grad=args.grad,
@@ -97,7 +101,7 @@ if __name__ == "__main__":
         weight_decay=args.weight_decay,
         lr=args.lr,
         vocab_size=args.vocab_size,
-        xformers=args.xformers,
+        attention_mode=args.attention,
         checkpoint=args.checkpoint,
         checkpoint_only_attention=args.checkpoint_only_attention,
     )
