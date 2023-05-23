@@ -13,6 +13,7 @@ argument that can custom
 - precision: 32-true | 32 | 16-mixed | bf16-mixed | 64-true
 - seed
 - batch_size
+- num_workers
 - grad
 - context_length
 - model_name= llama | llama_hf | gptj
