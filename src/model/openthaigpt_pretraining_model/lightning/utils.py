@@ -29,6 +29,11 @@ from openthaigpt_pretraining_model.models.llama.model import make_model_llama
 from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama_hf,
 )
+import wandb
+import os
+
+# os.environ["WANDB_API_KEY"] = "<your-api-key>"
+os.environ["WANDB_MODE"] = "offline"
 
 
 class DatasetWrapper(IterableDataset):
@@ -78,6 +83,10 @@ def seed_everything(seed):
     random.seed(seed)
 
 
+def compute_perplexity(loss):
+    return torch.exp(loss).item()
+
+
 class Trainer:
     def __init__(
         self,
@@ -97,7 +106,11 @@ class Trainer:
         attention_mode: str = "origin",
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
+        num_nodes: int = 1,
     ):
+        if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
+            torch.set_float32_matmul_precision("medium")  # high
+        self.wandb = None
         self.max_tokens = context_length
         self.step = 0
         self.seed = seed
@@ -107,8 +120,13 @@ class Trainer:
             strategy=strategy,
             devices=devices,
             precision=precision,
+            loggers=self.wandb,
+            num_nodes=num_nodes,
         )
         self.fabric.launch()
+        print(f"device:{self.fabric.device}")
+        if self.fabric.global_rank == 0:
+            self.wandb = wandb.init(project="Fabric")
 
         if model_name == "llama":
             model_name = LLAMA_MODEL  # for tokenizer
@@ -173,6 +191,10 @@ class Trainer:
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
+    def log(self, data):
+        if self.wandb is not None:
+            self.self.log(data)
+
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
         return loss
@@ -183,12 +205,14 @@ class Trainer:
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
                 loss = self.model(batch, labels=batch).loss
+                perplexity = compute_perplexity(loss)
+                self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
         return loss
 
     def train(self):
-        progress_bar = tqdm(self.dataloader)
+        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
 
         for i, batch in enumerate(progress_bar):
@@ -197,9 +221,10 @@ class Trainer:
             with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
                 loss = self.train_step(batch)
 
-                progress_bar.set_description(f"loss: {loss.item():.3f}")
-
                 self.fabric.backward(loss)
+                perplexity = compute_perplexity(loss)
+                self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
+                progress_bar.set_description(f"loss: {loss.item():.3f}")
 
             if not is_accumulating:
                 self.opt.step()
@@ -207,3 +232,5 @@ class Trainer:
 
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
+
+        self.run.finish()
