@@ -84,7 +84,7 @@ def seed_everything(seed):
     random.seed(seed)
 
 
-def compute_perplexity(loss):
+def compute_perplexity(loss: torch.Tensor) -> float:
     return torch.exp(loss).item()
 
 
