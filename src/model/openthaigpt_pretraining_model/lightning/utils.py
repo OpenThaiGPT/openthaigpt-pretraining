@@ -206,7 +206,7 @@ class Trainer:
 
     def log(self, data):
         if self.wandb is not None:
-            self.self.log(data)
+            self.wandb.log(data)
 
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
