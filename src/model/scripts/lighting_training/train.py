@@ -89,6 +89,9 @@ if __name__ == "__main__":
     trainer = Trainer(
         accelerator=args.accelerator,
         strategy=args.strategy,
+        stage=args.stage,
+        offload_optimizer=args.offload_opt,
+        offload_parameters=args.offload_par,
         devices=args.devices,
         precision=args.precision,
         num_nodes=args.num_nodes,
