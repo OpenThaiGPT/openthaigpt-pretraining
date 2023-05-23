@@ -126,6 +126,8 @@ class Trainer:
                 offload_optimizer=offload_optimizer,
                 offload_parameters=offload_parameters,
             )
+        elif offload_optimizer or offload_parameters:
+            raise NotImplementedError("offload only support for deepspeed strategy")
         self.fabric = L.Fabric(
             accelerator=accelerator,
             strategy=strategy,
