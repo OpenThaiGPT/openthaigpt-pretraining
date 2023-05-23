@@ -25,8 +25,9 @@ from .constants import (
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     make_model_gptj,
 )
+from openthaigpt_pretraining_model.models.llama.model import make_model_llama
 from openthaigpt_pretraining_model.models.llama_hf.model import (
-    make_model_llama,
+    make_model_llama_hf,
 )
 import wandb
 import os
@@ -102,7 +103,7 @@ class Trainer:
         weight_decay: float = 1e-2,
         lr: float = 1e-4,
         vocab_size: int = 50400,
-        xformers: bool = False,
+        attention_mode: str = "origin",
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
         num_nodes: int = 1,
@@ -132,21 +133,30 @@ class Trainer:
             self.model = make_model_llama(
                 vocab_size=vocab_size,
                 context_length=context_length,
+                atention_mode=attention_mode,
                 use_checkpointing=checkpoint,
                 checkpoint_only_attention=checkpoint_only_attention,
             )
-
+        elif model_name == "llama_hf":
+            model_name = LLAMA_MODEL  # for tokenizer
+            self.model = make_model_llama_hf(
+                vocab_size=vocab_size,
+                context_length=context_length,
+                use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
+            )
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
             self.model = make_model_gptj(
                 vocab_size=vocab_size,
                 context_length=context_length,
-                use_xformers=xformers,
+                attention_mode=attention_mode,
                 use_checkpointing=checkpoint,
+                checkpoint_only_attention=checkpoint_only_attention,
                 device=self.fabric.device,
             )
         else:
-            raise NotImplementedError("only support LlaMa or GPTJ")
+            raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
         self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
         self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
@@ -206,14 +216,18 @@ class Trainer:
         self.opt.zero_grad()
 
         for i, batch in enumerate(progress_bar):
-            loss = self.train_step(batch)
-            perplexity = compute_perplexity(loss)
-            self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
+            is_accumulating = (i + 1) % self.grad != 0
 
-            if self.fabric.global_rank == 0:
-                progress_bar.set_description(f"loss: {loss.item():.3f}")
-            self.fabric.backward(loss)
-            if (i + 1) % self.grad == 0:
+            with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
+                loss = self.train_step(batch)
+
+                self.fabric.backward(loss)
+                perplexity = compute_perplexity(loss)
+                self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
+                if self.fabric.global_rank == 0:
+                    progress_bar.set_description(f"loss: {loss.item():.3f}")
+
+            if not is_accumulating:
                 self.opt.step()
                 self.opt.zero_grad()
 
