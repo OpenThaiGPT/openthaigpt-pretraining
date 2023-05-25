@@ -36,6 +36,55 @@ import os
 os.environ["WANDB_MODE"] = "offline"
 
 
+class TokenizedDataset:
+    def __init__(self, mode: str, model: str, max_tokens: int = 256, path: str = "./"):
+        if model != "decapoda-research/llama-7b-hf":
+            self.tokenizer = AutoTokenizer.from_pretrained(model)
+        else:
+            self.tokenizer = LlamaTokenizer.from_pretrained(model)
+
+        self.mode = mode
+        self.max_tokens = max_tokens
+        self.path = path
+
+        if mode == "val":
+            self.data_set = load_dataset(
+                DATASET_NAME,
+                LANGUAGE_DATASET,
+                split=SPLIT_VAL,
+            )
+        elif mode == "train":
+            self.data_set = load_dataset(
+                DATASET_NAME,
+                LANGUAGE_DATASET,
+                split=SPLIT_TRAIN,
+            )
+        else:
+            raise NotImplementedError("only support Train,Val")
+        self.tokenized_data = None
+
+    def tokenize_data(self) -> List[List[int]]:
+        tokenized_data: List[List[int]] = []
+        for sample in self.data_set:
+            tokenized_sample = self.tokenizer(
+                sample["text"], truncation=True, padding=False
+            )["input_ids"]
+            tokenized_data.extend(
+                tokenized_sample[i : i + self.max_tokens]
+                for i in range(0, len(tokenized_sample), self.max_tokens)
+            )
+        return tokenized_data
+
+    def save_data(self):
+        self.tokenized_data = self.tokenize_data()
+        with open(os.path.join(self.path, f"tokenized_data_{self.mode}.pt"), "wb") as f:
+            torch.save(self.tokenized_data, f)
+
+    def load_data(self):
+        with open(os.path.join(self.path, f"tokenized_data_{self.mode}.pt"), "rb") as f:
+            self.tokenized_data = torch.load(f)
+
+
 class DatasetWrapper(IterableDataset):
     def __init__(self, mode, model, max_tokens=256):
         if model != "decapoda-research/llama-7b-hf":
