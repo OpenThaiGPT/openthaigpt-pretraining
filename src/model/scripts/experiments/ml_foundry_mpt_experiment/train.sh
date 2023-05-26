@@ -7,4 +7,7 @@
 #SBATCH -A lt200056         # Specify project name
 #SBATCH -J train            # Specify job name
 
-srun /bin/bash train_srun.sh
+sml purge
+ml Apptainer
+
+srun /bin/bash train_srun.shrun /bin/bash train_srun.sh

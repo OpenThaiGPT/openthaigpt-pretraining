@@ -98,7 +98,8 @@ clone tokenizer in this example use xlm-roberta-base
   git clone xlm-roberta-base
 ```
 
-make container from [openthaigpt/openthaigpt-pretraining:llmfoundry](https://hub.docker.com/layers/openthaigpt/openthaigpt-pretraining/llmfoundry/images/sha256-3d56b25d90f75977cc84e34ef12a12f3a5c557c941644e8a0edb9b07bca2fb95?context=repo) (but now this cannot use)
+make container from [openthaigpt/openthaigpt-pretraining:llmfoundry](https://hub.docker.com/layers/openthaigpt/openthaigpt-pretraining/llmfoundry/images/sha256-3d56b25d90f75977cc84e34ef12a12f3a5c557c941644e8a0edb9b07bca2fb95?context=repo) 
+
 
 ```bash
   ml Apptainer
@@ -120,7 +121,8 @@ make data_prep.sh file for run by sbatch
 
   ml purge
   ml Apptainer
-  apptainer run --nv --home /lustrefs/disk/home/USERNAME/llm-foundry llmfoundry.sif python3 scripts/data_prep/convert_dataset_json.py \
+  apptainer run --nv --home /home/USERNAME/llm-foundry llmfoundry.sif \
+    python3 scripts/data_prep/convert_dataset_json.py \
     --path scripts/data_prep/example_data/arxiv.jsonl \
     --out_root my-copy-arxiv --split train \
     --concat_tokens 2048 --tokenizer xlm-roberta-base --eos_text '<|endoftext|>'
@@ -134,29 +136,29 @@ run data_prep file
   sbatch data_prep.sh
 ```
 
-## Training
+## Training for multi node
 
 make train_srun.sh file for run by srun
 
 ```train_srun.sh
   master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 
-  apptainer run --nv --home /home/cutupon/llm-foundry/ llmfoundry.sif \
-  composer --world_size 32 --node_rank $((SLURM_NODEID)) --master_addr $master_addr --master_port 7501 \
-  scripts/train/train.py \
-  scripts/train/yamls/mpt/125m.yaml \
-  data_local=./my-copy-oscar \
-  train_loader.dataset.split=train \
-  train_loader.dataset.shuffle_seed=$((SLURM_NODEID)) \
-  eval_loader.dataset.split=eval \
-  eval_loader.dataset.shuffle_seed=$((SLURM_NODEID)) \
-  max_duration=10ba \
-  eval_interval=0 \
-  save_folder=mpt-125m \
-  precision=amp_fp16 \
-  global_train_batch_size=32 \
-  model.attn_config.attn_impl=torch \
-  tokenizer.name=xlm-roberta-base
+  apptainer run --nv --home /home/USERNAME/llm-foundry/ llmfoundry.sif \
+    composer --world_size 32 --node_rank $((SLURM_NODEID)) --master_addr $master_addr --master_port 7501 \
+    scripts/train/train.py \
+    scripts/train/yamls/mpt/125m.yaml \
+    data_local=./my-copy-oscar \
+    train_loader.dataset.split=train \
+    train_loader.dataset.shuffle_seed=$((SLURM_NODEID)) \
+    eval_loader.dataset.split=eval \
+    eval_loader.dataset.shuffle_seed=$((SLURM_NODEID)) \
+    max_duration=10ba \
+    eval_interval=0 \
+    save_folder=mpt-125m \
+    precision=amp_fp16 \
+    global_train_batch_size=32 \
+    model.attn_config.attn_impl=torch \
+    tokenizer.name=xlm-roberta-base
 ```
 
 note you will change USERNAME to your username
@@ -166,12 +168,15 @@ make train.sh file for run by sbatch
 ```train.sh
   #!/bin/bash
   #SBATCH -p gpu              # Specify partition [Compute/Memory/GPU]
-  #SBATCH --gpus=8            # Specify number of GPUs
-  #SBATCH -N 2 -c 64          # Specify number of nodes and processors per task
+  #SBATCH --gpus=32            # Specify number of GPUs
+  #SBATCH -N 8 -c 64          # Specify number of nodes and processors per task
   #SBATCH --ntasks-per-node=1 # Specify tasks per node
   #SBATCH -t 1:00:00          # Specify maximum time limit (hour: minute: second)
   #SBATCH -A lt200056         # Specify project name
   #SBATCH -J train            # Specify job name
+
+  ml purge
+  ml Apptainer
 
   srun /bin/bash train_srun.sh
 ```
