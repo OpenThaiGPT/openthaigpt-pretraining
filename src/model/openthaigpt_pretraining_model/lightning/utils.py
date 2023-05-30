@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import numpy as np
 import random
 from tqdm import tqdm
@@ -7,7 +7,7 @@ from lightning.fabric.accelerators import Accelerator
 from lightning.fabric.strategies import Strategy
 import torch
 import torch.optim as optim
-from torch.utils.data import IterableDataset, DataLoader
+from torch.utils.data import IterableDataset, Dataset, DataLoader
 from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
@@ -31,58 +31,131 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 )
 import wandb
 import os
+from re import findall
 
 # os.environ["WANDB_API_KEY"] = "<your-api-key>"
 os.environ["WANDB_MODE"] = "offline"
 
 
 class TokenizedDataset:
-    def __init__(self, mode: str, model: str, max_tokens: int = 256, path: str = "./"):
-        if model != "decapoda-research/llama-7b-hf":
-            self.tokenizer = AutoTokenizer.from_pretrained(model)
+    def __init__(
+        self,
+        mode: str,
+        model_or_path: str,
+        max_tokens: int = 256,
+        save_path: str = "./",
+        chunk_size: int = 1024 * 1024,
+        batch_size: int = 10000,
+        num_proc: int = 16,
+        use_cache: bool = True,
+        dataset_name: str = "oscar",
+        dataset_dir: str = "unshuffled_deduplicated_th",
+    ):
+        if len(findall("llama", model_or_path)):
+            self.tokenizer = LlamaTokenizer.from_pretrained(model_or_path)
         else:
-            self.tokenizer = LlamaTokenizer.from_pretrained(model)
+            self.tokenizer = AutoTokenizer.from_pretrained()
 
         self.mode = mode
         self.max_tokens = max_tokens
-        self.path = path
+        self.save_path = save_path
+        self.chunk_size = chunk_size
+        self.batch_size = batch_size
+        self.num_proc = num_proc
+        if use_cache:
+            if mode == "val":
+                self.data_set = load_dataset(
+                    dataset_name,
+                    dataset_dir,
+                    split=SPLIT_TRAIN,
+                )
+            elif mode == "train":
+                self.data_set = load_dataset(
+                    dataset_name,
+                    dataset_dir,
+                    split=SPLIT_TRAIN,
+                )
+            else:
+                raise NotImplementedError("only support Train,Val")
+            self.num_shards = (len(self.data_set) + chunk_size - 1) // chunk_size
 
-        if mode == "val":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                LANGUAGE_DATASET,
-                split=SPLIT_VAL,
-            )
-        elif mode == "train":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                LANGUAGE_DATASET,
-                split=SPLIT_TRAIN,
-            )
-        else:
-            raise NotImplementedError("only support Train,Val")
         self.tokenized_data = None
 
-    def tokenize_data(self) -> List[List[int]]:
-        tokenized_data: List[List[int]] = []
-        for sample in self.data_set:
-            tokenized_sample = self.tokenizer(
-                sample["text"], truncation=True, padding=False
+    def tokenize_data(self):
+        def tokenize_function(examples):
+            tokenized_text = self.tokenizer(
+                examples["text"],
+                truncation=True,
+                padding=False,
+                max_length=self.max_tokens,
             )["input_ids"]
-            tokenized_data.extend(
-                tokenized_sample[i : i + self.max_tokens]
-                for i in range(0, len(tokenized_sample), self.max_tokens)
+            return {"tokenized_text": tokenized_text}
+
+        for i in tqdm(range(self.num_shards)):
+            chunk = self.data_set.shard(self.num_shards, i)  # split chunk
+            tokenized_dataset = chunk.map(
+                tokenize_function,
+                batched=True,
+                batch_size=self.batch_size,
+                num_proc=self.num_proc,
             )
-        return tokenized_data
+            print(f"save {self.mode}_chunk_{i}")
+            tokenized_dataset.save_to_disk(
+                os.path.join(self.save_path, f"{self.mode}_chunk_{i}")
+            )
 
-    def save_data(self):
-        self.tokenized_data = self.tokenize_data()
-        with open(os.path.join(self.path, f"tokenized_data_{self.mode}.pt"), "wb") as f:
-            torch.save(self.tokenized_data, f)
 
-    def load_data(self):
-        with open(os.path.join(self.path, f"tokenized_data_{self.mode}.pt"), "rb") as f:
-            self.tokenized_data = torch.load(f)
+class ChunkedDatasetWrapper(Dataset):
+    def __init__(self, tokenized_dataset):
+        self.tokenized_dataset = tokenized_dataset
+        self.file_paths = []
+        self.chunk_lengths = []
+        self.total_length = 0
+        self.loaded_chunk = None
+        self.loaded_chunk_start_index = 0
+        self.loaded_chunk_end_index = 0
+
+        chunk_count = 0
+        file_path = os.path.join(
+            self.tokenized_dataset.save_path,
+            f"{self.tokenized_dataset.mode}_chunk_{chunk_count}",
+        )
+        while os.path.exists(file_path):
+            dataset = load_from_disk(file_path)
+            self.file_paths.append(file_path)
+            self.chunk_lengths.append(len(dataset))
+            self.total_length += len(dataset)
+            chunk_count += 1
+            file_path = os.path.join(
+                self.tokenized_dataset.save_path,
+                f"{self.tokenized_dataset.mode}_chunk_{chunk_count}",
+            )
+        # Pre-calculate
+        self.cumulative_chunk_lengths = [0]
+        for chunk_length in self.chunk_lengths:
+            self.cumulative_chunk_lengths.append(
+                self.cumulative_chunk_lengths[-1] + chunk_length
+            )
+
+    def __len__(self):
+        return self.total_length
+
+    def __getitem__(self, idx):
+        if not self.loaded_chunk_start_index <= idx < self.loaded_chunk_end_index:
+            # Calculate the chunk index
+            file_index = 0
+            for i, chunk_length in enumerate(self.chunk_lengths):
+                if idx < chunk_length:
+                    file_index = i
+                    break
+                idx -= chunk_length
+            self.loaded_chunk = load_from_disk(self.file_paths[file_index])
+            self.loaded_chunk_start_index = sum(self.chunk_lengths[:file_index])
+            self.loaded_chunk_end_index = (
+                self.loaded_chunk_start_index + self.chunk_lengths[file_index]
+            )
+        idx -= self.loaded_chunk_start_index
+        return torch.tensor(self.loaded_chunk[idx]["tokenized_text"])
 
 
 class DatasetWrapper(IterableDataset):
@@ -207,15 +280,29 @@ class Trainer:
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
-        self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
-        self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
-        self.tokenizer = self.dataset.tokenizer
+        self.dataset = ChunkedDatasetWrapper(
+            TokenizedDataset(
+                "train",
+                model_name,
+                max_tokens=self.max_tokens,
+                save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
+                use_cache=False,
+            )
+        )
+        self.dataset_val = ChunkedDatasetWrapper(
+            TokenizedDataset(
+                "val",
+                model_name,
+                max_tokens=self.max_tokens,
+                save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
+                use_cache=False,
+            )
+        )
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
-            num_workers=2,
+            num_workers=8,
         )
-
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
         if optimizer == "lion":
@@ -242,7 +329,7 @@ class Trainer:
 
     def log(self, data):
         if self.wandb is not None:
-            self.self.log(data)
+            self.wandb.log(data)
 
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
@@ -261,8 +348,11 @@ class Trainer:
         return loss
 
     def train(self):
-        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
+        progress_bar = tqdm(
+            self.dataloader,
+            disable=(self.fabric.global_rank != 0),
+        )
 
         for i, batch in enumerate(progress_bar):
             is_accumulating = (i + 1) % self.grad != 0
@@ -282,4 +372,4 @@ class Trainer:
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
 
-        self.run.finish()
+        self.wandb.finish()
