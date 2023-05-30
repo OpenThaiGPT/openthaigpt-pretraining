@@ -43,6 +43,8 @@ if __name__ == "__main__":
         default=1,
     )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
+    parser.add_argument("streaming", action="store_true")
+    parser.add_argument("--data_path", type=str, default="./tokendata")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
     parser.add_argument("--context_length", type=int, default=256, help="seq")
@@ -84,6 +86,8 @@ if __name__ == "__main__":
         precision=args.precision,
         num_nodes=args.num_nodes,
         seed=args.seed,
+        streaming=args.steaming,
+        data_path=args.data_path,
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,

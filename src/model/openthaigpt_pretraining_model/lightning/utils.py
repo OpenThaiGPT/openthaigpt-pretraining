@@ -47,7 +47,7 @@ class TokenizedDataset:
         chunk_size: int = 1024 * 1024,
         batch_size: int = 10000,
         num_proc: int = 16,
-        use_cache: bool = True,
+        use_cache: bool = False,
         dataset_name: str = "oscar",
         dataset_dir: str = "unshuffled_deduplicated_th",
     ):
@@ -69,7 +69,7 @@ class TokenizedDataset:
                 self.data_set = load_dataset(
                     dataset_name,
                     dataset_dir,
-                    split=SPLIT_TRAIN,
+                    split=SPLIT_VAL,
                 )
             elif mode == "train":
                 self.data_set = load_dataset(
@@ -219,6 +219,8 @@ class Trainer:
         devices: Union[List[int], str, int] = "auto",
         precision: Union[str, int] = "32-true",
         seed: int = 42,
+        streaming: bool = False,
+        data_path: str = "./tokendata",
         batch_size: int = 8,
         grad: int = 4,
         context_length: int = 256,
@@ -282,23 +284,25 @@ class Trainer:
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
-        self.dataset = TokenizedDataset(
-            "train",
-            model_name,
-            max_tokens=self.max_tokens,
-            save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
-            use_cache=False,
-        )
-        self.dataset_val = TokenizedDataset(
-            "val",
-            model_name,
-            max_tokens=self.max_tokens,
-            save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
-            use_cache=False,
-        )
-        self.tokenizer = self.dataset.tokenizer
-        self.dataset = ChunkedDatasetWrapper(self.dataset)
-        self.dataset_val = ChunkedDatasetWrapper(self.dataset_val)
+        if streaming:
+            self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
+            self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
+        else:
+            dataset = TokenizedDataset(
+                "train",
+                model_name,
+                max_tokens=self.max_tokens,
+                save_path=data_path,
+            )
+            dataset_val = TokenizedDataset(
+                "val",
+                model_name,
+                max_tokens=self.max_tokens,
+                save_path=data_path,
+            )
+            self.tokenizer = self.dataset.tokenizer
+            self.dataset = ChunkedDatasetWrapper(dataset)
+            self.dataset_val = ChunkedDatasetWrapper(dataset_val)
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
