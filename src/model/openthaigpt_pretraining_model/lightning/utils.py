@@ -53,8 +53,10 @@ class TokenizedDataset:
     ):
         if len(findall("llama", model_or_path)):
             self.tokenizer = LlamaTokenizer.from_pretrained(model_or_path)
+            self.tokenizer.pad_token = "<pad>"
+            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
         else:
-            self.tokenizer = AutoTokenizer.from_pretrained()
+            self.tokenizer = AutoTokenizer.from_pretrained(model_or_path)
 
         self.mode = mode
         self.max_tokens = max_tokens
@@ -86,7 +88,7 @@ class TokenizedDataset:
             tokenized_text = self.tokenizer(
                 examples["text"],
                 truncation=True,
-                padding=False,
+                padding=True,
                 max_length=self.max_tokens,
             )["input_ids"]
             return {"tokenized_text": tokenized_text}
@@ -280,24 +282,23 @@ class Trainer:
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
-        self.dataset = ChunkedDatasetWrapper(
-            TokenizedDataset(
-                "train",
-                model_name,
-                max_tokens=self.max_tokens,
-                save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
-                use_cache=False,
-            )
+        self.dataset = TokenizedDataset(
+            "train",
+            model_name,
+            max_tokens=self.max_tokens,
+            save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
+            use_cache=False,
         )
-        self.dataset_val = ChunkedDatasetWrapper(
-            TokenizedDataset(
-                "val",
-                model_name,
-                max_tokens=self.max_tokens,
-                save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
-                use_cache=False,
-            )
+        self.dataset_val = TokenizedDataset(
+            "val",
+            model_name,
+            max_tokens=self.max_tokens,
+            save_path="/project/lt200056-opgpth/lightning/tokendata/oscar",
+            use_cache=False,
         )
+        self.tokenizer = self.dataset.tokenizer
+        self.dataset = ChunkedDatasetWrapper(self.dataset)
+        self.dataset_val = ChunkedDatasetWrapper(self.dataset_val)
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
