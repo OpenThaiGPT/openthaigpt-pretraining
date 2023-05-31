@@ -93,7 +93,7 @@ if __name__ == "__main__":
         precision=args.precision,
         num_nodes=args.num_nodes,
         seed=args.seed,
-        streaming=args.steaming,
+        streaming=args.streaming,
         dataset_name_or_path=args.dataset_name_or_path,
         dataset_dir=args.dataset_dir,
         batch_size=args.batch_size,
