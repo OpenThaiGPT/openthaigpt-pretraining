@@ -42,7 +42,7 @@ class TokenizedDataset:
         self,
         mode: str,
         model_or_path: str,
-        max_tokens: int = 256,
+        max_tokens: int = 2048,
         save_path: str = "./",
         chunk_size: int = 1024 * 1024,
         batch_size: int = 10000,
@@ -107,7 +107,7 @@ class TokenizedDataset:
             )
 
 
-class ChunkedDatasetWrapper(Dataset):
+class ChunkedWrapper(Dataset):
     def __init__(self, tokenized_dataset):
         self.tokenized_dataset = tokenized_dataset
         self.file_paths = []
@@ -301,8 +301,8 @@ class Trainer:
                 save_path=data_path,
             )
             self.tokenizer = self.dataset.tokenizer
-            self.dataset = ChunkedDatasetWrapper(dataset)
-            self.dataset_val = ChunkedDatasetWrapper(dataset_val)
+            self.dataset = ChunkedWrapper(dataset)
+            self.dataset_val = ChunkedWrapper(dataset_val)
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
