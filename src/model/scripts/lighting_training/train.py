@@ -49,7 +49,7 @@ if __name__ == "__main__":
         default=1,
     )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
-    parser.add_argument("--streaming", action="store_true")
+    parser.add_argument("--streaming`", action="store_true")
     parser.add_argument("--dataset_name_or_path", type=str, default="./tokendata")
     parser.add_argument("--dataset_dir", type=str, default="en")
     parser.add_argument("--batch_size", type=int, default=2)
