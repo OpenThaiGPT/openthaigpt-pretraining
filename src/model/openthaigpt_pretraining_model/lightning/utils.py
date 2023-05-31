@@ -7,7 +7,7 @@ from lightning.fabric.accelerators import Accelerator
 from lightning.fabric.strategies import Strategy
 import torch
 import torch.optim as optim
-from torch.utils.data import IterableDataset, Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader
 from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
@@ -107,43 +107,66 @@ class TokenizedDataset:
             )
 
 
-class ChunkedWrapper(Dataset):
-    def __init__(self, tokenized_dataset):
-        self.tokenized_dataset = tokenized_dataset
-        self.file_paths = []
-        self.chunk_lengths = []
-        self.total_length = 0
-        self.loaded_chunk = None
-        self.loaded_chunk_start_index = 0
-        self.loaded_chunk_end_index = 0
+class DatasetWrapper(Dataset):
+    def __init__(
+        self,
+        model_or_path: str = "decapoda-research/llama-7b-hf",
+        mode: str = "train",
+        max_tokens: int = 2048,
+        streaming: bool = False,
+        dataset_name_or_path: str = "oscar",
+        dataset_dir: str = "unshuffled_deduplicated_th",
+    ):
+        self.streaming = streaming
+        self.mode = mode
+        self.max_tokens = max_tokens
 
-        chunk_count = 0
-        file_path = os.path.join(
-            self.tokenized_dataset.save_path,
-            f"{self.tokenized_dataset.mode}_chunk_{chunk_count}",
-        )
-        while os.path.exists(file_path):
-            dataset = load_from_disk(file_path)
-            self.file_paths.append(file_path)
-            self.chunk_lengths.append(len(dataset))
-            self.total_length += len(dataset)
-            chunk_count += 1
-            file_path = os.path.join(
-                self.tokenized_dataset.save_path,
-                f"{self.tokenized_dataset.mode}_chunk_{chunk_count}",
-            )
-        # Pre-calculate
-        self.cumulative_chunk_lengths = [0]
-        for chunk_length in self.chunk_lengths:
-            self.cumulative_chunk_lengths.append(
-                self.cumulative_chunk_lengths[-1] + chunk_length
-            )
+        if streaming:
+            if len(findall("llama", model_or_path)):
+                self.tokenizer = LlamaTokenizer.from_pretrained(model_or_path)
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained(model_or_path)
+            if mode == "val":
+                self.data_set = load_dataset(
+                    dataset_name_or_path,
+                    dataset_dir,
+                    streaming=True,
+                    split=SPLIT_VAL,
+                )
+            elif mode == "train":
+                self.data_set = load_dataset(
+                    dataset_name_or_path,
+                    dataset_dir,
+                    streaming=True,
+                    split=SPLIT_TRAIN,
+                ).shuffle(buffer_size=10_000)
+            else:
+                raise NotImplementedError("only support Train,Val")
+        else:
+            self.file_paths = []
+            self.chunk_lengths = []
+            self.total_length = 0
+            self.chunk = None
+            self.chunk_start_index = 0
+            self.chunk_end_index = 0
+
+            for chunk_path in dataset_name_or_path:
+                chunk = load_from_disk(chunk_path)
+                self.file_paths.append(chunk_path)
+                self.chunk_lengths.append(len(chunk))
+                self.total_length += len(chunk)
 
     def __len__(self):
+        if self.streaming:
+            raise NotImplementedError("This Dataset is streaming, length is unknown")
+
         return self.total_length
 
     def __getitem__(self, idx):
-        if not self.loaded_chunk_start_index <= idx < self.loaded_chunk_end_index:
+        if self.streaming:
+            raise NotImplementedError("This Dataset is streaming, use __iter__ instead")
+
+        if not self.chunk_start_index <= idx < self.chunk_end_index:
             # Calculate the chunk index
             file_index = 0
             for i, chunk_length in enumerate(self.chunk_lengths):
@@ -151,42 +174,19 @@ class ChunkedWrapper(Dataset):
                     file_index = i
                     break
                 idx -= chunk_length
-            self.loaded_chunk = load_from_disk(self.file_paths[file_index])
-            self.loaded_chunk_start_index = sum(self.chunk_lengths[:file_index])
-            self.loaded_chunk_end_index = (
-                self.loaded_chunk_start_index + self.chunk_lengths[file_index]
+            self.chunk = load_from_disk(self.file_paths[file_index])
+            self.chunk_start_index = sum(self.chunk_lengths[:file_index])
+            self.chunk_end_index = (
+                self.chunk_start_index + self.chunk_lengths[file_index]
             )
-        idx -= self.loaded_chunk_start_index
-        return torch.tensor(self.loaded_chunk[idx]["tokenized_text"])
-
-
-class DatasetWrapper(IterableDataset):
-    def __init__(self, mode, model, max_tokens=256):
-        if model != "decapoda-research/llama-7b-hf":
-            self.tokenizer = AutoTokenizer.from_pretrained(model)
-        else:
-            self.tokenizer = LlamaTokenizer.from_pretrained(model)
-        self.mode = mode
-        self.max_tokens = max_tokens
-
-        if mode == "val":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                LANGUAGE_DATASET,
-                streaming=True,
-                split=SPLIT_VAL,
-            )
-        elif mode == "train":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                LANGUAGE_DATASET,
-                streaming=True,
-                split=SPLIT_TRAIN,
-            ).shuffle(buffer_size=10_000)
-        else:
-            raise NotImplementedError("only support Train,Val")
+        return torch.tensor(self.chunk[idx - self.chunk_start_index]["tokenized_text"])
 
     def __iter__(self):
+        if not self.streaming:
+            raise NotImplementedError(
+                "This Dataset is not streaming, use __getitem__ instead"
+            )
+
         buffer = []
         iter_dataset = self.data_set
 
@@ -220,7 +220,8 @@ class Trainer:
         precision: Union[str, int] = "32-true",
         seed: int = 42,
         streaming: bool = False,
-        data_path: str = "./tokendata",
+        dataset_name_or_path: str = DATASET_NAME,
+        dataset_dir: str = LANGUAGE_DATASET,
         batch_size: int = 8,
         grad: int = 4,
         context_length: int = 256,
@@ -284,25 +285,31 @@ class Trainer:
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
-        if streaming:
-            self.dataset = DatasetWrapper("train", model_name, self.max_tokens)
-            self.dataset_val = DatasetWrapper("val", model_name, self.max_tokens)
-        else:
-            dataset = TokenizedDataset(
-                "train",
-                model_name,
-                max_tokens=self.max_tokens,
-                save_path=data_path,
-            )
-            dataset_val = TokenizedDataset(
-                "val",
-                model_name,
-                max_tokens=self.max_tokens,
-                save_path=data_path,
-            )
-            self.tokenizer = self.dataset.tokenizer
-            self.dataset = ChunkedWrapper(dataset)
-            self.dataset_val = ChunkedWrapper(dataset_val)
+        """
+            token_data_path: str = "./tokendata",
+            model_or_path: str = "decapoda-research/llama-7b-hf",
+            mode: str = "train",
+            max_tokens: int = 2048,
+            streaming: bool = False,
+            dataset_name: str = "oscar",
+            dataset_dir: str = "unshuffled_deduplicated_th",
+        """
+        self.dataset = DatasetWrapper(
+            mode="train",
+            model_or_path=model_name,
+            max_tokens=self.max_tokens,
+            streaming=streaming,
+            dataset_name_or_path=dataset_name_or_path,
+            dataset_dir=dataset_dir,
+        )
+        self.dataset_val = DatasetWrapper(
+            mode="val",
+            model_or_path=model_name,
+            max_tokens=self.max_tokens,
+            streaming=streaming,
+            dataset_name_or_path=dataset_name_or_path,
+            dataset_dir=dataset_dir,
+        )
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
