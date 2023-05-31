@@ -110,11 +110,11 @@ class TokenizedDataset:
 class StreamingDatasetWrapper(IterableDataset):
     def __init__(
         self,
-        model_or_path: str = "decapoda-research/llama-7b-hf",
-        mode: str = "train",
-        max_tokens: int = 2048,
-        dataset_name: str = "oscar",
-        dataset_dir: str = "unshuffled_deduplicated_th",
+        model_or_path,
+        mode,
+        max_tokens,
+        dataset_name,
+        dataset_dir,
     ):
         self.mode = mode
         self.max_tokens = max_tokens
@@ -310,6 +310,7 @@ class Trainer:
             self.dataset_val = StreamingDatasetWrapper(
                 mode="val",
                 model_or_path=model_name,
+                max_tokens=self.max_tokens,
                 dataset_name=dataset_name_or_path,
                 dataset_dir=dataset_dir,
             )
