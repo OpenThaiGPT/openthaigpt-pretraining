@@ -373,11 +373,8 @@ class Trainer:
         return loss
 
     def train(self):
+        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
-        progress_bar = tqdm(
-            self.dataloader,
-            disable=(self.fabric.global_rank != 0),
-        )
 
         for i, batch in enumerate(progress_bar):
             is_accumulating = (i + 1) % self.grad != 0
