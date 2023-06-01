@@ -189,11 +189,13 @@ class TokenDatasetWrapper(Dataset):
         if not self.chunk_start_index <= idx < self.chunk_end_index:
             # Calculate the chunk index
             file_index = 0
+            file_check = idx
             for i, chunk_length in enumerate(self.chunk_lengths):
-                if idx < chunk_length:
+                if file_check < chunk_length:
                     file_index = i
                     break
-                idx -= chunk_length
+                file_check -= chunk_length
+
             self.chunk = load_from_disk(self.file_paths[file_index])
             self.chunk_start_index = sum(self.chunk_lengths[:file_index])
             self.chunk_end_index = (
