@@ -28,7 +28,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-CLEAN_FUNCTION = {"mc4": clean_mc4_dataset, "oscar": clean_oscar_dataset, "core": clean_dataset}
+CLEAN_FUNCTION = {
+    "mc4": clean_mc4_dataset,
+    "oscar": clean_oscar_dataset,
+    "core": clean_dataset,
+}
 
 with open(args.input_file, "r", encoding="utf-8") as f:
     dataset = [line.strip() for line in f.readlines()]
