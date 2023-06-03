@@ -1,14 +1,4 @@
-DATASET_ARGS = {
-    "c4": {
-        "path": "c4",
-        "name": "en",
-        "streaming": True,
-    },
-    "mc4": {
-        "path": "mc4",
-        "name": ["th"],
-        "streaming": True,
-    },
-}
+C4_DATASET = "c4"
+MC4_DATASET = "mc4"
 SPLIT_TRAIN = "train"
 SPLIT_VAL = "validation"
