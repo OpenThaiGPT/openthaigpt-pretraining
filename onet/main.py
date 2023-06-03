@@ -8,7 +8,7 @@ docx_folder = "docx"
 
 
 def save_json(data, file_name):
-    with open(file_name, 'w', encoding='utf-8') as f:
+    with open(file_name, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
 
 
@@ -18,7 +18,7 @@ def remove_emptyline(lst):
 
 def is_something_list(lst):
     for item in lst:
-        if item != '':
+        if item != "":
             return True
     return False
 
@@ -29,17 +29,17 @@ def read_docx(file_name):
 
 
 def check_question_format(txt):
-    pattern = r'^\d+\)'
+    pattern = r"^\d+\)"
     match = re.match(pattern, txt)
     return bool(match)
 
 
 def separate_by_q(txt):
-    return re.split('\n{5,}', txt)
+    return re.split("\n{5,}", txt)
 
 
 def unwanted_questions(txt):
-    patterns = [r'IMAGE#\d+-image\d+']
+    patterns = [r"IMAGE#\d+-image\d+"]
     for pattern in patterns:
         if re.findall(pattern, txt):
             return True
@@ -58,7 +58,7 @@ def transform_docx2json(file_name):
         if unwanted_questions(question_text):
             continue
 
-        q = question_text.split('\n')
+        q = question_text.split("\n")
         questions = []
         answers = []
 
@@ -67,12 +67,14 @@ def transform_docx2json(file_name):
                 answers.append(x)
             else:
                 questions.append(x)
-        output.append({
-            'no': q_no,
-            'question': ' '.join(questions).strip(),
-            'answers': answers,
-            'answer': None
-        })
+        output.append(
+            {
+                "no": q_no,
+                "question": " ".join(questions).strip(),
+                "answers": answers,
+                "answer": None,
+            }
+        )
         q_no += 1
 
     return output
@@ -91,6 +93,6 @@ def list_files_in_folder(folder_path):
 
 file_lst = list_files_in_folder(docx_folder)
 for file_name in file_lst:
-    if '.docx' in file_name:
+    if ".docx" in file_name:
         q_a = transform_docx2json(file_name)
         save_json(q_a, f'result-{file_name.split(".")[0]}-result.json')
