@@ -5,8 +5,6 @@ import os
 
 # const
 docx_folder = "docx"
-result_file = 'result.json'
-NL_BETWEEN_QUESTION = 13
 
 
 def save_json(data, file_name):
@@ -31,24 +29,35 @@ def read_docx(file_name):
 
 
 def check_question_format(txt):
-    pattern = r'\n{2,}'
+    pattern = r'^\d+\)'
     match = re.match(pattern, txt)
     return bool(match)
 
 
-def separate_by_q_no(txt):
-    pattern = r'\d+\.'
-    return re.split(pattern, txt)
+def separate_by_q(txt):
+    return re.split('\n{5,}', txt)
+
+
+def unwanted_questions(txt):
+    patterns = [r'IMAGE#\d+-image\d+']
+    for pattern in patterns:
+        if re.findall(pattern, txt):
+            return True
+    return False
 
 
 def transform_docx2json(file_name):
     doc_txt = read_docx(file_name)
-    split_by_q = doc_txt.split('\n' * NL_BETWEEN_QUESTION)
+    split_by_q = separate_by_q(doc_txt)
     remove_empty = list(filter(is_something_list, split_by_q))
 
     output = []
+    q_no = 1
 
-    for question_no, question_text in enumerate(remove_empty):
+    for question_text in remove_empty:
+        if unwanted_questions(question_text):
+            continue
+
         q = question_text.split('\n')
         questions = []
         answers = []
@@ -59,10 +68,12 @@ def transform_docx2json(file_name):
             else:
                 questions.append(x)
         output.append({
-            'no': question_no,
+            'no': q_no,
             'question': ' '.join(questions).strip(),
-            'answer': answers
+            'answers': answers,
+            'answer': None
         })
+        q_no += 1
 
     return output
 
@@ -70,7 +81,6 @@ def transform_docx2json(file_name):
 def list_files_in_folder(folder_path):
     file_list = []
 
-    # Iterate over all the files in the folder
     for root, dirs, files in os.walk(folder_path):
         for file in files:
             file_path = os.path.join(root, file)
@@ -81,5 +91,6 @@ def list_files_in_folder(folder_path):
 
 file_lst = list_files_in_folder(docx_folder)
 for file_name in file_lst:
-    q_a = transform_docx2json(file_name)
-    save_json(q_a, result_file)
+    if '.docx' in file_name:
+        q_a = transform_docx2json(file_name)
+        save_json(q_a, f'result-{file_name.split(".")[0]}-result.json')
