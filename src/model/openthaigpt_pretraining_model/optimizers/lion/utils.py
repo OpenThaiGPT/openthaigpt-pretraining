@@ -4,7 +4,6 @@ import os
 
 import torch
 
-import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP  # noqa: N817
 from torch.distributed import init_process_group, destroy_process_group
@@ -14,10 +13,6 @@ from tqdm import tqdm
 from datasets import load_dataset
 from transformers import GPT2TokenizerFast
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
-
-from lion_pytorch import Lion
-from bitsandbytes.optim import Adam8bit
-import deepspeed
 
 from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from .constants import (
@@ -32,6 +27,7 @@ from .constants import (
     LANGUAGE_DATASET,
 )
 from ...data_wrapper import DatasetWrapper
+from ...optimizers import get_optimizer
 
 _attn_orig = GPT2Attention._attn
 
@@ -148,7 +144,7 @@ class Trainer:
 
         self.ctx = get_torch_context(dtype)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
-        self.model = model = make_model(
+        self.model = make_model(
             model_name,
             self.max_tokens,
             self.tokenizer,
@@ -157,53 +153,14 @@ class Trainer:
             self.device,
             self.use_rotary,
         )
-
-        if optimizer == "lion":
-            print("Use lion optimizer")
-            self.opt = Lion(
-                model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-            )
-        elif optimizer == "adamw":
-            print("Use AdamW optimizer")
-            self.opt = optim.AdamW(  # type: ignore
-                params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-                fused=True,
-            )
-        elif optimizer == "adam8bit":
-            assert self.device != "cpu", "Adam8bit need GPU to execute"
-            print("Use Adam8bit optimizer")
-            self.opt = Adam8bit(
-                params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-            )
-        elif optimizer == "adam1bit":
-            print("Use Adam1bit optimizer")
-            config_params = {
-                "train_batch_size": batch_size,
-                "optimizer": {
-                    "type": "OneBitAdam",
-                    "params": {
-                        "lr": lr,
-                        "weight_decay": weight_decay,
-                        "betas": (0.9, 0.95),
-                    },
-                },
-            }
-            self.model, self.opt, _, _ = deepspeed.initialize(
-                model=model,
-                model_parameters=model.parameters(),
-                config_params=config_params,
-            )
-        else:
-            raise NotImplementedError("only support lion or AdamW")
-        self.model = torch.compile(model)  # type: ignore
+        self.model, self.opt = get_optimizer(
+            model=self.model,
+            optimizer=optimizer,
+            weight_decay=weight_decay,
+            lr=lr,
+            batch_size=batch_size,
+        )
+        self.model = torch.compile(self.model)  # type: ignore
         if self.ddp:
             self.model = DDP(self.model, device_ids=[ddp_local_rank])
 

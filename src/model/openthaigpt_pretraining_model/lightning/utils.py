@@ -4,9 +4,7 @@ import lightning as L
 from lightning.fabric.accelerators import Accelerator
 from lightning.fabric.strategies import Strategy
 import torch
-import torch.optim as optim
 from torch.utils.data import DataLoader
-from lion_pytorch import Lion
 from typing import List, Union
 from transformers import (
     AutoTokenizer,
@@ -29,8 +27,8 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 )
 from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper
+from ..optimizers import get_optimizer
 from lightning.fabric.strategies import DeepSpeedStrategy
-import deepspeed
 import wandb
 import os
 
@@ -145,40 +143,15 @@ class Trainer:
         )
 
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
-        if offload_optimizer or offload_parameters:
-            if optimizer == "adamw":
-                print("Use AdamW optimizer")
-                self.opt = deepspeed.ops.adam.DeepSpeedCPUAdam(
-                    self.model.parameters(),
-                    lr=lr,
-                    bias_correction=True,
-                    weight_decay=weight_decay,
-                    betas=(0.9, 0.95),
-                    amsgrad=False,
-                    adamw_mode=True,
-                    fp32_optimizer_states=True,
-                )
-            else:
-                raise NotImplementedError("only support AdamW")
-        else:
-            if optimizer == "lion":
-                print("Use lion optimizer")
-                self.opt = Lion(
-                    self.model.parameters(),
-                    lr=lr,
-                    weight_decay=weight_decay,
-                )
-            elif optimizer == "adamw":
-                print("Use AdamW optimizer")
-                self.opt = optim.AdamW(
-                    params=self.model.parameters(),
-                    lr=lr,
-                    weight_decay=weight_decay,
-                    betas=(0.9, 0.95),
-                )
-            else:
-                raise NotImplementedError("only support lion or AdamW")
-
+        self.model, self.opt = get_optimizer(
+            model=self.model,
+            optimizer=optimizer,
+            weight_decay=weight_decay,
+            lr=lr,
+            batch_size=batch_size,
+            offload_optimizer=offload_optimizer,
+            offload_parameters=offload_parameters,
+        )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
