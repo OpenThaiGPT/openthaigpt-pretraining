@@ -10,7 +10,6 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from tqdm import tqdm
 
-from datasets import load_dataset
 from transformers import GPT2TokenizerFast
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
@@ -22,12 +21,10 @@ from .constants import (
     EOS_TOKEN,
     PAD_TOKEN,
     DATASET_NAME,
-    SPLIT_VAL,
-    SPLIT_TRAIN,
-    LANGUAGE_DATASET,
 )
 from ...data_wrapper import DatasetWrapper
 from ...optimizers import get_optimizer
+from ...datasets import get_datasets
 
 _attn_orig = GPT2Attention._attn
 
@@ -103,18 +100,7 @@ class Trainer:
             eos_token=EOS_TOKEN,
             pad_token=PAD_TOKEN,
         )
-        dataset_train = load_dataset(
-            DATASET_NAME,
-            languages=[LANGUAGE_DATASET],
-            streaming=True,
-            split=SPLIT_TRAIN,  # optional
-        ).shuffle(buffer_size=10_000)
-        dataset_val = load_dataset(
-            DATASET_NAME,
-            languages=[LANGUAGE_DATASET],
-            streaming=True,
-            split=SPLIT_VAL,  # optional
-        )
+        dataset_train, dataset_val = get_datasets(DATASET_NAME)
         self.dataset = DatasetWrapper(tokenizer, dataset_train, self.max_tokens)
         self.dataset_val = DatasetWrapper(tokenizer, dataset_val, self.max_tokens)
         self.use_flash = use_flash

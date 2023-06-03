@@ -1,4 +1,3 @@
-from datasets import load_dataset
 from tqdm import tqdm
 import lightning as L
 from lightning.fabric.accelerators import Accelerator
@@ -11,10 +10,7 @@ from transformers import (
     LlamaTokenizer,
 )
 from .constants import (
-    DATASET_NAME,
-    SPLIT_VAL,
-    SPLIT_TRAIN,
-    LANGUAGE_DATASET,
+    DEFALUT_DATASET_NAME,
     LLAMA_MODEL,
     GPTJ_MODEL,
 )
@@ -28,6 +24,7 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper
 from ..optimizers import get_optimizer
+from ..datasets import get_datasets
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
 import os
@@ -39,6 +36,7 @@ os.environ["WANDB_MODE"] = "offline"
 class Trainer:
     def __init__(
         self,
+        dataset_name: str = DEFALUT_DATASET_NAME,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
         stage: int = 2,
@@ -121,18 +119,7 @@ class Trainer:
             )
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
-        train_dataset = load_dataset(
-            DATASET_NAME,
-            LANGUAGE_DATASET,
-            streaming=True,
-            split=SPLIT_TRAIN,
-        ).shuffle(buffer_size=10_000)
-        val_dataset = load_dataset(
-            DATASET_NAME,
-            LANGUAGE_DATASET,
-            streaming=True,
-            split=SPLIT_VAL,
-        )
+        train_dataset, val_dataset = get_datasets(dataset_name)
         self.dataset = DatasetWrapper(self.tokenizer, train_dataset, self.max_tokens)
         self.dataset_val = DatasetWrapper(self.tokenizer, val_dataset, self.max_tokens)
         self.tokenizer = self.dataset.tokenizer
