@@ -1,0 +1,4 @@
+[core]
+    remote = openthaigpt
+['remote "openthaigpt"']
+    url = gs://openthaigpt-pretraining
