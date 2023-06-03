@@ -363,7 +363,7 @@ class GPTJForCausalLMNewCheckpoint(GPTJForCausalLM):
 def make_model_gptj(
     vocab_size,
     context_length,
-    use_xformers,
+    attention_mode,
     use_checkpointing,
     checkpoint_only_attention,
     device: str = "cuda",
@@ -405,14 +405,16 @@ def make_model_gptj(
         if use_checkpointing:
             print("use gradient checkpointing")
 
-    if use_xformers:
+    if attention_mode == "xformers":
         print("Use xFormers")
         if device == "cpu":
             GPTJAttention._attn = _attn_xformers_cpu
         else:
             GPTJAttention._attn = _attn_xformers
-    else:
+    elif attention_mode == "origin":
         print("Use original")
+    else:
+        print("GPTJ attention mode only support origin and xformers")
 
     if use_checkpointing:
         model.gradient_checkpointing_enable()
