@@ -10,7 +10,7 @@ from transformers import (
     LlamaTokenizer,
 )
 from .constants import (
-    DEFALUT_DATASET_NAME,
+    DEFAULT_DATASET_NAME,
     LLAMA_MODEL,
     GPTJ_MODEL,
 )
@@ -36,7 +36,7 @@ os.environ["WANDB_MODE"] = "offline"
 class Trainer:
     def __init__(
         self,
-        dataset_name: str = DEFALUT_DATASET_NAME,
+        dataset_name: str = DEFAULT_DATASET_NAME,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
         stage: int = 2,
