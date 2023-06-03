@@ -29,6 +29,8 @@ from openthaigpt_pretraining_model.models.llama.model import make_model_llama
 from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama_hf,
 )
+from lightning.fabric.strategies import DeepSpeedStrategy
+import deepspeed
 import wandb
 import os
 
@@ -83,7 +85,7 @@ def seed_everything(seed):
     random.seed(seed)
 
 
-def compute_perplexity(loss):
+def compute_perplexity(loss: torch.Tensor) -> float:
     return torch.exp(loss).item()
 
 
@@ -92,10 +94,14 @@ class Trainer:
         self,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
+        stage: int = 2,
+        offload_optimizer: bool = False,
+        offload_parameters: bool = False,
         devices: Union[List[int], str, int] = "auto",
         precision: Union[str, int] = "32-true",
         seed: int = 42,
         batch_size: int = 8,
+        num_workers: int = 2,
         grad: int = 4,
         context_length: int = 256,
         model_name: str = "llama",
@@ -115,6 +121,14 @@ class Trainer:
         self.step = 0
         self.seed = seed
         self.grad = grad
+        if strategy == "deepspeed":
+            strategy = DeepSpeedStrategy(
+                stage=stage,
+                offload_optimizer=offload_optimizer,
+                offload_parameters=offload_parameters,
+            )
+        elif offload_optimizer or offload_parameters:
+            raise NotImplementedError("offload only support for deepspeed strategy")
         self.fabric = L.Fabric(
             accelerator=accelerator,
             strategy=strategy,
@@ -164,28 +178,43 @@ class Trainer:
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
-            num_workers=2,
+            num_workers=num_workers,
         )
 
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
-
-        if optimizer == "lion":
-            print("Use lion optimizer")
-            self.opt = Lion(
-                self.model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-            )
-        elif optimizer == "adamw":
-            print("Use AdamW optimizer")
-            self.opt = optim.AdamW(
-                params=self.model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-            )
+        if offload_optimizer or offload_parameters:
+            if optimizer == "adamw":
+                print("Use AdamW optimizer")
+                self.opt = deepspeed.ops.adam.DeepSpeedCPUAdam(
+                    self.model.parameters(),
+                    lr=lr,
+                    bias_correction=True,
+                    weight_decay=weight_decay,
+                    betas=(0.9, 0.95),
+                    amsgrad=False,
+                    adamw_mode=True,
+                    fp32_optimizer_states=True,
+                )
+            else:
+                raise NotImplementedError("only support AdamW")
         else:
-            raise NotImplementedError("only support lion or AdamW")
+            if optimizer == "lion":
+                print("Use lion optimizer")
+                self.opt = Lion(
+                    self.model.parameters(),
+                    lr=lr,
+                    weight_decay=weight_decay,
+                )
+            elif optimizer == "adamw":
+                print("Use AdamW optimizer")
+                self.opt = optim.AdamW(
+                    params=self.model.parameters(),
+                    lr=lr,
+                    weight_decay=weight_decay,
+                    betas=(0.9, 0.95),
+                )
+            else:
+                raise NotImplementedError("only support lion or AdamW")
 
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
@@ -193,7 +222,7 @@ class Trainer:
 
     def log(self, data):
         if self.wandb is not None:
-            self.self.log(data)
+            self.wandb.log(data)
 
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
