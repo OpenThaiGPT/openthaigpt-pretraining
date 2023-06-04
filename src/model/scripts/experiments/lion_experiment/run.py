@@ -1,6 +1,7 @@
 import argparse
 from openthaigpt_pretraining_model.utils import (
     seed_everything,
+    load_hydra_config,
 )
 import os
 from contextlib import nullcontext
@@ -82,7 +83,7 @@ def get_torch_context(dtype: str):
 class Trainer:
     def __init__(
         self,
-        optimizer,
+        training_configuration,
         seed,
         batch_size,
         context_length,
@@ -90,9 +91,7 @@ class Trainer:
         eval_steps,
         warmup_steps,
         model_name,
-        weight_decay,
         grad,
-        lr,
         do_sample,
         use_flash,
         use_checkpointing,
@@ -154,11 +153,8 @@ class Trainer:
             self.use_rotary,
         )
         self.model, self.opt = get_optimizer(
-            model=self.model,
-            optimizer=optimizer,
-            weight_decay=weight_decay,
-            lr=lr,
-            batch_size=batch_size,
+            self.model,
+            optimizer_configuration=training_configuration.optimizer,
         )
         self.model = torch.compile(self.model)  # type: ignore
         if self.ddp:
@@ -244,7 +240,9 @@ class Trainer:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--optimizer", type=str, default="adamw")
+    parser.add_argument(
+        "--training_configuration", type=str, default="./lion_optimizer_experiment.yml"
+    )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=20)
     parser.add_argument("--context_length", type=int, default=256, help="seq")
@@ -280,8 +278,9 @@ if __name__ == "__main__":
     print(args)
 
     seed_everything(args.seed)
+    training_configuration = load_hydra_config(args.training_configuration)
     trainer = Trainer(
-        optimizer=args.optimizer,
+        training_configuration=training_configuration,
         seed=args.seed,
         batch_size=args.batch_size,
         context_length=args.context_length,
@@ -289,9 +288,7 @@ if __name__ == "__main__":
         eval_steps=args.eval_steps,
         warmup_steps=args.warmup_steps,
         model_name=args.model_name,
-        weight_decay=args.weight_decay,
         grad=args.gradient_accumulation_steps,
-        lr=args.lr,
         do_sample=args.do_sample,
         use_flash=args.use_flash,
         use_checkpointing=args.use_checkpointing,

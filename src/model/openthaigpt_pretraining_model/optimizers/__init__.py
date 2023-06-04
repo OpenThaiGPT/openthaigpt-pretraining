@@ -12,58 +12,47 @@ from .constants import (
 
 def get_optimizer(
     model,
-    optimizer: str = ADAMW,
-    weight_decay: float = 1e-2,
-    lr: float = 1e-4,
+    optimizer_configuration,
     batch_size: int = 1,
     offload_optimizer: bool = False,
     offload_parameters: bool = False,
 ):
+    optimizer_name = optimizer_configuration.name
     if offload_optimizer or offload_parameters:
-        if optimizer == ADAMW:
+        if optimizer_name == ADAMW:
             opt = deepspeed.ops.adam.DeepSpeedCPUAdam(
                 model.parameters(),
-                lr=lr,
                 bias_correction=True,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
                 amsgrad=False,
                 adamw_mode=True,
                 fp32_optimizer_states=True,
+                **optimizer_name.hyps,
             )
         else:
             raise NotImplementedError("Optimizer does not support")
     else:
-        if optimizer == LION:
+        if optimizer_name == LION:
             opt = Lion(
                 model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
+                **optimizer_name.hyps,
             )
-        elif optimizer == ADAMW:
+        elif optimizer_name == ADAMW:
             opt = optim.AdamW(  # type: ignore
                 params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-                fused=True,
+                **optimizer_name.hyps,
             )
-        elif optimizer == ADAM8BIT:
+        elif optimizer_name == ADAM8BIT:
             opt = Adam8bit(
                 params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
+                **optimizer_name.hyps,
             )
-        elif optimizer == ADAM1BIT:
+        elif optimizer_name == ADAM1BIT:
             config_params = {
                 "train_batch_size": batch_size,
                 "optimizer": {
                     "type": "OneBitAdam",
                     "params": {
-                        "lr": lr,
-                        "weight_decay": weight_decay,
-                        "betas": (0.9, 0.95),
+                        **optimizer_name.hyps,
                     },
                 },
             }
