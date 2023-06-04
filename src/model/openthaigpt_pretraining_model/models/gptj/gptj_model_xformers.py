@@ -341,7 +341,7 @@ class GPTJBlockWithCheckpointing(GPTJBlock):
         return outputs
 
 
-class GPTJForCausalLMNewCheckpoint(GPTJForCausalLM):
+class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
     _keys_to_ignore_on_load_missing = [
         r"h\.\d+\.attn\.masked_bias",
         r"h\.\d+\.attn\.bias",
@@ -398,7 +398,7 @@ def make_model_gptj(
     if use_checkpointing:
         cfg.use_cache = False
     if use_checkpointing and checkpoint_only_attention:
-        model = GPTJForCausalLMNewCheckpoint(cfg)
+        model = GPTJForCausalLMWithCheckpointing(cfg)
         print("use gradient checkpointing only attentions")
     else:
         model = GPTJForCausalLM(cfg)
