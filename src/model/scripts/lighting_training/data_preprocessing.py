@@ -12,7 +12,7 @@ if __name__ == "__main__":
         help="train | val",
     )
     parser.add_argument(
-        "--model",
+        "--tokenizer",
         type=str,
         default="decapoda-research/llama-7b-hf",
         help="train | val",
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     print(args)
     dataset = TokenizedDataset(
         mode=args.mode,
-        model_or_path=args.model,
+        model_or_path=args.tokenizer,
         max_tokens=args.max_tokens,
         save_path=args.save_path,
         chunk_size=args.chunk_size,

@@ -41,7 +41,7 @@ class TokenizedDataset:
     def __init__(
         self,
         mode: str,
-        model_or_path: str,
+        tokenizer: str,
         max_tokens: int = 2048,
         save_path: str = "./",
         chunk_size: int = 1024 * 1024,
@@ -51,12 +51,12 @@ class TokenizedDataset:
         dataset_name: str = "oscar",
         dataset_dir: str = "unshuffled_deduplicated_th",
     ):
-        if len(findall("llama", model_or_path)):
-            self.tokenizer = LlamaTokenizer.from_pretrained(model_or_path)
+        if len(findall("llama", tokenizer)):
+            self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer)
             self.tokenizer.pad_token = "<pad>"
             self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
         else:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_or_path)
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
 
         self.mode = mode
         self.max_tokens = max_tokens
