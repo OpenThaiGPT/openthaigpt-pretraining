@@ -246,7 +246,6 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=20)
     parser.add_argument("--context_length", type=int, default=256, help="seq")
-    parser.add_argument("--lr", type=float, default=5e-4, help="lr")
     parser.add_argument("--max_steps", type=int, default=800, help="max steps")
     parser.add_argument("--eval_steps", type=int, default=400, help="eval steps")
     parser.add_argument("--warmup_steps", type=int, default=20, help="warmup steps")
@@ -260,7 +259,6 @@ if __name__ == "__main__":
         help="{gpt2|gpt2-medium|gpt2-large|gpt2-xl,cerebras/Cerebras-GPT-2.7B}",
     )
     parser.add_argument("--do_sample", default=False, action="store_true")
-    parser.add_argument("--weight_decay", type=float, default=1e-1, help="weight decay")
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
