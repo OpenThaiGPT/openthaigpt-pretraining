@@ -1,5 +1,5 @@
 import argparse
-from openthaigpt_pretraining_model.lightning.utils import (
+from openthaigpt_pretraining_model.datasets.utils import (
     jsonl_to_dataset,
 )
 
