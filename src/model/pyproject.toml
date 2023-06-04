@@ -27,5 +27,6 @@ dependencies = [
     "lightning>=2.0.2",
     "bitsandbytes-cuda110",
     "wandb>=0.15.2",
-    "bitsandbytes"
+    "bitsandbytes",
+    "deepspeed>=0.9.2"
 ]
