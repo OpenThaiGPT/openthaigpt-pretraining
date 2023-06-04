@@ -47,7 +47,6 @@ class TokenizedDataset:
         chunk_size: int = 1024 * 1024,
         batch_size: int = 10000,
         num_proc: int = 16,
-        use_cache: bool = False,
         dataset_name: str = "oscar",
         dataset_dir: str = "unshuffled_deduplicated_th",
     ):
@@ -64,22 +63,21 @@ class TokenizedDataset:
         self.chunk_size = chunk_size
         self.batch_size = batch_size
         self.num_proc = num_proc
-        if use_cache:
-            if mode == "val":
-                self.data_set = load_dataset(
-                    dataset_name,
-                    dataset_dir,
-                    split=SPLIT_VAL,
-                )
-            elif mode == "train":
-                self.data_set = load_dataset(
-                    dataset_name,
-                    dataset_dir,
-                    split=SPLIT_TRAIN,
-                )
-            else:
-                raise NotImplementedError("only support Train,Val")
-            self.num_shards = (len(self.data_set) + chunk_size - 1) // chunk_size
+        if mode == "val":
+            self.data_set = load_dataset(
+                dataset_name,
+                dataset_dir,
+                split=SPLIT_VAL,
+            )
+        elif mode == "train":
+            self.data_set = load_dataset(
+                dataset_name,
+                dataset_dir,
+                split=SPLIT_TRAIN,
+            )
+        else:
+            raise NotImplementedError("only support Train,Val")
+        self.num_shards = (len(self.data_set) + chunk_size - 1) // chunk_size
 
         self.tokenized_data = None
 
@@ -241,6 +239,11 @@ class Trainer:
         checkpoint: bool = False,
         checkpoint_only_attention: bool = False,
         num_nodes: int = 1,
+        lora: bool = False,
+        lora_r: int = 8,
+        lora_alpha: int = 32,
+        lora_dropout: float = 0.05,
+        lora_bias: str = "none",
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
@@ -278,6 +281,11 @@ class Trainer:
                 context_length=context_length,
                 use_checkpointing=checkpoint,
                 checkpoint_only_attention=checkpoint_only_attention,
+                lora=lora,
+                lora_r=lora_r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                lora_bias=lora_bias,
             )
         elif model_name == "gptj":
             model_name = GPTJ_MODEL  # for tokenizer
@@ -287,6 +295,11 @@ class Trainer:
                 attention_mode=attention_mode,
                 use_checkpointing=checkpoint,
                 checkpoint_only_attention=checkpoint_only_attention,
+                lora=lora,
+                lora_r=lora_r,
+                lora_alpha=lora_alpha,
+                lora_dropout=lora_dropout,
+                lora_bias=lora_bias,
                 device=self.fabric.device,
             )
         else:
