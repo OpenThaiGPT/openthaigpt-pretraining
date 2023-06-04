@@ -24,7 +24,8 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
 from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper
 from ..optimizers import get_optimizer
-from ..datasets import get_datasets
+from ..datasets import get_dataset
+from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
 import os
@@ -119,7 +120,8 @@ class Trainer:
             )
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
-        train_dataset, val_dataset = get_datasets(dataset_name)
+        train_dataset = get_dataset(dataset_name, split=SPLIT_TRAIN, shuffle=True)
+        val_dataset = get_dataset(dataset_name, split=SPLIT_VAL)
         self.dataset = DatasetWrapper(self.tokenizer, train_dataset, self.max_tokens)
         self.dataset_val = DatasetWrapper(self.tokenizer, val_dataset, self.max_tokens)
         self.tokenizer = self.dataset.tokenizer

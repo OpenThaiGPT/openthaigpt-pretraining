@@ -24,7 +24,8 @@ from .constants import (
 )
 from ...data_wrapper import DatasetWrapper
 from ...optimizers import get_optimizer
-from ...datasets import get_datasets
+from ...datasets import get_dataset
+from ...datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 
 _attn_orig = GPT2Attention._attn
 
@@ -100,7 +101,8 @@ class Trainer:
             eos_token=EOS_TOKEN,
             pad_token=PAD_TOKEN,
         )
-        dataset_train, dataset_val = get_datasets(DATASET_NAME)
+        dataset_train = get_dataset(DATASET_NAME, split=SPLIT_TRAIN, shuffle=True)
+        dataset_val = get_dataset(DATASET_NAME, split=SPLIT_VAL)
         self.dataset = DatasetWrapper(tokenizer, dataset_train, self.max_tokens)
         self.dataset_val = DatasetWrapper(tokenizer, dataset_val, self.max_tokens)
         self.use_flash = use_flash
