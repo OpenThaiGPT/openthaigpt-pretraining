@@ -32,8 +32,6 @@ BOS_TOKEN = "<|startoftext|>"
 EOS_TOKEN = "<|endoftext|>"
 PAD_TOKEN = "<|pad|>"
 DATASET_NAME = "mc4"
-ROTARY_PCT = 0.25
-ROTARY_EMB_BASE = 10000
 
 DTYPE_CHOICE = {
     "float32": torch.float32,
