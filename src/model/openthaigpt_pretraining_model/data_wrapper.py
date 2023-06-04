@@ -10,6 +10,8 @@ from transformers import (
 )
 from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 
+HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
+
 
 class TokenizedDataset:
     def __init__(
@@ -118,7 +120,7 @@ class StreamingDatasetWrapper(IterableDataset):
         iter_dataset = self.data_set
 
         for sample in iter_dataset:
-            buffer += self.tokenizer(sample["text"])["input_ids"]
+            buffer += self.tokenizer(sample["text"])[HF_TOKENIZER_INPUT_IDS_NAME]
             while len(buffer) > self.max_tokens:
                 yield torch.tensor(buffer[: self.max_tokens])
                 buffer = buffer[self.max_tokens :]

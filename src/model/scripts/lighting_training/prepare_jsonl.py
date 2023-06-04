@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "output_path",
         type=str,
-        default="hfsave",
+        default="path/to/save",
     )
     args = parser.parse_args()
     print(args)
