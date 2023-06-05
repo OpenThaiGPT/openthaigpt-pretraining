@@ -13,6 +13,39 @@ from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
 
 
+class DatasetWrapper(IterableDataset):
+    def __init__(
+        self,
+        tokenizer,
+        dataset,
+        max_tokens: int = 256,
+        text_column_name: str = "text",
+    ):
+        """
+        Args:
+            tokenizer: hf tokenizer
+            dataset: hf dataset which has [{text_column_name: "example"}, ...]
+                structure.
+            text_column_name: Column name which contain text data.
+        """
+        self.tokenizer = tokenizer
+        self.dataset = dataset
+        self.max_tokens = max_tokens
+        self.text_column_name = text_column_name
+
+    def __iter__(self):
+        buffer = []
+        iter_dataset = self.dataset
+
+        for sample in iter_dataset:
+            buffer += self.tokenizer(sample[self.text_column_name])[
+                HF_TOKENIZER_INPUT_IDS_NAME
+            ]
+            while len(buffer) > self.max_tokens:
+                yield torch.tensor(buffer[: self.max_tokens])
+                buffer = buffer[self.max_tokens :]
+
+
 class TokenizedDataset:
     def __init__(
         self,
@@ -65,7 +98,7 @@ class TokenizedDataset:
                 padding=True,
                 max_length=self.max_tokens,
             )["input_ids"]
-            return {"tokenized_text": tokenized_text}
+            return {HF_TOKENIZER_INPUT_IDS_NAME: tokenized_text}
 
         for i in tqdm(range(self.num_shards)):
             chunk = self.data_set.shard(self.num_shards, i)  # split chunk
@@ -175,4 +208,6 @@ class TokenDatasetWrapper(Dataset):
             self.chunk_end_index = (
                 self.chunk_start_index + self.chunk_lengths[file_index]
             )
-        return torch.tensor(self.chunk[idx - self.chunk_start_index]["tokenized_text"])
+        return torch.tensor(
+            self.chunk[idx - self.chunk_start_index][HF_TOKENIZER_INPUT_IDS_NAME]
+        )
