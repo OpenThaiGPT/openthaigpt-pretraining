@@ -2,3 +2,7 @@
 *.pyc
 .idea
 **/temp
+src/data/openthaigpt_pretraining_data/core/*.sav
+src/data/openthaigpt_pretraining_data/core/*.model
+src/data/openthaigpt_pretraining_data/core/*.vocab
+src/data/openthaigpt_pretraining_data/core/*.bin
