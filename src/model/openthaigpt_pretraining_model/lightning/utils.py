@@ -22,8 +22,10 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama_hf,
 )
 from ..utils import compute_perplexity
-from ..data_wrapper import StreamingDatasetWrapper, TokenDatasetWrapper
+from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
+from ..datasets import get_dataset
 from ..optimizers import get_optimizer
+from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
@@ -46,7 +48,6 @@ class Trainer:
         seed: int = 42,
         streaming: bool = False,
         dataset_name_or_path: str = DEFAULT_DATASET_NAME,
-        dataset_dir: str = "en",
         batch_size: int = 8,
         num_workers: int = 2,
         grad: int = 4,
@@ -123,28 +124,29 @@ class Trainer:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
         if streaming:
-            self.dataset = StreamingDatasetWrapper(
-                mode="train",
-                model_or_path=model_name,
-                max_tokens=self.max_tokens,
-                dataset_name=dataset_name_or_path,
-                dataset_dir=dataset_dir,
+            train_dataset = get_dataset(
+                dataset_name_or_path,
+                split=SPLIT_TRAIN,
+                shuffle=True,
+                streaming=streaming,
             )
-            self.dataset_val = StreamingDatasetWrapper(
-                mode="val",
-                model_or_path=model_name,
-                max_tokens=self.max_tokens,
-                dataset_name=dataset_name_or_path,
-                dataset_dir=dataset_dir,
+            val_dataset = get_dataset(
+                dataset_name_or_path, split=SPLIT_VAL, streaming=streaming
+            )
+            self.dataset = DatasetWrapper(
+                self.tokenizer, train_dataset, self.max_tokens
+            )
+            self.dataset_val = DatasetWrapper(
+                self.tokenizer, val_dataset, self.max_tokens
             )
         else:
             self.dataset = TokenDatasetWrapper(
-                mode="train",
                 dataset_path=dataset_name_or_path,
+                split=SPLIT_TRAIN,
             )
             self.dataset_val = TokenDatasetWrapper(
-                mode="val",
                 dataset_path=dataset_name_or_path,
+                split=SPLIT_VAL,
             )
         self.dataloader = DataLoader(
             self.dataset,

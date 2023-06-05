@@ -114,58 +114,13 @@ class TokenizedDataset:
             )
 
 
-class StreamingDatasetWrapper(IterableDataset):
-    def __init__(
-        self,
-        model_or_path,
-        mode,
-        max_tokens,
-        dataset_name,
-        dataset_dir,
-    ):
-        self.mode = mode
-        self.max_tokens = max_tokens
-
-        if len(findall("llama", model_or_path)):
-            self.tokenizer = LlamaTokenizer.from_pretrained(model_or_path)
-        else:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_or_path)
-
-        if mode == "val":
-            self.data_set = load_dataset(
-                dataset_name,
-                dataset_dir,
-                streaming=True,
-                split=SPLIT_VAL,
-            )
-        elif mode == "train":
-            self.data_set = load_dataset(
-                dataset_name,
-                dataset_dir,
-                streaming=True,
-                split=SPLIT_TRAIN,
-            ).shuffle(buffer_size=10_000)
-        else:
-            raise NotImplementedError("only support Train,Val")
-
-    def __iter__(self):
-        buffer = []
-        iter_dataset = self.data_set
-
-        for sample in iter_dataset:
-            buffer += self.tokenizer(sample["text"])[HF_TOKENIZER_INPUT_IDS_NAME]
-            while len(buffer) > self.max_tokens:
-                yield torch.tensor(buffer[: self.max_tokens])
-                buffer = buffer[self.max_tokens :]
-
-
 class TokenDatasetWrapper(Dataset):
     def __init__(
         self,
-        mode: str,
         dataset_path: str,
+        split: str,
     ):
-        self.mode = mode
+        self.mode = split
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
