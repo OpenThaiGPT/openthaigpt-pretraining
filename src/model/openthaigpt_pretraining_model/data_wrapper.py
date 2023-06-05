@@ -1,14 +1,9 @@
 import torch
 from torch.utils.data import IterableDataset
-from datasets import Dataset, load_dataset, load_from_disk
+from datasets import Dataset, load_from_disk
 import os
-from re import findall
 from tqdm import tqdm
-from transformers import (
-    AutoTokenizer,
-    LlamaTokenizer,
-)
-from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+
 
 HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
 
@@ -49,68 +44,57 @@ class DatasetWrapper(IterableDataset):
 class TokenizedDataset:
     def __init__(
         self,
-        mode: str,
-        tokenizer: str,
+        dataset,
+        split: str,
+        tokenizer,
         max_tokens: int = 2048,
         save_path: str = "./",
         chunk_size: int = 1024 * 1024,
         batch_size: int = 10000,
         num_proc: int = 16,
-        dataset_name: str = "oscar",
-        dataset_dir: str = "unshuffled_deduplicated_th",
     ):
-        if len(findall("llama", tokenizer)):
-            self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer)
-            self.tokenizer.pad_token = "<pad>"
-            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
-        else:
-            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
-
-        self.mode = mode
+        """
+        Args:
+            tokenizer: hf tokenizer
+            dataset: hf dataset which has [{text_column_name: "example"}, ...]
+            chunk_size: size of each chunk that you want to split
+            batch_size: higher for faster but care about OOM(out of memory)
+            num_proc: int = 16: number of process, suggest to use equal number of cpus
+        """
+        self.tokenizer = tokenizer
+        self.split = split
         self.max_tokens = max_tokens
         self.save_path = save_path
         self.chunk_size = chunk_size
         self.batch_size = batch_size
         self.num_proc = num_proc
-        if mode == "val":
-            self.data_set = load_dataset(
-                dataset_name,
-                dataset_dir,
-                split=SPLIT_VAL,
-            )
-        elif mode == "train":
-            self.data_set = load_dataset(
-                dataset_name,
-                dataset_dir,
-                split=SPLIT_TRAIN,
-            )
-        else:
-            raise NotImplementedError("only support Train,Val")
-        self.num_shards = (len(self.data_set) + chunk_size - 1) // chunk_size
+        self.dataset = dataset
 
+        self.num_shards = (len(self.dataset) + chunk_size - 1) // chunk_size
         self.tokenized_data = None
 
-    def tokenize_data(self):
-        def tokenize_function(examples):
-            tokenized_text = self.tokenizer(
-                examples["text"],
-                truncation=True,
-                padding=True,
-                max_length=self.max_tokens,
-            )["input_ids"]
-            return {HF_TOKENIZER_INPUT_IDS_NAME: tokenized_text}
+    def tokenize_function(self, data):
+        tokenized_text = self.tokenizer(
+            data["text"],
+            truncation=True,
+            padding=True,
+            max_length=self.max_tokens,
+        )["input_ids"]
+        return {HF_TOKENIZER_INPUT_IDS_NAME: tokenized_text}
 
+    def tokenize_data(self):
+        os.makedirs(self.save_path, exist_ok=True)
         for i in tqdm(range(self.num_shards)):
             chunk = self.data_set.shard(self.num_shards, i)  # split chunk
             tokenized_dataset = chunk.map(
-                tokenize_function,
+                self.tokenize_function,
                 batched=True,
                 batch_size=self.batch_size,
                 num_proc=self.num_proc,
             )
-            print(f"save {self.mode}_chunk_{i}")
+            print(f"save {self.split}_chunk_{i}")
             tokenized_dataset.save_to_disk(
-                os.path.join(self.save_path, f"{self.mode}_chunk_{i}")
+                os.path.join(self.save_path, f"{self.split}_chunk_{i}")
             )
 
 
@@ -120,7 +104,7 @@ class TokenDatasetWrapper(Dataset):
         dataset_path: str,
         split: str,
     ):
-        self.mode = split
+        self.split = split
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
@@ -131,7 +115,7 @@ class TokenDatasetWrapper(Dataset):
         chunk_count = 0
         file_path = os.path.join(
             dataset_path,
-            f"{self.mode}_chunk_{chunk_count}",
+            f"{self.split}_chunk_{chunk_count}",
         )
         while os.path.exists(file_path):
             dataset = load_from_disk(file_path)
@@ -141,7 +125,7 @@ class TokenDatasetWrapper(Dataset):
             chunk_count += 1
             file_path = os.path.join(
                 dataset_path,
-                f"{self.mode}_chunk_{chunk_count}",
+                f"{self.split}_chunk_{chunk_count}",
             )
 
     def __len__(self):

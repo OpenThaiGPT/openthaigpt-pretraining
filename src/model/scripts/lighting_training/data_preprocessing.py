@@ -2,6 +2,13 @@ import argparse
 from openthaigpt_pretraining_model.data_wrapper import (
     TokenizedDataset,
 )
+from openthaigpt_pretraining_model.datasets import get_dataset
+from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+from re import findall
+from transformers import (
+    AutoTokenizer,
+    LlamaTokenizer,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -43,27 +50,34 @@ if __name__ == "__main__":
         default=128,
     )
     parser.add_argument(
-        "--dataset_name",
+        "--dataset",
         type=str,
         default="oscar",
     )
     parser.add_argument(
-        "--dataset_dir",
+        "--split",
         type=str,
-        default="unshuffled_deduplicated_th",
+        default=SPLIT_TRAIN,
+        help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
     )
     args = parser.parse_args()
     print(args)
+    dataset = get_dataset(dataset_name=args.dataset, split=args.split)
+    if len(findall("llama", args.tokenizer)):
+        tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
+        tokenizer.pad_token = "<pad>"
+        tokenizer.add_special_tokens({"pad_token": "<pad>"})
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+
     dataset = TokenizedDataset(
-        mode=args.mode,
-        tokenizer=args.tokenizer,
+        dataset=dataset,
+        split=args.split,
+        tokenizer=tokenizer,
         max_tokens=args.max_tokens,
         save_path=args.save_path,
         chunk_size=args.chunk_size,
         batch_size=args.batch_size,
         num_proc=args.num_proc,
-        use_cache=True,
-        dataset_name=args.dataset_name,
-        dataset_dir=args.dataset_dir,
     )
     dataset.tokenize_data()
