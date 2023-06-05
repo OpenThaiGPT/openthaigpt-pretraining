@@ -4,21 +4,14 @@ import os
 
 import torch
 
-import torch.optim as optim
-from torch.utils.data import DataLoader, IterableDataset
+from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP  # noqa: N817
 from torch.distributed import init_process_group, destroy_process_group
 
-import numpy as np
-import random
 from tqdm import tqdm
 
-from datasets import load_dataset
 from transformers import GPT2TokenizerFast
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
-
-from lion_pytorch import Lion
-from bitsandbytes.optim import Adam8bit
 
 from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from .constants import (
@@ -28,22 +21,13 @@ from .constants import (
     EOS_TOKEN,
     PAD_TOKEN,
     DATASET_NAME,
-    SPLIT_VAL,
-    SPLIT_TRAIN,
-    LANGUAGE_DATASET,
 )
+from ...data_wrapper import DatasetWrapper
+from ...optimizers import get_optimizer
+from ...datasets import get_dataset
+from ...datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 
 _attn_orig = GPT2Attention._attn
-
-
-def seed_everything(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(seed)
-    random.seed(seed)
 
 
 def closest_power_of_2(x):
@@ -83,45 +67,6 @@ def get_torch_context(dtype: str):
     return ctx
 
 
-class DatasetWrapper(IterableDataset):
-    def __init__(self, mode, max_tokens=256):
-        self.tokenizer = GPT2TokenizerFast.from_pretrained(
-            MODEL_NAME,
-            bos_token=BOS_TOKEN,
-            eos_token=EOS_TOKEN,
-            pad_token=PAD_TOKEN,
-        )
-        self.mode = mode
-        self.max_tokens = max_tokens
-
-        if mode == "val":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                languages=[LANGUAGE_DATASET],
-                streaming=True,
-                split=SPLIT_VAL,  # optional
-            )
-        elif mode == "train":
-            self.data_set = load_dataset(
-                DATASET_NAME,
-                languages=[LANGUAGE_DATASET],
-                streaming=True,
-                split=SPLIT_TRAIN,  # optional
-            ).shuffle(buffer_size=10_000)
-        else:
-            raise NotImplementedError("only support Train,Val")
-
-    def __iter__(self):
-        buffer = []
-        iter_dataset = self.data_set
-
-        for sample in iter_dataset:
-            buffer += self.tokenizer(sample["text"] + EOS_TOKEN)["input_ids"]
-            while len(buffer) > self.max_tokens:
-                yield torch.tensor(buffer[: self.max_tokens])
-                buffer = buffer[self.max_tokens :]
-
-
 class Trainer:
     def __init__(
         self,
@@ -150,8 +95,16 @@ class Trainer:
         self.warmup_steps = warmup_steps
         self.eval_steps = eval_steps
         self.do_sample = do_sample
-        self.dataset = DatasetWrapper("train", self.max_tokens)
-        self.dataset_val = DatasetWrapper("val", self.max_tokens)
+        tokenizer = GPT2TokenizerFast.from_pretrained(
+            MODEL_NAME,
+            bos_token=BOS_TOKEN,
+            eos_token=EOS_TOKEN,
+            pad_token=PAD_TOKEN,
+        )
+        dataset_train = get_dataset(DATASET_NAME, split=SPLIT_TRAIN, shuffle=True)
+        dataset_val = get_dataset(DATASET_NAME, split=SPLIT_VAL)
+        self.dataset = DatasetWrapper(tokenizer, dataset_train, self.max_tokens)
+        self.dataset_val = DatasetWrapper(tokenizer, dataset_val, self.max_tokens)
         self.use_flash = use_flash
         self.use_checkpointing = use_checkpointing
         self.use_rotary = use_rotary
@@ -179,7 +132,7 @@ class Trainer:
 
         self.ctx = get_torch_context(dtype)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(dtype == "float16"))
-        self.model = model = make_model(
+        self.model = make_model(
             model_name,
             self.max_tokens,
             self.tokenizer,
@@ -188,35 +141,14 @@ class Trainer:
             self.device,
             self.use_rotary,
         )
-
-        if optimizer == "lion":
-            print("Use lion optimizer")
-            self.opt = Lion(
-                model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-            )
-        elif optimizer == "adamw":
-            print("Use AdamW optimizer")
-            self.opt = optim.AdamW(  # type: ignore
-                params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-                fused=True,
-            )
-        elif optimizer == "adam8bit":
-            assert self.device != "cpu", "Adam8bit need GPU to execute"
-            print("Use Adam8bit optimizer")
-            self.opt = Adam8bit(
-                params=model.parameters(),
-                lr=lr,
-                weight_decay=weight_decay,
-                betas=(0.9, 0.95),
-            )
-        else:
-            raise NotImplementedError("only support lion or AdamW")
-        self.model = torch.compile(model)  # type: ignore
+        self.model, self.opt = get_optimizer(
+            model=self.model,
+            optimizer=optimizer,
+            weight_decay=weight_decay,
+            lr=lr,
+            batch_size=batch_size,
+        )
+        self.model = torch.compile(self.model)  # type: ignore
         if self.ddp:
             self.model = DDP(self.model, device_ids=[ddp_local_rank])
 
