@@ -7,6 +7,12 @@ import emoji
 import re
 import os
 
+SOURCE = "source"
+SOURCE_ID = "source_id"
+TEXT = "text"
+CREATED_DATE = "created_date"
+UPDATED_DATE = "updated_date"
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--input_folder", help="Name of an input folder", required=True)
@@ -20,14 +26,19 @@ args = parser.parse_args()
 
 
 def clean_data(text):
+    # Replace <br> with newline
     text = text.replace("<br>", "\n")
-    text = text.replace("&nbsp;", "")
-    text = text.replace("&quot;", '"')
+    # Replace tab+colon with tab
     text = text.replace("\t:", "\t")
+    # Remove emoji \(^-^\)
     text = re.sub(r"\\\(.*?\^\-.*?\^\\\)", "", text)
+    # Remove emoji
     text = emoji.demojize(text)
+    # Decode HTML entities
     text = html.unescape(text)
+    # Remove HTML tags
     text = re.sub(r"<.*?>", "", text)
+    # Strip leading and trailing whitespace
     text = text.strip()
 
     return text
@@ -49,11 +60,11 @@ def reformat_jsonl(input_file, output_file, source):
                 # Write the previous line (if any) to the output file
                 if current_tid is not None:
                     data = {
-                        "source": source,
-                        "source_id": tid,
-                        "text": clean_data(current_text.strip()),
-                        "created_date": item["updated_time"],
-                        "updated_date": item["updated_time"],
+                        SOURCE: source,
+                        SOURCE_ID: tid,
+                        TEXT: clean_data(current_text.strip()),
+                        CREATED_DATE: item["updated_time"],
+                        UPDATED_DATE: item["updated_time"],
                     }
                     writer.write(data)
 
@@ -71,11 +82,11 @@ def reformat_jsonl(input_file, output_file, source):
         # Write the last line to the output file
         if current_tid is not None:
             data = {
-                "source": source,
-                "source_id": tid,
-                "text": clean_data(current_text.strip()),
-                "created_date": item["updated_time"],
-                "updated_date": item["updated_time"],
+                SOURCE: source,
+                SOURCE_ID: tid,
+                TEXT: clean_data(current_text.strip()),
+                CREATED_DATE: item["updated_time"],
+                UPDATED_DATE: item["updated_time"],
             }
             writer.write(data)
 
