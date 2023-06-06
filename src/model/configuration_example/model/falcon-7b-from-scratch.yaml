@@ -1,5 +1,5 @@
 name: falcon
-pretrained: null
+pretrained_model_name_or_path: null
 args:
   hidden_size: 4544
   n_layer: 32
@@ -15,5 +15,5 @@ args:
   bias: false
   parallel_attn: true
 tokenizer:
-  pretrained: tiiuae/falcon-7b
+  pretrained_model_name_or_path: tiiuae/falcon-7b
   tokenizer_class: AutoTokenizer
