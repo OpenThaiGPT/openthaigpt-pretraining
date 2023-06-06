@@ -23,7 +23,7 @@ class LightningTrainer:
         val_dataset,
         tokenizer,
         model,
-        optimizer: str = "adamw",
+        training_configuration,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
         stage: int = 2,
@@ -36,8 +36,6 @@ class LightningTrainer:
         num_workers: int = 2,
         grad: int = 4,
         context_length: int = 256,
-        weight_decay: float = 1e-2,
-        lr: float = 1e-4,
         num_nodes: int = 1,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
@@ -79,9 +77,7 @@ class LightningTrainer:
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
         self.model, self.opt = get_optimizer(
             model=model,
-            optimizer=optimizer,
-            weight_decay=weight_decay,
-            lr=lr,
+            optimizer_configuration=training_configuration.optimizer,
             batch_size=batch_size,
             offload_optimizer=offload_optimizer,
             offload_parameters=offload_parameters,
