@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input_folder", help="Name of an input folder", required=True)
 parser.add_argument(
     "--output_folder",
-    help='Name of an output folder (Default: "clean.txt")',
+    help='Name of an output folder (Default: "clean")',
     default="clean",
 )
 
