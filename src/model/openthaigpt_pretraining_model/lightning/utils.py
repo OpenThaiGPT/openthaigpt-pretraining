@@ -154,11 +154,14 @@ class Trainer:
             num_workers=num_workers,
         )
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
+
+        class CustomOptimizer:
+            name = optimizer
+            hyps = {"weight_decay": weight_decay, "lr": lr}
+
         self.model, self.opt = get_optimizer(
             model=self.model,
-            optimizer=optimizer,
-            weight_decay=weight_decay,
-            lr=lr,
+            optimizer_configuration=CustomOptimizer,
             batch_size=batch_size,
             offload_optimizer=offload_optimizer,
             offload_parameters=offload_parameters,
