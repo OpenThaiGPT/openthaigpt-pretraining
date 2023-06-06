@@ -20,10 +20,6 @@ from transformers.modeling_outputs import (
     CausalLMOutputWithCrossAttentions,
 )
 
-from ...optimizers.lion.constants import (  # type: ignore
-    ROTARY_EMB_BASE,
-    ROTARY_PCT,
-)
 from transformers.models.gpt2.modeling_gpt2 import (
     GPT2Attention as OriginalGPT2Attention,
     GPT2Block as OriginalGPT2Block,
@@ -36,6 +32,8 @@ _attn_orig = OriginalGPT2Attention._attn
 
 _CHECKPOINT_FOR_DOC = "gpt2"
 _CONFIG_FOR_DOC = "GPT2Config"
+ROTARY_PCT = 0.25
+ROTARY_EMB_BASE = 10000
 
 
 # patch GPT2Attention to use flash_sdp, disable it when doing the inference
