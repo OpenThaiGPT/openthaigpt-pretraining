@@ -45,6 +45,14 @@ def clean_data(text):
 
 
 def reformat_jsonl(input_file, output_file, source):
+    """
+    clean data and change format to
+        "text": "Data",
+        "source": "Source of the data",
+        "source_id": "id of the original item in source data",
+        "created_date": "Created date",
+        "updated_date": "Updated date"
+    """
     with jsonlines.open(input_file, "r") as reader, jsonlines.open(
         output_file, "w"
     ) as writer:
