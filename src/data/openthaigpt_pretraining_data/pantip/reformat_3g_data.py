@@ -35,7 +35,7 @@ def reformat_jsonl(input_file, output_file):
         current_tid = None
         current_data = {}
 
-        for item in reader:
+        for item in reader.iter(skip_invalid=True):
             tid = item["tid"]
             cid = item["cid"]
             desc = item.get("desc")
