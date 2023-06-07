@@ -1,6 +1,10 @@
 from datasketch import MinHash, MinHashLSH
 import numpy as np
 
+LSH = "lsh"
+TEXT_LIST = "text_list"
+MINHASH_LIST = "minhash_list"
+
 
 # create minhash signature
 def generate_minhash_signature(text, num_perm=128):
@@ -31,7 +35,7 @@ def generate_minhashlsh(text_list, threshold=0.9, num_perm=128):
     for i in range(len(minhash_list)):
         lsh.insert(i, minhash_list[i])
 
-    lsh_dict = {"lsh": lsh, "text_list": text_list, "minhash_list": minhash_list}
+    lsh_dict = {LSH: lsh, TEXT_LIST: text_list, MINHASH_LIST: minhash_list}
     return lsh_dict
 
 
@@ -42,9 +46,9 @@ def list_duplicated(lsh_dict, showtext=False):
     - showtext=False will return groups of duplication (list in list)
     - showtext=True will return groups of duplication and texts
     """
-    text_list = lsh_dict["text_list"]
-    lsh = lsh_dict["lsh"]
-    minhash_list = lsh_dict["minhash_list"]
+    text_list = lsh_dict[TEXT_LIST]
+    lsh = lsh_dict[LSH]
+    minhash_list = lsh_dict[MINHASH_LIST]
     dup_lists = []
     for m in minhash_list:
         dup_list = lsh.query(m)
@@ -73,7 +77,7 @@ def remove_duplicated(lsh_dict, viewindex=False):
     - viewindex=False will return list of deduplicated text
     - viewindex=True will return list of removed indices
     """
-    text_list = lsh_dict["text_list"]
+    text_list = lsh_dict[TEXT_LIST]
     dup_lists = list_duplicated(lsh_dict)
     # get 1st index of dup_lists for keeping a representative of each dup_list
     first_index = [li[0] for li in dup_lists]
