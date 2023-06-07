@@ -1,7 +1,9 @@
 import argparse
 from openthaigpt_pretraining_model.lightning.utils import (
-    seed_everything,
     Trainer,
+)
+from openthaigpt_pretraining_model.utils import (
+    seed_everything,
 )
 
 if __name__ == "__main__":
