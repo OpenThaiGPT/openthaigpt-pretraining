@@ -7,12 +7,13 @@ MINHASH_LIST = "minhash_list"
 
 
 # create minhash signature
-def generate_minhash_signature(text, num_perm=128):
+def generate_minhash_signature(text, num_perm=128, n_gram=3):
     """
     convert text string to minhash
     """
+    assert n_gram >= 3, "n_gram should be more than or equal to 3"
     minhash = MinHash(num_perm=num_perm)
-    shingles = [text[i : i + 3] for i in range(len(text) - 2)]
+    shingles = [text[i : i + n_gram] for i in range(len(text) - n_gram - 1)]
     shingles = set(shingles)
     for shingle in shingles:
         minhash.update(shingle.encode("utf-8"))
