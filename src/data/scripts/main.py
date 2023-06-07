@@ -1,71 +1,125 @@
 from openthaigpt_pretraining_data.mc4.preprocess import (
-    clean_dataset as clean_mc4_dataset,
+    clean_text as clean_mc4_text,
 )
 from openthaigpt_pretraining_data.oscar.preprocess import (
-    clean_dataset as clean_oscar_dataset,
+    clean_text as clean_oscar_text,
 )
-from openthaigpt_pretraining_data.core.perplexity import remove_spam_from_dataset
+from openthaigpt_pretraining_data.core.perplexity import (
+    classify_spam,
+    sample_text_back,
+)
 import argparse
-import os
-import platform
-from datetime import datetime
-
-
-def creation_date(path_to_file):
-    """
-    Try to get the date that a file was created, falling back to when it was
-    last modified if that isn't possible.
-    See http://stackoverflow.com/a/39501288/1709587 for explanation.
-    """
-    if platform.system() == "Windows":
-        return datetime.fromtimestamp(os.path.getctime(path_to_file)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-    else:
-        stat = os.stat(path_to_file)
-        try:
-            return datetime.fromtimestamp(stat.st_birthtime).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-        except AttributeError:
-            return datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
-
+import jsonlines
+from multiprocessing import Pool
+import numpy as np
+import scipy
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "--input_file",
-    help='Name of an input file (Default: "input.txt")',
+    help='Name of an input file (Default: "scripts/input.jsonl")',
     default="scripts/input.jsonl",
 )
 parser.add_argument(
     "--output_file",
-    help='Name of an output file (Default: "output.txt")',
+    help='Name of an output file (Default: "scripts/output.jsonl")',
     default="scripts/output.jsonl",
 )
+parser.add_argument(
+    "--buffer_capacity",
+    help="""Size of the buffer.The bigger it is, the more parallelization benefits us
+            but be aware of memory consumtion. (Default: 1000)""",
+    default=1000,
+)
+parser.add_argument(
+    "--sampled_back_ratio",
+    help="""Ratio of data classified as spam to sampled back to the dataset.
+    (Default: 0.1)""",
+    default=0.1,
+)
+
 
 args = parser.parse_args()
 
-with open(args.input_file, "r", encoding="utf-8") as f:
-    json_list = list(f)
 
-dataset = []
-for json_str in json_list:
-    dataset.append(eval(json_str))
+def clean_data(item):
+    text = item["text"]
 
-if "created_time" not in dataset[0]:
-    created_datetime = creation_date(args.input_file)
-    for i, data in enumerate(dataset):
-        dataset[i]["created_time"] = created_datetime
-        dataset[i]["updated_time"] = created_datetime
+    text = text.strip()
+    text = clean_mc4_text(text)
 
-dataset = clean_mc4_dataset(dataset)
-dataset = clean_oscar_dataset(dataset)
-dataset = remove_spam_from_dataset(dataset)
+    if text == "":
+        item["text"] = text
+        return None, None, item
 
-for i, data in enumerate(dataset):
-    dataset[i]["source"] = ""
-    dataset[i]["source_id"] = str(i)
+    text = clean_oscar_text(text)
 
-with open(args.output_file, "w", encoding="utf-8") as f:
-    f.write("\n".join([str(data_point) for data_point in dataset]))
+    if text == "":
+        item["text"] = text
+        return None, None, item
+
+    prediction, log_pp_score = classify_spam(text)
+
+    item["text"] = text
+    return prediction, log_pp_score, item
+
+
+BUFFER_CAP = int(args.buffer_capacity)
+idx = 0
+if __name__ == "__main__":
+    with open(args.input_file, "r", encoding="utf-8") as reader, jsonlines.open(
+        args.output_file, "w"
+    ) as writer:
+        buffer = []
+        is_read_all = False
+        while True:
+            line_content = reader.readline().strip()
+
+            if line_content == "":
+                is_read_all = True
+            else:
+                item = eval(line_content)
+                buffer.append(item)
+
+            if len(buffer) != BUFFER_CAP and not is_read_all:
+                continue
+
+            with Pool(2) as pool:
+                result = pool.map(clean_data, buffer)
+
+            spam_data_points = []
+            log_score_list = []
+            for prediction, score, data in result:
+                # if classifier predict not spam
+                if prediction == 0:
+                    data["source_id"] = idx
+                    writer.write(data)
+                    idx += 1
+                elif prediction == 1:
+                    spam_data_points.append(data)
+                    log_score_list.append(score)
+
+            log_scores = np.array(log_score_list)
+            mean = np.mean(log_scores)
+            std = np.mean(log_scores)
+
+            probs = scipy.stats.norm.pdf(
+                log_scores,
+                loc=mean,
+                scale=std,
+            )
+
+            # sampled some text classified as spam back
+            sampled_back_texts = sample_text_back(
+                spam_data_points,
+                probs,
+                percentage=float(args.sampled_back_ratio),
+            )
+            for data in sampled_back_texts:
+                data["source_id"] = idx
+                writer.write(data)
+                idx += 1
+            if is_read_all:
+                break
+            buffer = []

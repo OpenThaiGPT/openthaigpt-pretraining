@@ -24,6 +24,7 @@ dependencies = [
     "zstandard>=0.21.0",
     "pythainlp==4.0.0",
     "kenlm==0.1",
-    "scipy==1.10.1"
+    "scipy==1.10.1",
+    "jsonlines==3.1.0"
 ]
 

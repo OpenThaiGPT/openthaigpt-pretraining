@@ -2,7 +2,10 @@
 *.pyc
 .idea
 **/temp
-src/data/openthaigpt_pretraining_data/core/*.sav
-src/data/openthaigpt_pretraining_data/core/*.model
-src/data/openthaigpt_pretraining_data/core/*.vocab
-src/data/openthaigpt_pretraining_data/core/*.bin
+src/data/**/*.sav
+src/data/**/*.model
+src/data/**/*.vocab
+src/data/**/*.bin
+src/data/**/*.sh
+src/data/**/*.yaml
+src/data/**/full_input*
