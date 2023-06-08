@@ -94,7 +94,9 @@ def process_chunk_data(chunk):
     chunk["log_pp_score"] = log_pp_scores
     chunk["updated_date"] = updated_dates
 
-    non_spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 0]
+    non_spam_idx = [
+        i for i, p in enumerate(chunk["prediction"]) if p == 0 and chunk["text"] != ""
+    ]
     spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
     spam_idx = set(spam_idx)
 
