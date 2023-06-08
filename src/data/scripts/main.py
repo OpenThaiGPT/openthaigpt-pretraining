@@ -115,6 +115,7 @@ def process_chunk_data(chunk):
         percentage=float(args.sampled_back_ratio),
     )
 
+    sampled_back_idx = []
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
         chunk[field] = [val for i, val in enumerate(chunk[field]) if i in selected_idx]
@@ -157,7 +158,7 @@ if __name__ == "__main__":
             dataset = load_dataset(
                 DATASET_TO_FILETYPE[args.source],
                 data_files=args.input_file,
-                split="train[:10000]",
+                split="train",
             )
             dataset = dataset.add_column(
                 "source_id", [i for i in range(len(dataset))]  # noqa: C416
