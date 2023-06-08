@@ -66,10 +66,9 @@ def classify_spam(text: str):
 
 
 def sample_text_back(
-    spam_data_points: List[dict[str, str]],
     probs: np.ndarray,
     percentage: float = 0.1,
-) -> List[dict]:
+) -> List[int]:
     """Sample some spam text back in the dataset
     using log score distribution of language model
 
@@ -81,7 +80,7 @@ def sample_text_back(
     Output : sampled_data -> The sampled back data.
     """
 
-    n = len(spam_data_points)
+    n = len(probs)
     if n <= 1:
         return []
 
@@ -92,8 +91,4 @@ def sample_text_back(
         n, p=norm_probs, size=int(percentage * n), replace=False
     )
 
-    sampled_data = []
-    for idx in selected_idx:
-        sampled_data.append(spam_data_points[idx])
-
-    return sampled_data
+    return list(selected_idx)
