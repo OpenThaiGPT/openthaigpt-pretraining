@@ -5,9 +5,14 @@ from lightning.fabric.strategies import Strategy
 import torch
 from torch.utils.data import DataLoader
 from typing import List, Union
+from .constants import (
+    DEFAULT_DATASET_NAME,
+)
 from ..utils import compute_perplexity
-from ..data_wrapper import DatasetWrapper
+from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
 from ..optimizers import get_optimizer
+from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
 import os
@@ -16,7 +21,7 @@ import os
 os.environ["WANDB_MODE"] = "offline"
 
 
-class LightningTrainer:
+class Trainer:
     def __init__(
         self,
         train_dataset,
@@ -32,6 +37,8 @@ class LightningTrainer:
         devices: Union[List[int], str, int] = "auto",
         precision: Union[str, int] = "32-true",
         seed: int = 42,
+        streaming: bool = False,
+        dataset_name_or_path: str = DEFAULT_DATASET_NAME,
         batch_size: int = 8,
         num_workers: int = 2,
         grad: int = 4,
@@ -66,14 +73,23 @@ class LightningTrainer:
         if self.fabric.global_rank == 0:
             self.wandb = wandb.init(project="Fabric")
 
-        self.dataset = DatasetWrapper(tokenizer, train_dataset, self.max_tokens)
-        self.dataset_val = DatasetWrapper(tokenizer, val_dataset, self.max_tokens)
+        if streaming:
+            self.dataset = DatasetWrapper(tokenizer, train_dataset, self.max_tokens)
+            self.dataset_val = DatasetWrapper(tokenizer, val_dataset, self.max_tokens)
+        else:
+            self.dataset = TokenDatasetWrapper(
+                dataset_path=dataset_name_or_path,
+                split=SPLIT_TRAIN,
+            )
+            self.dataset_val = TokenDatasetWrapper(
+                dataset_path=dataset_name_or_path,
+                split=SPLIT_VAL,
+            )
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
             num_workers=num_workers,
         )
-
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
         self.model, self.opt = get_optimizer(
             model=model,
@@ -128,4 +144,4 @@ class LightningTrainer:
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
 
-        self.run.finish()
+        self.wandb.finish()
