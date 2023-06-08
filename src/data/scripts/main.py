@@ -93,11 +93,13 @@ def process_chunk_data(chunk):
     chunk["log_pp_score"] = log_pp_scores
     chunk["updated_date"] = updated_dates
 
-    non_spam_idx = [
-        i
-        for i, p in enumerate(chunk["prediction"])
-        if p == 0 and chunk["text"][i] != ""
-    ]
+    # filter blank
+    blank_idx = set([i for i, t in enumerate(chunk["text"]) if t == ""])  # noqa: C403
+
+    for field in chunk:
+        chunk[field] = [val for i, val in enumerate(chunk[field]) if i not in blank_idx]
+
+    non_spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 0]
     spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
     spam_idx = set(spam_idx)
 
@@ -121,7 +123,9 @@ def process_chunk_data(chunk):
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
         chunk[field] = [val for i, val in enumerate(chunk[field]) if i in selected_idx]
-
+    if "" in chunk["text"]:
+        print("kuay")
+        exit()
     return chunk
 
 
