@@ -1,7 +1,6 @@
 import argparse
 from datasets import load_dataset, load_from_disk
 import datetime
-import time
 import jsonlines
 from openthaigpt_pretraining_data.mc4.preprocess import (
     clean_text as clean_mc4_text,
@@ -95,7 +94,9 @@ def process_chunk_data(chunk):
     chunk["updated_date"] = updated_dates
 
     non_spam_idx = [
-        i for i, p in enumerate(chunk["prediction"]) if p == 0 and chunk["text"] != ""
+        i
+        for i, p in enumerate(chunk["prediction"])
+        if p == 0 and chunk["text"][i] != ""
     ]
     spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
     spam_idx = set(spam_idx)
@@ -153,8 +154,6 @@ DATASET_TO_FILETYPE = {"mc4": "json", "cc100": "txt"}
 
 if __name__ == "__main__":
     with jsonlines.open(args.output_file, "w") as writer:
-        start_time = time.perf_counter()
-
         if args.source != "oscar":
             dataset = load_dataset(
                 DATASET_TO_FILETYPE[args.source],
