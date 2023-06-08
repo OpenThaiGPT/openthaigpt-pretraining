@@ -115,7 +115,6 @@ def process_chunk_data(chunk):
         percentage=float(args.sampled_back_ratio),
     )
 
-    sampled_back_idx = []
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
         chunk[field] = [val for i, val in enumerate(chunk[field]) if i in selected_idx]
