@@ -277,42 +277,75 @@ class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
         self.post_init()
 
 
-def make_model_llama_hf(
-    vocab_size: int,
-    context_length: int,
-    use_checkpointing: bool,
-    checkpoint_only_attention: bool,
-):
-    """
-    Args:
-        vocab_size: vocabulary size
-        context_length: maximum sequence length
-        use_checkpointing: use gradient checkpointing
-        checkpoint_only_attention: gradient checkpointing only attention
-    """
-    cfg = LlamaConfig(
-        vocab_size=vocab_size,
-        hidden_size=1024,
-        num_hidden_layers=8,
-        num_attention_heads=8,
-        hidden_act="silu",
-        max_position_embeddings=context_length,
-    )
-    if use_checkpointing:
-        cfg.use_cache = False
-    if use_checkpointing and checkpoint_only_attention:
-        model = LlamaForCausalLMNewCheckpoint(cfg)
-        model.gradient_checkpointing_enable()
-        print("use gradient checkpointing only attentions")
-    else:
-        model = LlamaForCausalLM(cfg)
-        if use_checkpointing:
-            model.gradient_checkpointing_enable()
-            print("use gradient checkpointing")
+# def make_model_llama_hf(
+#     vocab_size: int,
+#     context_length: int,
+#     use_checkpointing: bool,
+#     checkpoint_only_attention: bool,
+# ):
+#     """
+#     Args:
+#         vocab_size: vocabulary size
+#         context_length: maximum sequence length
+#         use_checkpointing: use gradient checkpointing
+#         checkpoint_only_attention: gradient checkpointing only attention
+#     """
+#     cfg = LlamaConfig(
+#         vocab_size=vocab_size,
+#         hidden_size=1024,
+#         num_hidden_layers=8,
+#         num_attention_heads=8,
+#         hidden_act="silu",
+#         max_position_embeddings=context_length,
+#     )
+#     if use_checkpointing:
+#         cfg.use_cache = False
+#     if use_checkpointing and checkpoint_only_attention:
+#         model = LlamaForCausalLMNewCheckpoint(cfg)
+#         model.gradient_checkpointing_enable()
+#         print("use gradient checkpointing only attentions")
+#     else:
+#         model = LlamaForCausalLM(cfg)
+#         if use_checkpointing:
+#             model.gradient_checkpointing_enable()
+#             print("use gradient checkpointing")
 
-    model_size = sum(t.numel() for t in model.parameters())
-    print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
+#     model_size = sum(t.numel() for t in model.parameters())
+#     print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
+#     model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+#     print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
 
-    return model
+
+#     return model
+
+
+class LlamaForCausalModel:
+    def __init__(
+        self,
+        cfg: LlamaConfig,
+        use_checkpointing: bool,
+        checkpoint_only_attention: bool = False,
+    ):
+        """
+        Args:
+            use_checkpointing: use gradient checkpointing
+            checkpoint_only_attention: gradient checkpointing only attention
+        """
+        self.cfg = cfg
+        self.use_checkpointing = use_checkpointing
+        self.checkpoint_only_attention = checkpoint_only_attention
+
+        if self.use_checkpointing:
+            self.cfg.use_cache = False
+        if self.use_checkpointing and self.checkpoint_only_attention:
+            self.model = LlamaForCausalLMNewCheckpoint(self.cfg)
+            self.model.gradient_checkpointing_enable()
+            print("use gradient checkpointing only attentions")
+        else:
+            self.model = LlamaForCausalLM(self.cfg)
+            if self.use_checkpointing:
+                self.model.gradient_checkpointing_enable()
+                print("use gradient checkpointing")
+
+    def __call__(self, *args, **kwargs):
+        return self.model(*args, **kwargs)

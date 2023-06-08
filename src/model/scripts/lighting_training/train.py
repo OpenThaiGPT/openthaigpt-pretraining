@@ -4,6 +4,7 @@ from openthaigpt_pretraining_model.lightning.utils import (
 )
 from openthaigpt_pretraining_model.utils import (
     seed_everything,
+    load_hydra_config,
 )
 
 if __name__ == "__main__":
@@ -18,7 +19,6 @@ if __name__ == "__main__":
         streaming: bool = False,
         data_path: str = "./tokendata",
         dataset_name: str = DATASET_NAME,
-        dataset_dir: str = LANGUAGE_DATASET,
         batch_size: int = 8,
         grad: int = 4,
         context_length: int = 256,
@@ -45,7 +45,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--offload_par", action="store_true", help="offload parameters of deepspeed"
     )
-
     parser.add_argument("--devices", type=int, default=1, help="number of GPUS")
     parser.add_argument(
         "--precision",
@@ -61,7 +60,6 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--streaming", action="store_true")
     parser.add_argument("--dataset_name_or_path", type=str, default="./tokendata")
-    parser.add_argument("--dataset_dir", type=str, default="en")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
@@ -92,11 +90,16 @@ if __name__ == "__main__":
         action="store_true",
         help="False (model) | True (self-attentions only)",
     )
+    parser.add_argument(
+        "src/model/configuration_example/config.yaml",
+        type=str,
+    )
 
     args = parser.parse_args()
     print(args)
 
     seed_everything(args.seed)
+    training_configuration = load_hydra_config(args.training_configuration)
     trainer = Trainer(
         accelerator=args.accelerator,
         strategy=args.strategy,
@@ -107,9 +110,9 @@ if __name__ == "__main__":
         precision=args.precision,
         num_nodes=args.num_nodes,
         seed=args.seed,
+        training_configuration=training_configuration,
         streaming=args.streaming,
         dataset_name_or_path=args.dataset_name_or_path,
-        dataset_dir=args.dataset_dir,
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,

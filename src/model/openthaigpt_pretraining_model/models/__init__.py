@@ -38,6 +38,11 @@ def load_model(model_config, tokenizer=None):
         model = model_object.from_pretrained(model_pretrained)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
+
+    model_size = sum(t.numel() for t in model.parameters())
+    print(f"model size: {model_size/1000**2:.1f}M parameters")
+    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"model size requires_grad: {model_size/1000**2:.1f}M parameters")
     return model
 
 
