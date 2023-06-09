@@ -1,0 +1,2 @@
+defaults:
+  - optimizer: lion_optimizer

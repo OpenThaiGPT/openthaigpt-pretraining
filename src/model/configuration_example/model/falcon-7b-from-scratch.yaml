@@ -1,0 +1,19 @@
+name: falcon
+pretrained_model_name_or_path: null
+args:
+  hidden_size: 4544
+  n_layer: 32
+  n_head: 71
+  layer_norm_epsilon: 1e-5
+  initializer_range: 0.02
+  use_cache: true
+  apply_residual_connection_post_layernorm: false
+  hidden_dropout: 0.0
+  attention_dropout: 0.0
+  multi_query: true
+  alibi: false
+  bias: false
+  parallel_attn: true
+tokenizer:
+  pretrained_model_name_or_path: tiiuae/falcon-7b
+  tokenizer_class: AutoTokenizer

@@ -8,6 +8,7 @@ def get_dataset(
     split: str = None,  # type: ignore
     shuffle: bool = False,
     buffer_size: int = 10_000,
+    streaming: bool = False,
 ):
     """
     Args:
@@ -27,6 +28,7 @@ def get_dataset(
     dataset = load_dataset(
         **dataset_args,
         split=split,
+        streaming=streaming,
     )
     if shuffle:
         dataset = dataset.shuffle(buffer_size=buffer_size)
