@@ -2,3 +2,10 @@
 *.pyc
 .idea
 **/temp
+src/data/**/*.sav
+src/data/**/*.model
+src/data/**/*.vocab
+src/data/**/*.bin
+src/data/**/*.sh
+src/data/**/*.yaml
+src/data/**/full_input*
