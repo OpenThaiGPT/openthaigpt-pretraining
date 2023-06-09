@@ -22,10 +22,11 @@ from openthaigpt_pretraining_model.models.llama_hf.model import (
     make_model_llama_hf,
 )
 from ..utils import compute_perplexity
-from ..data_wrapper import DatasetWrapper
-from ..optimizers import get_optimizer
+from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
 from ..datasets import get_dataset
+from ..optimizers import get_optimizer
 from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
 import os
@@ -37,7 +38,6 @@ os.environ["WANDB_MODE"] = "offline"
 class Trainer:
     def __init__(
         self,
-        dataset_name: str = DEFAULT_DATASET_NAME,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
         stage: int = 2,
@@ -46,6 +46,8 @@ class Trainer:
         devices: Union[List[int], str, int] = "auto",
         precision: Union[str, int] = "32-true",
         seed: int = 42,
+        streaming: bool = False,
+        dataset_name_or_path: str = DEFAULT_DATASET_NAME,
         batch_size: int = 8,
         num_workers: int = 2,
         grad: int = 4,
@@ -120,23 +122,46 @@ class Trainer:
             )
         else:
             raise NotImplementedError("only support Llama, llama_hf or GPTJ")
-        train_dataset = get_dataset(dataset_name, split=SPLIT_TRAIN, shuffle=True)
-        val_dataset = get_dataset(dataset_name, split=SPLIT_VAL)
-        self.dataset = DatasetWrapper(self.tokenizer, train_dataset, self.max_tokens)
-        self.dataset_val = DatasetWrapper(self.tokenizer, val_dataset, self.max_tokens)
-        self.tokenizer = self.dataset.tokenizer
+
+        if streaming:
+            train_dataset = get_dataset(
+                dataset_name_or_path,
+                split=SPLIT_TRAIN,
+                shuffle=True,
+                streaming=streaming,
+            )
+            val_dataset = get_dataset(
+                dataset_name_or_path, split=SPLIT_VAL, streaming=streaming
+            )
+            self.dataset = DatasetWrapper(
+                self.tokenizer, train_dataset, self.max_tokens
+            )
+            self.dataset_val = DatasetWrapper(
+                self.tokenizer, val_dataset, self.max_tokens
+            )
+        else:
+            self.dataset = TokenDatasetWrapper(
+                dataset_path=dataset_name_or_path,
+                split=SPLIT_TRAIN,
+            )
+            self.dataset_val = TokenDatasetWrapper(
+                dataset_path=dataset_name_or_path,
+                split=SPLIT_VAL,
+            )
         self.dataloader = DataLoader(
             self.dataset,
             batch_size=batch_size,
             num_workers=num_workers,
         )
-
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
+
+        class CustomOptimizer:
+            name = optimizer
+            hyps = {"weight_decay": weight_decay, "lr": lr}
+
         self.model, self.opt = get_optimizer(
             model=self.model,
-            optimizer=optimizer,
-            weight_decay=weight_decay,
-            lr=lr,
+            optimizer_configuration=CustomOptimizer,
             batch_size=batch_size,
             offload_optimizer=offload_optimizer,
             offload_parameters=offload_parameters,
@@ -187,4 +212,4 @@ class Trainer:
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
 
-        self.run.finish()
+        self.wandb.finish()
