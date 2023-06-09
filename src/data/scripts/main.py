@@ -35,6 +35,11 @@ parser.add_argument(
     default=2,
 )
 parser.add_argument(
+    "--do_perplexity",
+    help="If True, preprocess using kenlm + tree. Else,only regex (Default: True)",
+    default=True,
+)
+parser.add_argument(
     "--batch_size",
     help="Chunk size of data (Data will be processed together) (Default: 1000)",
     default=1000,
@@ -53,6 +58,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+do_perplexity = bool(args.do_perplexity)
+
 
 def clean_text(text):
     text = text.strip()
@@ -65,6 +72,9 @@ def clean_text(text):
 
     if text == "":
         return -1, 0, ""
+
+    if not do_perplexity:
+        return 0, 0, text
 
     prediction, log_pp_score = classify_spam(text)
 
@@ -100,32 +110,33 @@ def process_chunk_data(chunk):
         chunk[field] = [val for i, val in enumerate(chunk[field]) if i not in blank_idx]
 
     non_spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 0]
-    spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
-    spam_idx = set(spam_idx)
 
-    spam_log_pps = [
-        log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx
-    ]
-    log_pp_array = np.array(spam_log_pps)
+    sampled_back_idx = []
 
-    # sampled some data point classified as spam back
-    probs = scipy.stats.norm.pdf(
-        log_pp_array,
-        loc=np.mean(log_pp_array),
-        scale=np.std(log_pp_array),
-    )
+    if do_perplexity:
+        spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
+        spam_idx = set(spam_idx)
 
-    sampled_back_idx = sample_text_back(
-        probs,
-        percentage=float(args.sampled_back_ratio),
-    )
+        spam_log_pps = [
+            log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx
+        ]
+        log_pp_array = np.array(spam_log_pps)
+
+        # sampled some data point classified as spam back
+        probs = scipy.stats.norm.pdf(
+            log_pp_array,
+            loc=np.mean(log_pp_array),
+            scale=np.std(log_pp_array),
+        )
+
+        sampled_back_idx = sample_text_back(
+            probs,
+            percentage=float(args.sampled_back_ratio),
+        )
 
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
         chunk[field] = [val for i, val in enumerate(chunk[field]) if i in selected_idx]
-    if "" in chunk["text"]:
-        print("kuay")
-        exit()
     return chunk
 
 
@@ -174,7 +185,7 @@ if __name__ == "__main__":
             process_chunk_data,
             num_proc=NUM_PROC,
             batched=True,
-            batch_size=args.batch_size,
+            batch_size=int(args.batch_size),
         )
 
         for data in dataset:
