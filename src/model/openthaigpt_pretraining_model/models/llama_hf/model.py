@@ -269,8 +269,11 @@ class LlamaDecoderLayerWithCheckpointing(LlamaDecoderLayer):
 class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
     def __init__(self, config):
         super().__init__(config)
-        self.model = LlamaModelWithNewCheckpoint(config)
-
+        if config.use_checkpointing and config.checkpoint_only_attention:
+            self.model = LlamaModelWithNewCheckpoint(config)
+            print("use model with gradient checkpointing only attention")
+        else:
+            self.model = LlamaModel(config)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         # Initialize weights and apply final processing
@@ -317,35 +320,3 @@ class LlamaForCausalLMNewCheckpoint(LlamaForCausalLM):
 
 
 #     return model
-
-
-class LlamaForCausalModel:
-    def __init__(
-        self,
-        cfg: LlamaConfig,
-        use_checkpointing: bool,
-        checkpoint_only_attention: bool = False,
-    ):
-        """
-        Args:
-            use_checkpointing: use gradient checkpointing
-            checkpoint_only_attention: gradient checkpointing only attention
-        """
-        self.cfg = cfg
-        self.use_checkpointing = use_checkpointing
-        self.checkpoint_only_attention = checkpoint_only_attention
-
-        if self.use_checkpointing:
-            self.cfg.use_cache = False
-        if self.use_checkpointing and self.checkpoint_only_attention:
-            self.model = LlamaForCausalLMNewCheckpoint(self.cfg)
-            self.model.gradient_checkpointing_enable()
-            print("use gradient checkpointing only attentions")
-        else:
-            self.model = LlamaForCausalLM(self.cfg)
-            if self.use_checkpointing:
-                self.model.gradient_checkpointing_enable()
-                print("use gradient checkpointing")
-
-    def __call__(self, *args, **kwargs):
-        return self.model(*args, **kwargs)

@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, LlamaTokenizer, LlamaConfig, LlamaForCausalLM
+from transformers import AutoTokenizer, LlamaTokenizer, LlamaConfig, GPTJForCausalLM, GPTJConfig
 from .falcon.model import RWForCausalLM
 from .falcon.configuration_RW import RWConfig
 from .llama_hf.model import LlamaForCausalLMNewCheckpoint
@@ -12,12 +12,12 @@ TOKENIZERS = {
 
 MODELS = {
     "falcon": RWForCausalLM,
-    "llama_hf": LlamaForCausalLM,
-    "llama_hf_gradient_attention_checkpoint": LlamaForCausalLMNewCheckpoint,
+    "llama_hf": LlamaForCausalLMNewCheckpoint,
+    "gptj": GPTJForCausalLM,
 }
 
 MODEL_CONFIGS = {
     "falcon": RWConfig,
     "llama_hf": LlamaConfig,
-    "llama_hf_gradient_attention_checkpoint": LlamaConfig,
+    "gptj": GPTJConfig,
 }

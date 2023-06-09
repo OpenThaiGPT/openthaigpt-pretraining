@@ -1,11 +1,11 @@
-name: llama_hf_gradient_attention_checkpoint
+name: llama_hf
 pretrained_model_name_or_path: null
 args:
   vocab_size: 32000
-  hidden_size: 4096
+  hidden_size: 1024 #4096
   intermediate_size: 11008
-  num_hidden_layers: 32
-  num_attention_heads: 32
+  num_hidden_layers: 8 #32
+  num_attention_heads: 8 #32
   hidden_act: "silu"
   max_position_embeddings: 2048
   initializer_range: 0.02
@@ -15,6 +15,8 @@ args:
   bos_token_id: 1
   eos_token_id: 2
   tie_word_embeddings: False
+  use_checkpointing: True
+  checkpoint_only_attention: False
 tokenizer:
   pretrained_model_name_or_path: decapoda-research/llama-7b-hf
   tokenizer_class: LlamaTokenizer

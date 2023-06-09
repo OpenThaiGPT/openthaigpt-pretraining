@@ -6,23 +6,10 @@ import torch
 from torch.utils.data import DataLoader
 from typing import List, Union
 
-# from transformers import (
-#     AutoTokenizer,
-#     LlamaTokenizer,
-# )
 from .constants import (
     DEFAULT_DATASET_NAME,
-    # LLAMA_MODEL,
-    # GPTJ_MODEL,
 )
 
-# from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
-#     make_model_gptj,
-# )
-# from openthaigpt_pretraining_model.models.llama.model import make_model_llama
-# from openthaigpt_pretraining_model.models.llama_hf.model import (
-#     make_model_llama_hf,
-# )
 from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
 from ..datasets import get_dataset
@@ -56,14 +43,7 @@ class Trainer:
         num_workers: int = 2,
         grad: int = 4,
         context_length: int = 256,
-        # model_name: str = "llama",
-        # optimizer: str = "adamw",
-        # weight_decay: float = 1e-2,
-        # lr: float = 1e-4,
-        # vocab_size: int = 50400,
         # attention_mode: str = "origin",
-        # checkpoint: bool = False,
-        # checkpoint_only_attention: bool = False,
         num_nodes: int = 1,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
@@ -128,7 +108,7 @@ class Trainer:
         #     raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
         self.tokenizer, self.model = load_model_and_tokenizer(
-            training_configuration.model
+            training_configuration.model,
         )
         if streaming:
             train_dataset = get_dataset(
@@ -162,9 +142,6 @@ class Trainer:
         )
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
-        # class CustomOptimizer:
-        #     name = optimizer
-        #     hyps = {"weight_decay": weight_decay, "lr": lr}
         self.model = self.model.to('cuda')
         self.model, self.opt = get_optimizer(
             model=self.model,

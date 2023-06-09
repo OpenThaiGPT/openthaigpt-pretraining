@@ -1,5 +1,5 @@
 name: llama_hf
-pretrained_model_name_or_path: null
+pretrained_model_name_or_path: decapoda-research/llama-7b-hf
 args:
   vocab_size: 32000
   hidden_size: 1024 #4096

@@ -16,6 +16,7 @@ def load_model(model_config, tokenizer=None):
         raise NotImplementedError(f"No model name: {model_config.name}")
 
     model_pretrained = model_config.pretrained_model_name_or_path
+        
     if model_pretrained is None:
         model_config_args = model_config.args
         if tokenizer is not None:
@@ -28,16 +29,18 @@ def load_model(model_config, tokenizer=None):
             }
         config = model_config_object(
             **model_config.args,
-            # vocab_size=len(tokenizer),
-            # bos_token_id=tokenizer.bos_token_id,
-            # eos_token_id=tokenizer.eos_token_id,
-            # pad_token_id=tokenizer.pad_token_id,
         )
         model = model_object(config)
     else:
         model = model_object.from_pretrained(model_pretrained)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
+    
+    if model_config.args.use_checkpointing:
+        model.gradient_checkpointing_enable()
+        print("use gradient checkpointing")
+        if model_config.args.checkpoint_only_attention:
+            print("use gradient checkpointing only attentions")
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"model size: {model_size/1000**2:.1f}M parameters")

@@ -26,7 +26,7 @@ def get_optimizer(
                 amsgrad=False,
                 adamw_mode=True,
                 fp32_optimizer_states=True,
-                **optimizer_name.hyps,
+                **optimizer_configuration.hyps,
             )
         else:
             raise NotImplementedError("Optimizer does not support")
@@ -34,7 +34,7 @@ def get_optimizer(
         if optimizer_name == LION:
             opt = Lion(
                 model.parameters(),
-                **optimizer_name.hyps,
+                **optimizer_configuration.hyps,
             )
         elif optimizer_name == ADAMW:
             opt = optim.AdamW(  # type: ignore
@@ -44,7 +44,7 @@ def get_optimizer(
         elif optimizer_name == ADAM8BIT:
             opt = Adam8bit(
                 params=model.parameters(),
-                **optimizer_name.hyps,
+                **optimizer_configuration.hyps,
             )
         elif optimizer_name == ADAM1BIT:
             config_params = {
@@ -52,7 +52,7 @@ def get_optimizer(
                 "optimizer": {
                     "type": "OneBitAdam",
                     "params": {
-                        **optimizer_name.hyps,
+                        **optimizer_configuration.hyps,
                     },
                 },
             }
