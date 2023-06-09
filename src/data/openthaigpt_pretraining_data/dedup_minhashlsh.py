@@ -2,8 +2,9 @@ from datasketch import MinHash, MinHashLSH
 import numpy as np
 
 LSH = "lsh"
-TEXT_LIST = "text_list"
 MINHASH_LIST = "minhash_list"
+HF_TEXT_LABEL = "text"
+HF_DATASET = "hf_dataset"
 
 
 # create minhash signature
@@ -20,10 +21,13 @@ def generate_minhash_signature(text, num_perm=128, n_gram=3):
     return minhash
 
 
-# create minhasLSH from text_lists
-def generate_minhashlsh(text_list, threshold=0.9, num_perm=128):
+# create minhasLSH from Huggingface dataset
+def generate_minhashlsh(hf_dataset, threshold=0.9, num_perm=128):
     """
-    create MinhashLSH from [text_list] --> lsh_dict
+    create MinhashLSH from [hf_dataset] --> lsh_dict
+    - hf_dataset is hugging dataset format
+    !!! Warning:  if hf_dataset.shape contains split name, MUST alias
+    split, for example: hf_dataset = hf_dataset["train"]
     - threshold is jaccard number. Default is 0.9 which can
     detect NearDup which is slightly changed in a few word.
     - For detecting ExactDup, recommend threshold=0.97
@@ -31,12 +35,13 @@ def generate_minhashlsh(text_list, threshold=0.9, num_perm=128):
     Higher number, better accuracy,
     but trade-off with slower speed and higher memory
     """
-    minhash_list = [generate_minhash_signature(t) for t in text_list]
+    minhash_list = [generate_minhash_signature(t[HF_TEXT_LABEL]) for t in hf_dataset]
     lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
     for i in range(len(minhash_list)):
         lsh.insert(i, minhash_list[i])
 
-    lsh_dict = {LSH: lsh, TEXT_LIST: text_list, MINHASH_LIST: minhash_list}
+    # save hf_dataset in lsh_dict as pointer (global id)
+    lsh_dict = {LSH: lsh, MINHASH_LIST: minhash_list, HF_DATASET: hf_dataset}
     return lsh_dict
 
 
@@ -47,7 +52,7 @@ def list_duplicated(lsh_dict, showtext=False):
     - showtext=False will return groups of duplication (list in list)
     - showtext=True will return groups of duplication and texts
     """
-    text_list = lsh_dict[TEXT_LIST]
+    hf_dataset = lsh_dict[HF_DATASET]
     lsh = lsh_dict[LSH]
     minhash_list = lsh_dict[MINHASH_LIST]
     dup_lists = []
@@ -66,19 +71,21 @@ def list_duplicated(lsh_dict, showtext=False):
     dup_lists = np.unique(np_dup_lists).tolist()
 
     if showtext is True:
-        dup_lists_text = [[li, [text_list[t] for t in li]] for li in dup_lists]
+        dup_lists_text = [
+            [li, [hf_dataset[t][HF_TEXT_LABEL] for t in li]] for li in dup_lists
+        ]
         return dup_lists_text
     return dup_lists
 
 
 def remove_duplicated(lsh_dict, viewindex=False):
     """
-    Remove duplication and return as python list
+    Remove duplication and return as deduplicated dataset or list
     - Must create lsh_dict (def generate_minhashLSH) first
-    - viewindex=False will return list of deduplicated text
+    - viewindex=False will return dedup huggingface dataset format
     - viewindex=True will return list of removed indices
     """
-    text_list = lsh_dict[TEXT_LIST]
+    hf_dataset = lsh_dict[HF_DATASET]
     dup_lists = list_duplicated(lsh_dict)
     # get 1st index of dup_lists for keeping a representative of each dup_list
     first_index = [li[0] for li in dup_lists]
@@ -97,29 +104,23 @@ def remove_duplicated(lsh_dict, viewindex=False):
         return remove_indexes
 
     # remove duplicated text
-    dedup_texts = []
-    for i in range(len(text_list)):
-        if i not in remove_indexes:
-            dedup_texts.append(text_list[i])
-    return dedup_texts
+    dedup_dataset = hf_dataset.filter(lambda dat: dat["id"] not in remove_indexes)
+
+    return dedup_dataset
 
 
 # Example of usage
 """
-# Read jsonline dataset and extract as text lists
-import jsonlines
+from datasets import load_dataset, load_from_disk
 
-dat_jsonl = "oscar_th_10k.jsonl"
-text_list = []
+dataset = load_from_disk("/project/lt200056-opgpth/oscar2301_th/datasets")
 
-with jsonlines.open(dat_jsonl) as reader:
-    for obj in reader:
-        text_list.append(obj["text"])
-
-# Generate minhashLSH first
-lsh_dict = generate_minhashlsh(text_list,0.9)
-
-# Get deduplicated text lists
-dedup = remove_duplicated(lsh_dict)
+# firstly create minhashlsh which return as lsh_dict
+lsh_dict = generate_minhashlsh(dataset, 0.9)
+# remove_duplicated from lsh_dict
+# this will return duduplicated huggingface dataset
+dedup_dat = remove_duplicated(lsh_dict)
+# save dataset to proj dir
+dedup_dat.save_to_disk("/project/lt200056-opgpth/oscar2301/deduplicated_dataset")
 
 """
