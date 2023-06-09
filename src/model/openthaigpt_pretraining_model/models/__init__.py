@@ -28,10 +28,10 @@ def load_model(model_config, tokenizer=None):
             }
         config = model_config_object(
             **model_config.args,
-            vocab_size=len(tokenizer),
-            bos_token_id=tokenizer.bos_token_id,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id,
+            # vocab_size=len(tokenizer),
+            # bos_token_id=tokenizer.bos_token_id,
+            # eos_token_id=tokenizer.eos_token_id,
+            # pad_token_id=tokenizer.pad_token_id,
         )
         model = model_object(config)
     else:

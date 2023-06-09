@@ -57,9 +57,9 @@ class Trainer:
         grad: int = 4,
         context_length: int = 256,
         # model_name: str = "llama",
-        optimizer: str = "adamw",
-        weight_decay: float = 1e-2,
-        lr: float = 1e-4,
+        # optimizer: str = "adamw",
+        # weight_decay: float = 1e-2,
+        # lr: float = 1e-4,
         # vocab_size: int = 50400,
         # attention_mode: str = "origin",
         # checkpoint: bool = False,
@@ -162,10 +162,10 @@ class Trainer:
         )
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
-        class CustomOptimizer:
-            name = optimizer
-            hyps = {"weight_decay": weight_decay, "lr": lr}
-
+        # class CustomOptimizer:
+        #     name = optimizer
+        #     hyps = {"weight_decay": weight_decay, "lr": lr}
+        self.model = self.model.to('cuda')
         self.model, self.opt = get_optimizer(
             model=self.model,
             optimizer_configuration=training_configuration.optimizer,

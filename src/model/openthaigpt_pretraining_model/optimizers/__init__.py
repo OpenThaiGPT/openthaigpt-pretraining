@@ -39,7 +39,7 @@ def get_optimizer(
         elif optimizer_name == ADAMW:
             opt = optim.AdamW(  # type: ignore
                 params=model.parameters(),
-                **optimizer_name.hyps,
+                **optimizer_configuration.hyps,
             )
         elif optimizer_name == ADAM8BIT:
             opt = Adam8bit(

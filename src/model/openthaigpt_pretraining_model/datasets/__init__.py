@@ -21,7 +21,7 @@ def get_dataset(
     dataset_args = DATASET_ARGS.get(dataset_name, None)  # type: ignore
     if isinstance(dataset_name, dict):
         dataset_args = dataset_name
-    elif isinstance(dataset_name, str) and not dataset_args:
+    elif isinstance(dataset_name, str) and dataset_args:
         pass
     else:
         raise NotImplementedError(f"No dataset name {dataset_name}")
