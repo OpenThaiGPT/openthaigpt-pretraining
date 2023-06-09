@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # load dataset
     if args.data_type is None:
-        dataset = load_dataset(args.data_path, split="train")
+        dataset = load_dataset(args.data_path, split="train", streaming=True)
     else:
         data_files = {
             "train": [
@@ -46,9 +46,7 @@ if __name__ == "__main__":
             ]
         }
         dataset = load_dataset(
-            args.data_type,
-            data_files=data_files,
-            split="train",
+            args.data_type, data_files=data_files, split="train", streaming=True
         )
 
     # Instantiate tokenizer
@@ -59,8 +57,13 @@ if __name__ == "__main__":
         return result
 
     def batch_iterator(batch_size=1000):
-        for i in range(0, len(dataset), batch_size):
-            yield [th_tokenize(text) for text in dataset[i : i + batch_size]["text"]]
+        texts = []
+        for i, data in enumerate(dataset):
+            texts.append(data["text"])
+            if (i + 1) % batch_size == 0:
+                yield texts
+                texts = []
+        yield texts
 
     # Customized training
     tokenizer.train_from_iterator(
