@@ -36,10 +36,12 @@ def load_model(model_config, tokenizer=None):
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
     
-    if model_config.args.use_checkpointing:
+    use_checkpointing = model_config.args.get('use_checkpointing', False)
+    checkpoint_only_attention = model_config.args.get('checkpoint_only_attention', False)
+    if use_checkpointing:
         model.gradient_checkpointing_enable()
         print("use gradient checkpointing")
-        if model_config.args.checkpoint_only_attention:
+        if checkpoint_only_attention:
             print("use gradient checkpointing only attentions")
 
     model_size = sum(t.numel() for t in model.parameters())

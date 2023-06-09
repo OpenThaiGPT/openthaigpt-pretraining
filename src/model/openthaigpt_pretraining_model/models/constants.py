@@ -3,8 +3,6 @@ from .falcon.model import RWForCausalLM
 from .falcon.configuration_RW import RWConfig
 from .llama_hf.model import LlamaForCausalLMNewCheckpoint
 
-# from .llama.model import make_model_llama
-
 TOKENIZERS = {
     "AutoTokenizer": AutoTokenizer,
     "LlamaTokenizer": LlamaTokenizer,
