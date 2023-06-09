@@ -116,10 +116,6 @@ def train_tokenizer(
     text_processed_dataset = text_dataset.map(
         function=prepare_datasets,
         batched=True,
-        remove_columns=[
-            DOC_TEXT,
-            DOC_ID,
-        ],  # this is must b/c we will return different number of rows
     )
 
     spm.SentencePieceTrainer.train(
