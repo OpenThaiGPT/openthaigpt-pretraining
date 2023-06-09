@@ -58,7 +58,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-do_perplexity = bool(args.do_perplexity)
+do_perplexity = eval(args.do_perplexity)
 
 
 def clean_text(text):
