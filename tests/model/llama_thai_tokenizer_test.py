@@ -3,6 +3,10 @@ from openthaigpt_pretraining_model.llama_thai_tokenizer.tokenizer import (
     LLaMaToken,
     EngThaiLLaMaToken,
 )
+from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
+    LLAMA_TOKENIZER_DIR,
+    THAI_SP_MODEL_DIR,
+)
 
 TEXT_TEST_CASES = [
     "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่",
@@ -246,20 +250,20 @@ TEXT_TEST_ENGLISH = "Convert Pretrained LLaMa to Token"
 
 
 def test_merge_tokenizer():
-    engthai_tokenizer = EngThaiLLaMaToken()
+    engthai_tokenizer = EngThaiLLaMaToken(LLAMA_TOKENIZER_DIR, THAI_SP_MODEL_DIR)
     for idx, test_text in enumerate(TEXT_TEST_CASES):
         assert engthai_tokenizer.tokenize(test_text) == LABEL_TEST_ENGTHAI_CASES[idx]
 
 
 def test_llama_tokenizer():
-    llama_tokenizer = LLaMaToken()
+    llama_tokenizer = LLaMaToken(LLAMA_TOKENIZER_DIR)
     for idx, test_text in enumerate(TEXT_TEST_CASES):
         assert llama_tokenizer.tokenize(test_text) == LABEL_TEST_LLAMA_CASES[idx]
 
 
 def test_encode_english():
-    engthai_tokenizer = EngThaiLLaMaToken()
-    llama_tokenizer = LLaMaToken()
+    engthai_tokenizer = EngThaiLLaMaToken(LLAMA_TOKENIZER_DIR, THAI_SP_MODEL_DIR)
+    llama_tokenizer = LLaMaToken(LLAMA_TOKENIZER_DIR)
     assert engthai_tokenizer.encode(TEXT_TEST_ENGLISH) == llama_tokenizer.encode(
         TEXT_TEST_ENGLISH
     )
