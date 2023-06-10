@@ -1,5 +1,6 @@
 from datasketch import MinHash, MinHashLSH
 import numpy as np
+import tqdm
 
 LSH = "lsh"
 MINHASH_LIST = "minhash_list"
@@ -35,9 +36,12 @@ def generate_minhashlsh(hf_dataset, threshold=0.9, num_perm=128):
     Higher number, better accuracy,
     but trade-off with slower speed and higher memory
     """
-    minhash_list = [generate_minhash_signature(t[HF_TEXT_LABEL]) for t in hf_dataset]
+    minhash_list = [
+        generate_minhash_signature(t[HF_TEXT_LABEL])
+        for t in tqdm.tqdm(hf_dataset, desc="generate minhash")
+    ]
     lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
-    for i in range(len(minhash_list)):
+    for i in tqdm.tqdm(range(len(minhash_list)), desc="create lsh"):
         lsh.insert(i, minhash_list[i])
 
     # save hf_dataset in lsh_dict as pointer (global id)
@@ -56,7 +60,7 @@ def list_duplicated(lsh_dict, showtext=False):
     lsh = lsh_dict[LSH]
     minhash_list = lsh_dict[MINHASH_LIST]
     dup_lists = []
-    for m in minhash_list:
+    for m in tqdm.tqdm(minhash_list, desc="list duplicated"):
         dup_list = lsh.query(m)
         # sort index before adding to dup_lists
         # this helps when finding duplicated_list.
@@ -104,16 +108,19 @@ def remove_duplicated(lsh_dict, viewindex=False):
         return remove_indexes
 
     # remove duplicated text
-    dedup_dataset = hf_dataset.filter(lambda dat: dat["id"] not in remove_indexes)
+    dedup_dataset = hf_dataset.filter(
+        lambda dat: dat["id"] not in tqdm.tqdm(remove_indexes, desc="remove duplicated")
+    )
 
     return dedup_dataset
 
 
 # Example of usage
 """
-from datasets import load_dataset, load_from_disk
+from datasets import load_from_disk
 
 dataset = load_from_disk("/project/lt200056-opgpth/oscar2301_th/datasets")
+dataset = dataset["train"]
 
 # firstly create minhashlsh which return as lsh_dict
 lsh_dict = generate_minhashlsh(dataset, 0.9)
@@ -121,6 +128,6 @@ lsh_dict = generate_minhashlsh(dataset, 0.9)
 # this will return duduplicated huggingface dataset
 dedup_dat = remove_duplicated(lsh_dict)
 # save dataset to proj dir
-dedup_dat.save_to_disk("/project/lt200056-opgpth/oscar2301/deduplicated_dataset")
+dedup_dat.save_to_disk("/project/lt200056-opgpth/oscar2301_th/deduplicated_dataset")
 
 """
