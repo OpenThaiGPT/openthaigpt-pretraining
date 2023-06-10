@@ -6,7 +6,8 @@ from .keywords import (
     TH_MONTHS,
     CODE_SPECIAL_CHARACTERS,
 )
-from typing import List
+from typing import List, Dict
+from datetime import datetime
 
 
 def contains_document_removal_keywords(text: str) -> bool:
@@ -90,15 +91,17 @@ def clean_text(text: str) -> str:
     return text
 
 
-def clean_dataset(dataset: List[str]) -> List[str]:
+def clean_dataset(dataset: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """
     Description : Call function clean_text to process the whole dataset.
-
     Input text : An input dataset having each element as a document in the dataset.
     Output : A clean dataset.
     """
 
     for i, data_point in enumerate(dataset):
-        dataset[i] = clean_text(data_point)
+        cleaned_text = clean_text(data_point["text"])
+        if cleaned_text != dataset[i]["text"]:
+            dataset[i]["text"] = cleaned_text
+            dataset[i]["updated_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return [data_point for data_point in dataset if data_point != ""]
+    return [data_point for data_point in dataset if data_point["text"] != ""]

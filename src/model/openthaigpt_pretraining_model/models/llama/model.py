@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import xformers.ops as xops
 
 from llama.model import RMSNorm, apply_rotary_emb, precompute_freqs_cis  # type: ignore
-
+from typing import NamedTuple
 
 ORIGIN_ATTENTION_MODE = "origin"
 PYTORCH_ATTENTION_MODE = "pytorch"
@@ -31,6 +31,11 @@ class ModelArgs:
     attention_mode: str = ORIGIN_ATTENTION_MODE  # pytorch, xformers
     use_checkpointing: bool = False
     checkpoint_only_attention: bool = False
+
+
+class OutputModel(NamedTuple):
+    logits: torch.Tensor
+    loss: Optional[torch.Tensor] = None
 
 
 class Attention(nn.Module):
@@ -209,7 +214,7 @@ class Transformer(nn.Module):
         tokens: torch.Tensor,
         start_pos: int = 0,
         labels: Optional[torch.Tensor] = None,
-    ):
+    ) -> OutputModel:
         _bsz, seqlen = tokens.shape
         h = self.tok_embeddings(tokens)
         self.freqs_cis = self.freqs_cis.to(h.device)
@@ -243,12 +248,6 @@ class Transformer(nn.Module):
             )
 
         return OutputModel(logits=logits[:, -1, :], loss=loss)
-
-
-class OutputModel:
-    def __init__(self, logits, loss):
-        self.logits = logits
-        self.loss = loss
 
 
 def make_model_llama(
