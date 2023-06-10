@@ -2,20 +2,12 @@ from datasets import load_dataset
 from tokenizers import ByteLevelBPETokenizer
 from nlpo3 import segment, load_dict
 import argparse
+import json
 import os
 
-SPECIAL_TOKENS = [
-    "<s>",
-    "<pad>",
-    "</s>",
-    "<unk>",
-    "<mask>",
-]
+SPECIAL_TOKENS_FILE = f"{os.path.dirname(__file__)}/sp_token.json"
+DICT_NAME = "dict"
 
-DICT_FILE = f"{os.path.dirname(__file__)}/words_th.txt"
-DICT = "dict"
-
-load_dict(DICT_FILE, DICT)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -32,8 +24,22 @@ if __name__ == "__main__":
         default=None,
         help="data type of dataset if None will be Huggingface format",
     )
+    parser.add_argument(
+        "--special_tokens_file",
+        type=str,
+        default=SPECIAL_TOKENS_FILE,
+        help="Path to the JSON file containing special tokens",
+    )
+    parser.add_argument(
+        "--dict_file",
+        type=str,
+        required=True,
+        help="path to tokenization dictionary file",
+    )
 
     args = parser.parse_args()
+
+    load_dict(args.dict_file, DICT_NAME)
 
     # load dataset
     if args.data_type is None:
@@ -53,7 +59,7 @@ if __name__ == "__main__":
     tokenizer = ByteLevelBPETokenizer()
 
     def th_tokenize(text):
-        result = " ".join(segment(text, DICT))
+        result = " ".join(segment(text, DICT_NAME))
         return result
 
     def batch_iterator(batch_size=1000):
@@ -65,12 +71,16 @@ if __name__ == "__main__":
                 texts = []
         yield texts
 
+    with open(args.special_tokens_file, "r") as file:
+        special_tokens_data = json.load(file)
+        special_tokens = special_tokens_data["special_tokens"]
+
     # Customized training
     tokenizer.train_from_iterator(
         batch_iterator(),
         vocab_size=args.vocab_size,
         min_frequency=2,
-        special_tokens=SPECIAL_TOKENS,
+        special_tokens=special_tokens,
     )
 
     # Save files to disk
