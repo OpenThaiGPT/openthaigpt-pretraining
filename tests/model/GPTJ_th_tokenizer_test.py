@@ -3,16 +3,15 @@ from openthaigpt_pretraining_model.GPTJ_TH_tokenizer.tokenizer import (
     GPT2Token,
     MergedToken,
 )
-from openthaigpt_pretraining_model.GPTJ_TH_tokenizer.constants import (
-    GPT2_REPO,
-    GPTJ_REPO,
-    GPT2_LOCAL_DIR,
-    GPTJ_LOCAL_DIR,
-    GPT2_MERGE_DIR,
-    GPTJ_MERGE_DIR,
-)
+from openthaigpt_pretraining_model.GPTJ_TH_tokenizer.constants import FILE_DIR
 from huggingface_hub import hf_hub_download
 
+GPT2_REPO = "flax-community/gpt2-base-thai"
+GPTJ_REPO = "EleutherAI/gpt-j-6B"
+GPT2_LOCAL_DIR = f"{FILE_DIR}/GPT2_merge_rule/"
+GPTJ_LOCAL_DIR = f"{FILE_DIR}/GPTJ_merge_rule/"
+GPT2_MERGE_DIR = f"{FILE_DIR}/GPT2_merge_rule/merges.txt"
+GPTJ_MERGE_DIR = f"{FILE_DIR}/GPTJ_merge_rule/merges.txt"
 
 TEXT_TEST_CASES = [
     "การวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่",
