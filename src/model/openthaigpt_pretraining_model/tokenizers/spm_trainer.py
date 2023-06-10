@@ -55,6 +55,7 @@ def train_tokenizer(
     load_dataset_name: str = "unshuffled_deduplicated_th",
     load_dataset_local_path: Optional[str] = None,
     load_dataset_data_type: str = "csv",
+    large_corpus: bool = False,
 ) -> None:
     """
     Train a SentencePiece tokenizer on a large text dataset.
@@ -126,4 +127,5 @@ def train_tokenizer(
         vocab_size=vocab_size,
         user_defined_symbols=USER_DEFINED_SYMBOLS,
         num_threads=num_proc,
+        train_extremely_large_corpus=large_corpus,
     )
