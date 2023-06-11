@@ -11,7 +11,7 @@ if __name__ == "__main__":
         default="path/to/file",
     )
     parser.add_argument(
-        "output_path",
+        "--output_path",
         type=str,
         default="path/to/save",
     )
