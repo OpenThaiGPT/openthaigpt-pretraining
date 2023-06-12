@@ -12,7 +12,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--data_path", type=str, help="path of datasets", required=True)
     parser.add_argument(
-        "--data_type", type=str, default="json", help="data type of dataset"
+        "--data_type",
+        default=None,
+        help="data type of dataset if None will be Huggingface format",
     )
 
     args = parser.parse_args()
