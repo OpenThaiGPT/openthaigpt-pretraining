@@ -36,6 +36,9 @@ if __name__ == "__main__":
         required=True,
         help="path to tokenization dictionary file",
     )
+    parser.add_argument(
+        "batch_size", type=int, default=1000, help="batch size for train tokenizer"
+    )
 
     args = parser.parse_args()
 
@@ -62,7 +65,7 @@ if __name__ == "__main__":
         result = " ".join(segment(text, DICT_NAME))
         return result
 
-    def batch_iterator(batch_size=1000):
+    def batch_iterator(batch_size=args.batch_size):
         texts = []
         for i, data in enumerate(dataset):
             texts.append(data["text"])
