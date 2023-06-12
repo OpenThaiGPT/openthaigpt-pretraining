@@ -16,6 +16,9 @@ if __name__ == "__main__":
         default=None,
         help="data type of dataset if None will be Huggingface format",
     )
+    parser.add_argument(
+        "--large_corpus", action="store_true", help="use large corpus in train"
+    )
 
     args = parser.parse_args()
 
@@ -24,4 +27,5 @@ if __name__ == "__main__":
         args.vocab_size,
         load_dataset_local_path=args.data_path,
         load_dataset_data_type=args.data_type,
+        large_corpus=args.large_corpus,
     )
