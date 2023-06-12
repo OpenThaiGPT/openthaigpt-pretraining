@@ -3,7 +3,6 @@ import glob
 import tqdm
 import jsonlines
 import html
-import emoji
 import re
 import os
 
@@ -30,10 +29,6 @@ def clean_data(text):
     text = text.replace("<br>", "\n")
     # Replace tab+colon with tab
     text = text.replace("\t:", "\t")
-    # Remove emoji \(^-^\)
-    text = re.sub(r"\\\(.*?\^\-.*?\^\\\)", "", text)
-    # Remove emoji
-    text = emoji.demojize(text)
     # Decode HTML entities
     text = html.unescape(text)
     # Remove HTML tags
