@@ -50,12 +50,12 @@ from .pattern import (
     REFINE13_RE,
     REFINE14_RE,
 )
-from typing import List
+from datetime import datetime
+from typing import List, Dict
 import re
 
 
 def clean_with_remove_document(text: str) -> bool:
-
     # ---- Clean too large unused lines
     # Limit matches list to 2 items only, enough
     matches = TOOLARGE_RE.findall(text)[:2]
@@ -171,7 +171,6 @@ def clean_with_remove_document(text: str) -> bool:
 
 
 def clean_text(text: str) -> str:
-
     text = PAGE_RE.sub(" ", text)
     text = EMBEDDED_SERVER_RE.sub(" ", text)
     text = U_RE.sub(" ", text)
@@ -243,7 +242,7 @@ def clean_text(text: str) -> str:
     return text
 
 
-def clean_dataset(dataset: List[str]) -> List[str]:
+def clean_dataset(dataset: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """
     Description : Call function clean_text to process the whole dataset.
     Input text : An input dataset having each element as a document in the dataset.
@@ -251,6 +250,9 @@ def clean_dataset(dataset: List[str]) -> List[str]:
     """
 
     for i, data_point in enumerate(dataset):
-        dataset[i] = clean_text(data_point)
+        cleaned_text = clean_text(data_point["text"])
+        if cleaned_text != dataset[i]["text"]:
+            dataset[i]["text"] = cleaned_text
+            dataset[i]["updated_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    return [data_point for data_point in dataset if data_point != ""]
+    return [data_point for data_point in dataset if data_point["text"] != ""]

@@ -1,16 +1,12 @@
 from transformers import LlamaTokenizer
 from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
-from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
-    LLAMA_TOKENIZER_DIR,
-    THAI_SP_MODEL_DIR,
-)
 
 
-def merge():
-    llama_tokenizer = LlamaTokenizer.from_pretrained(LLAMA_TOKENIZER_DIR)
+def merge(llama_tokenizer_dir, thai_sp_model_dir):
+    llama_tokenizer = LlamaTokenizer.from_pretrained(llama_tokenizer_dir)
     thai_sp_model = spm.SentencePieceProcessor()
-    thai_sp_model.Load(THAI_SP_MODEL_DIR)
+    thai_sp_model.Load(thai_sp_model_dir)
 
     llama_spm = sp_pb2_model.ModelProto()
     llama_spm.ParseFromString(llama_tokenizer.sp_model.serialized_model_proto())
