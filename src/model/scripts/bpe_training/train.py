@@ -89,3 +89,5 @@ if __name__ == "__main__":
 
     # Save files to disk
     tokenizer.save_model(args.output_path)
+
+    print("done")
