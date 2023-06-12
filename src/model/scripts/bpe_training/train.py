@@ -3,6 +3,7 @@ from tokenizers import ByteLevelBPETokenizer
 from nlpo3 import segment, load_dict
 import argparse
 import json
+import tqdm
 import os
 
 SPECIAL_TOKENS_FILE = f"{os.path.dirname(__file__)}/sp_token.json"
@@ -67,7 +68,7 @@ if __name__ == "__main__":
 
     def batch_iterator(batch_size=args.batch_size):
         texts = []
-        for i, data in enumerate(dataset):
+        for i, data in tqdm.tqdm(enumerate(dataset)):
             texts.append(data["text"])
             if (i + 1) % batch_size == 0:
                 yield texts
