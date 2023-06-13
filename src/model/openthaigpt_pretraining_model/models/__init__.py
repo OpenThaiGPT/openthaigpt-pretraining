@@ -1,4 +1,10 @@
-from .constants import TOKENIZERS, MODELS, MODEL_CONFIGS
+from .constants import (
+    TOKENIZERS,
+    MODELS,
+    MODEL_CONFIGS,
+    ATTENTION_MODE,
+    GRADIENT_CHECKPOINTING,
+)
 
 
 def load_model_and_tokenizer(model_config):
@@ -16,7 +22,7 @@ def load_model(model_config, tokenizer=None):
         raise NotImplementedError(f"No model name: {model_config.name}")
 
     model_pretrained = model_config.pretrained_model_name_or_path
-        
+
     if model_pretrained is None:
         model_config_args = model_config.args
         if tokenizer is not None:
@@ -35,10 +41,26 @@ def load_model(model_config, tokenizer=None):
         model = model_object.from_pretrained(model_pretrained)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
-    
-    use_checkpointing = model_config.args.get('use_checkpointing', False)
-    checkpoint_only_attention = model_config.args.get('checkpoint_only_attention', False)
+
+    attention_mode = model_config.args.get("attenttion_mode", None)
+    use_checkpointing = model_config.args.get("use_checkpointing", False)
+    checkpoint_only_attention = model_config.args.get(
+        "checkpoint_only_attention", False
+    )
+    if attention_mode is not None:
+        attention_object = ATTENTION_MODE.get(model_config.name, None)
+        if attention_object is None:
+            raise NotImplementedError(
+                f"No attention mode: {attention_mode} for {model_config.name}"
+            )
+        attention_object(attention_mode=attention_mode)
+
     if use_checkpointing:
+        checkpointing = GRADIENT_CHECKPOINTING.get(model_config.name, None)
+        if checkpointing is None:
+            raise NotImplementedError(
+                f"No gradient checkpointing for {model_config.name}"
+            )
         model.gradient_checkpointing_enable()
         print("use gradient checkpointing")
         if checkpoint_only_attention:

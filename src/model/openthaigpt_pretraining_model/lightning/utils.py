@@ -43,7 +43,6 @@ class Trainer:
         num_workers: int = 2,
         grad: int = 4,
         context_length: int = 256,
-        # attention_mode: str = "origin",
         num_nodes: int = 1,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
@@ -73,39 +72,6 @@ class Trainer:
         print(f"device:{self.fabric.device}")
         if self.fabric.global_rank == 0:
             self.wandb = wandb.init(project="Fabric")
-
-        # if model_name == "llama":
-        #     model_name = LLAMA_MODEL  # for tokenizer
-        #     self.tokenizer = LlamaTokenizer.from_pretrained(model_name)
-        #     self.model = make_model_llama(
-        #         vocab_size=vocab_size,
-        #         context_length=context_length,
-        #         atention_mode=attention_mode,
-        #         use_checkpointing=checkpoint,
-        #         checkpoint_only_attention=checkpoint_only_attention,
-        #     )
-        # elif model_name == "llama_hf":
-        #     model_name = LLAMA_MODEL  # for tokenizer
-        #     self.tokenizer = LlamaTokenizer.from_pretrained(model_name)
-        #     self.model = make_model_llama_hf(
-        #         vocab_size=vocab_size,
-        #         context_length=context_length,
-        #         use_checkpointing=checkpoint,
-        #         checkpoint_only_attention=checkpoint_only_attention,
-        #     )
-        # elif model_name == "gptj":
-        #     model_name = GPTJ_MODEL  # for tokenizer
-        #     self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        #     self.model = make_model_gptj(
-        #         vocab_size=vocab_size,
-        #         context_length=context_length,
-        #         attention_mode=attention_mode,
-        #         use_checkpointing=checkpoint,
-        #         checkpoint_only_attention=checkpoint_only_attention,
-        #         device=self.fabric.device,
-        #     )
-        # else:
-        #     raise NotImplementedError("only support Llama, llama_hf or GPTJ")
 
         self.tokenizer, self.model = load_model_and_tokenizer(
             training_configuration.model,
@@ -142,7 +108,7 @@ class Trainer:
         )
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
 
-        self.model = self.model.to('cuda')
+        self.model = self.model.to("cuda")
         self.model, self.opt = get_optimizer(
             model=self.model,
             optimizer_configuration=training_configuration.optimizer,

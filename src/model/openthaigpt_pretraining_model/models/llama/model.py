@@ -18,7 +18,7 @@ XFORMERS_ATTENTION_MODE = "xformers"
 
 
 @dataclass
-class ModelArgs:
+class LLaMAArgs:
     dim: int = 512
     n_layers: int = 8
     n_heads: int = 8
@@ -39,7 +39,7 @@ class OutputModel(NamedTuple):
 
 
 class Attention(nn.Module):
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: LLaMAArgs):
         super().__init__()
 
         self.head_dim = args.dim // args.n_heads
@@ -155,7 +155,7 @@ class FeedForward(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, layer_id: int, args: ModelArgs):
+    def __init__(self, layer_id: int, args: LLaMAArgs):
         super().__init__()
         self.n_heads = args.n_heads
         self.dim = args.dim
@@ -182,8 +182,8 @@ class TransformerBlock(nn.Module):
         return out
 
 
-class Transformer(nn.Module):
-    def __init__(self, params: ModelArgs):
+class LLaMA(nn.Module):
+    def __init__(self, params: LLaMAArgs):
         super().__init__()
         self.params = params
         self.vocab_size = params.vocab_size
@@ -248,41 +248,3 @@ class Transformer(nn.Module):
             )
 
         return OutputModel(logits=logits[:, -1, :], loss=loss)
-
-
-def make_model_llama(
-    vocab_size: int,
-    context_length: int,
-    atention_mode: str = ORIGIN_ATTENTION_MODE,
-    use_checkpointing: bool = False,
-    checkpoint_only_attention: bool = False,
-):
-    """
-    Args:
-        vocab_size: vocabulary size
-        context_length: maximum sequence length
-        atention_mode: attention mode support origin pytorch and xformers
-        use_checkpointing: use gradient checkpointing
-        checkpoint_only_attention: gradient checkpointing only attention
-    """
-    cfg = ModelArgs(
-        dim=512,
-        n_layers=8,
-        n_heads=8,
-        vocab_size=vocab_size,
-        multiple_of=256,
-        norm_eps=1e-5,
-        max_batch_size=2,
-        max_seq_len=context_length,
-        attention_mode=atention_mode,  # pytorch, xformers
-        use_checkpointing=use_checkpointing,
-        checkpoint_only_attention=checkpoint_only_attention,
-    )
-    model = Transformer(cfg)
-
-    model_size = sum(t.numel() for t in model.parameters())
-    print(f"LLAMA size: {model_size/1000**2:.1f}M parameters")
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"LLAMA size requires_grad: {model_size/1000**2:.1f}M parameters")
-
-    return model
