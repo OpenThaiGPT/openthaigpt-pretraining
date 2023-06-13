@@ -88,6 +88,7 @@ if __name__ == "__main__":
     )
 
     # Save files to disk
+    tokenizer.save(args.output_path + "/tokenizer.json")
     tokenizer.save_model(args.output_path)
 
     print("done")
