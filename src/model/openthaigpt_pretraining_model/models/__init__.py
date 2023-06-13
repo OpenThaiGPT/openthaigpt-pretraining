@@ -61,10 +61,11 @@ def load_model(model_config, tokenizer=None):
             raise NotImplementedError(
                 f"No gradient checkpointing for {model_config.name}"
             )
-        model.gradient_checkpointing_enable()
-        print("use gradient checkpointing")
-        if checkpoint_only_attention:
-            print("use gradient checkpointing only attentions")
+        if checkpointing:
+            model.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
+            if checkpoint_only_attention:
+                print("use gradient checkpointing only attentions")
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"model size: {model_size/1000**2:.1f}M parameters")
