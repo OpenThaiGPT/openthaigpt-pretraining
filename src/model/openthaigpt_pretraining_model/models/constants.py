@@ -4,15 +4,15 @@ from .falcon.configuration_RW import RWConfig
 from .llama.model import LLaMAArgs, LLaMA
 from .llama_hf.model import LlamaForCausalLMNewCheckpoint
 from .gptj.gptj_model_xformers import change_attn, GPTJForCausalLMWithCheckpointing
-from typing import Type, Dict
+
 
 TOKENIZERS = {
     "AutoTokenizer": AutoTokenizer,
     "LlamaTokenizer": LlamaTokenizer,
 }
 
-MODELS: Dict[str, Type[RWForCausalLM]] = {
-    "falcon": RWForCausalLM,
+MODELS = {
+    "falcon": RWForCausalLM,  # type: ignore
     "llama_hf": LlamaForCausalLMNewCheckpoint,
     "gptj": GPTJForCausalLMWithCheckpointing,
     "llama": LLaMA,
