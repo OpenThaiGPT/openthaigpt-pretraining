@@ -32,5 +32,5 @@ ATTENTION_MODE = {
 GRADIENT_CHECKPOINTING = {
     "llama_hf": True,
     "gptj": True,
-    "llama": True,
+    "llama": False,
 }

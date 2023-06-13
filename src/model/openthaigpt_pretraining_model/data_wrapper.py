@@ -104,19 +104,18 @@ class TokenDatasetWrapper(Dataset):
         dataset_path: str,
         split: str,
     ):
-        
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
         self.chunk = None
         self.chunk_start_index = 0
         self.chunk_end_index = 0
-        self.mode = split
-        
+        self.split = split
+
         chunk_count = 0
         file_path = os.path.join(
             dataset_path,
-            f"{self.mode}_chunk_{chunk_count}",
+            f"{self.split}_chunk_{chunk_count}",
         )
         while os.path.exists(file_path):
             dataset = load_from_disk(file_path)
@@ -126,39 +125,13 @@ class TokenDatasetWrapper(Dataset):
             chunk_count += 1
             file_path = os.path.join(
                 dataset_path,
-                f"{self.mode}_chunk_{chunk_count}",
+                f"{self.split}_chunk_{chunk_count}",
             )
 
     def __len__(self):
         return self.total_length
 
-    # def __getitem__(self, idx):
-    #     if not self.chunk_start_index <= idx < self.chunk_end_index:
-    #         # Calculate the chunk index
-    #         file_index = 0
-    #         file_check = idx
-    #         for i, chunk_length in enumerate(self.chunk_lengths):
-    #             if file_check < chunk_length:
-    #                 file_index = i
-    #                 break
-    #             file_check -= chunk_length
-
-    #         self.chunk = load_from_disk(self.file_paths[file_index])
-    #         self.chunk_start_index = sum(self.chunk_lengths[:file_index])
-    #         self.chunk_end_index = (
-    #             self.chunk_start_index + self.chunk_lengths[file_index]
-    #         )
-    #     return torch.tensor(
-    #         self.chunk[idx - self.chunk_start_index][HF_TOKENIZER_INPUT_IDS_NAME]
-    #     )
-    
     def __getitem__(self, idx):
-        if isinstance(idx, list):
-            return [self.__get_single_item(i) for i in idx]
-        else:
-            return self.__get_single_item(idx)
-
-    def __get_single_item(self, idx):
         if not self.chunk_start_index <= idx < self.chunk_end_index:
             # Calculate the chunk index
             file_index = 0
@@ -174,8 +147,6 @@ class TokenDatasetWrapper(Dataset):
             self.chunk_end_index = (
                 self.chunk_start_index + self.chunk_lengths[file_index]
             )
-
         return torch.tensor(
             self.chunk[idx - self.chunk_start_index][HF_TOKENIZER_INPUT_IDS_NAME]
         )
-
