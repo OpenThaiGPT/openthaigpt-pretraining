@@ -54,7 +54,8 @@ def train_tokenizer(
     load_dataset_path: str = "oscar",
     load_dataset_name: str = "unshuffled_deduplicated_th",
     load_dataset_local_path: Optional[str] = None,
-    load_dataset_data_type: str = "csv",
+    load_dataset_data_type: Optional[str] = None,
+    large_corpus: bool = False,
 ) -> None:
     """
     Train a SentencePiece tokenizer on a large text dataset.
@@ -103,23 +104,27 @@ def train_tokenizer(
 
     else:
         # Stream from local files
-        data_files = {
-            "train": [
-                f"{load_dataset_local_path}/{filename}"
-                for filename in os.listdir(load_dataset_local_path)
-            ]
-        }
-        text_dataset = load_dataset(
-            load_dataset_data_type, data_files=data_files, split="train", streaming=True
-        )
+        if load_dataset_data_type is None:
+            text_dataset = load_dataset(
+                load_dataset_local_path, split="train", streaming=True
+            )
+        else:
+            data_files = {
+                "train": [
+                    f"{load_dataset_local_path}/{filename}"
+                    for filename in os.listdir(load_dataset_local_path)
+                ]
+            }
+            text_dataset = load_dataset(
+                load_dataset_data_type,
+                data_files=data_files,
+                split="train",
+                streaming=True,
+            )
 
     text_processed_dataset = text_dataset.map(
         function=prepare_datasets,
         batched=True,
-        remove_columns=[
-            DOC_TEXT,
-            DOC_ID,
-        ],  # this is must b/c we will return different number of rows
     )
 
     spm.SentencePieceTrainer.train(
@@ -130,4 +135,5 @@ def train_tokenizer(
         vocab_size=vocab_size,
         user_defined_symbols=USER_DEFINED_SYMBOLS,
         num_threads=num_proc,
+        train_extremely_large_corpus=large_corpus,
     )
