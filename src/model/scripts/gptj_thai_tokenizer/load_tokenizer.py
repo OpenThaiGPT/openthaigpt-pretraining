@@ -15,7 +15,7 @@ if __name__ == "__main__":
         "--tokenizer_path", type=str, required=True, help="path to save tokenizer"
     )
     parser.add_argument(
-        "--merge_file_path", type=str, required=True, help="path to save merge rule"
+        "--merge_file_path", default=None, help="path to save merge rule"
     )
 
     args = parser.parse_args()
@@ -23,8 +23,9 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     tokenizer.save_pretrained(args.tokenizer_path)
 
-    hf_hub_download(
-        repo_id=args.model_name,
-        filename="merges.txt",
-        local_dir=args.merge_file_path,
-    )
+    if args.merge_file_path is not None:
+        hf_hub_download(
+            repo_id=args.model_name,
+            filename="merges.txt",
+            local_dir=args.merge_file_path,
+        )
