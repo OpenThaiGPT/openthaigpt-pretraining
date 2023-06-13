@@ -1,9 +1,6 @@
 {
     "special_tokens": [
-        "<s>",
-        "<pad>",
-        "</s>",
-        "<unk>",
-        "<mask>"
+        "<eos>",
+        "<unk>"
     ]
 }
