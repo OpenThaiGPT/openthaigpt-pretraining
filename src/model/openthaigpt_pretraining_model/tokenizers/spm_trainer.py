@@ -46,6 +46,23 @@ class DataSetColumnIterator:
                 )
 
 
+def load_local_dataset(data_type, local_path):
+    if data_type is None:
+        text_dataset = load_dataset(local_path, split="train", streaming=True)
+    else:
+        data_files = {
+            "train": [f"{local_path}/{filename}" for filename in os.listdir(local_path)]
+        }
+        text_dataset = load_dataset(
+            data_type,
+            data_files=data_files,
+            split="train",
+            streaming=True,
+        )
+
+    return text_dataset
+
+
 def train_tokenizer(
     output_path: str,
     vocab_size: int,
@@ -105,23 +122,9 @@ def train_tokenizer(
 
     else:
         # Stream from local files
-        if load_dataset_data_type is None:
-            text_dataset = load_dataset(
-                load_dataset_local_path, split="train", streaming=True
-            )
-        else:
-            data_files = {
-                "train": [
-                    f"{load_dataset_local_path}/{filename}"
-                    for filename in os.listdir(load_dataset_local_path)
-                ]
-            }
-            text_dataset = load_dataset(
-                load_dataset_data_type,
-                data_files=data_files,
-                split="train",
-                streaming=True,
-            )
+        text_dataset = load_local_dataset(
+            load_dataset_data_type, load_dataset_local_path
+        )
 
     text_processed_dataset = text_dataset.map(
         function=prepare_datasets,
