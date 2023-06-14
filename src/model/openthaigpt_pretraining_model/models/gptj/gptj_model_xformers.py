@@ -1,6 +1,5 @@
 import torch
 import xformers.ops as xops
-from xformers.components.attention.core import scaled_query_key_softmax, bmm
 from transformers.models.gptj.modeling_gptj import (
     GPTJAttention,
     GPTJModel,
