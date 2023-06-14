@@ -37,7 +37,7 @@ def load_model(model_config, tokenizer=None):
         )
         model = model_object(config)
     else:
-        model = model_object.from_pretrained(model_pretrained)
+        model = model_object.from_pretrained(model_pretrained, **model_config.args)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
 
