@@ -17,3 +17,10 @@ args:
 tokenizer:
   pretrained_model_name_or_path: tiiuae/falcon-7b
   tokenizer_class: AutoTokenizer
+optimizer:
+  name: adamw
+  hyps:
+    lr: 1e-4
+    weight_decay: 1e-2
+    betas: [0.9, 0.95]
+    fused: true
