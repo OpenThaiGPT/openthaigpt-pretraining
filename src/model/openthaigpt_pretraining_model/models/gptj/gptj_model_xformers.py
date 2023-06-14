@@ -338,9 +338,12 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
+        if config.args.use_checkpointing:
+            self.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
         if config.use_checkpointing and config.checkpoint_only_attention:
-            print("use model with gradient checkpointing only attention")
             self.transformer = GPTJModelWithCheckpointing(config)
+            print("use model with gradient checkpointing only attention")
         else:
             self.transformer = GPTJModel(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size)

@@ -2,7 +2,6 @@ from .constants import (
     TOKENIZERS,
     MODELS,
     MODEL_CONFIGS,
-    GRADIENT_CHECKPOINTING,
 )
 
 
@@ -40,23 +39,6 @@ def load_model(model_config, tokenizer=None):
         model = model_object.from_pretrained(model_pretrained, **model_config.args)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
-
-    use_checkpointing = model_config.args.get("use_checkpointing", False)
-    checkpoint_only_attention = model_config.args.get(
-        "checkpoint_only_attention", False
-    )
-
-    if use_checkpointing:
-        checkpointing = GRADIENT_CHECKPOINTING.get(model_config.name, None)
-        if checkpointing is None:
-            raise NotImplementedError(
-                f"No gradient checkpointing for {model_config.name}"
-            )
-        if checkpointing:
-            model.gradient_checkpointing_enable()
-            print("use gradient checkpointing")
-            if checkpoint_only_attention:
-                print("use gradient checkpointing only attentions")
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"model size: {model_size/1000**2:.1f}M parameters")

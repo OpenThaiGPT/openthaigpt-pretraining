@@ -24,9 +24,3 @@ MODEL_CONFIGS = {
     "gptj": GPTJConfig,
     "llama": LLaMAArgs,
 }
-
-GRADIENT_CHECKPOINTING = {
-    "llama_hf": True,
-    "gptj": True,
-    "llama": False,
-}
