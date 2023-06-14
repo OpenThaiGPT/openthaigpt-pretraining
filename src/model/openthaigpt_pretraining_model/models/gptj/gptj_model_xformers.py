@@ -338,7 +338,7 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
-        if config.args.use_checkpointing:
+        if config.use_checkpointing:
             self.gradient_checkpointing_enable()
             print("use gradient checkpointing")
         if config.use_checkpointing and config.checkpoint_only_attention:
