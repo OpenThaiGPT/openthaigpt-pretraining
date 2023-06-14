@@ -46,7 +46,6 @@ class GPTJAttentionXFormers(GPTJAttention):
 
             return attn_output, None
         return super()._attn(
-            self,
             query,
             key,
             value,
