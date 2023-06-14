@@ -2,7 +2,7 @@ import os
 from typing import Optional, Union
 from tqdm import tqdm
 import sentencepiece as spm
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, load_from_disk, Dataset
 
 # CONSTANTS
 PREPARE_DATASETS_KEY = "text_processed"
@@ -48,7 +48,7 @@ class DataSetColumnIterator:
 
 def load_local_dataset(data_type, local_path):
     if data_type is None:
-        text_dataset = load_dataset(local_path, split="train", streaming=True)
+        text_dataset = load_from_disk(local_path)["train"]
     else:
         data_files = {
             "train": [f"{local_path}/{filename}" for filename in os.listdir(local_path)]
