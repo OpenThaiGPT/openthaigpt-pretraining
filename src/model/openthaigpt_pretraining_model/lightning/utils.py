@@ -6,10 +6,6 @@ import torch
 from torch.utils.data import DataLoader
 from typing import List, Union
 
-from .constants import (
-    DEFAULT_DATASET_NAME,
-)
-
 from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
 from ..datasets import get_dataset
@@ -37,8 +33,6 @@ class Trainer:
         precision: Union[str, int] = "32-true",
         seed: int = 42,
         training_configuration=None,  # type : ignore
-        streaming: bool = False,
-        dataset_name_or_path: str = DEFAULT_DATASET_NAME,
         batch_size: int = 8,
         num_workers: int = 2,
         grad: int = 4,
@@ -76,16 +70,9 @@ class Trainer:
         self.tokenizer, self.model = load_model_and_tokenizer(
             training_configuration.model,
         )
-        if streaming:
-            train_dataset = get_dataset(
-                dataset_name_or_path,
-                split=SPLIT_TRAIN,
-                shuffle=True,
-                streaming=streaming,
-            )
-            val_dataset = get_dataset(
-                dataset_name_or_path, split=SPLIT_VAL, streaming=streaming
-            )
+        if training_configuration.tokenized_dataset is None:
+            train_dataset = get_dataset(training_configuration.train_dataset)
+            val_dataset = get_dataset(training_configuration.val_dataset)
             self.dataset = DatasetWrapper(
                 self.tokenizer, train_dataset, self.max_tokens
             )
@@ -94,11 +81,11 @@ class Trainer:
             )
         else:
             self.dataset = TokenDatasetWrapper(
-                dataset_path=dataset_name_or_path,
+                dataset_path=training_configuration.tokenized_dataset,
                 split=SPLIT_TRAIN,
             )
             self.dataset_val = TokenDatasetWrapper(
-                dataset_path=dataset_name_or_path,
+                dataset_path=training_configuration.tokenized_dataset,
                 split=SPLIT_VAL,
             )
         self.dataloader = DataLoader(

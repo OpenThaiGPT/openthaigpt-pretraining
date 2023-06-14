@@ -15,6 +15,7 @@ args:
 tokenizer:
   pretrained_model_name_or_path: decapoda-research/llama-7b-hf
   tokenizer_class: LlamaTokenizer
+tokenized_dataset: None
 train_dataset:
   dataset_name: oscar
   split: train  # type: ignore

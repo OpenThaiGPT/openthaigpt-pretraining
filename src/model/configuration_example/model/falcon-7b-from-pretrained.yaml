@@ -17,6 +17,7 @@ args:
 tokenizer:
   pretrained_model_name_or_path: tiiuae/falcon-7b
   tokenizer_class: AutoTokenizer
+tokenized_dataset: None
 train_dataset:
   dataset_name: oscar
   split: train  # type: ignore
