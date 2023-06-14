@@ -16,56 +16,43 @@ from transformers.modeling_outputs import (
 )
 
 
-def _attn_xformers_cpu(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    # compute causal mask from causal mask buffer
-    query_length, key_length = query.size(-2), key.size(-2)
-    causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length]
-    attention_mask = torch.where(causal_mask, 0.0, -torch.inf)
-    # Keep the attention weights computation in fp32 to avoid overflow issues
-    query = query.to(torch.float32)
-    key = key.to(torch.float32)
-    attn_weights = scaled_query_key_softmax(query, key, attention_mask)
-    attn_weights = self.attn_dropout(attn_weights)
+class GPTJAttentionXFormers(GPTJAttention):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attention_mode = config.attention_mode
 
-    # Mask heads if we want to
-    if head_mask is not None:
-        attn_weights = attn_weights * head_mask
-    # attn_output = bmm(attn_weights, value)
-    attn_output = bmm(attn_weights, value)
+    def _attn(
+        self,
+        query,
+        key,
+        value,
+        attention_mask=None,
+        head_mask=None,
+    ):
+        if self.attention_mode == "xformers":
+            if attention_mask is not None:
+                raise TypeError("Not support manual attention mask")
 
-    return attn_output, attn_weights
+            if head_mask is not None:
+                raise TypeError("Not support head_mask")
 
+            # Attention output
+            attn_output = xops.memory_efficient_attention(
+                query.transpose(2, 1),
+                key.transpose(2, 1),
+                value.transpose(2, 1),
+                xops.LowerTriangularMask(),
+            ).transpose(2, 1)
 
-def _attn_xformers(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    if attention_mask is not None:
-        raise TypeError("Not support manual attention mask")
-
-    if head_mask is not None:
-        raise TypeError("Not support head_mask")
-
-    # Attention output
-    attn_output = xops.memory_efficient_attention(
-        query.transpose(2, 1),
-        key.transpose(2, 1),
-        value.transpose(2, 1),
-        xops.LowerTriangularMask(),
-    ).transpose(2, 1)
-
-    return attn_output, None
+            return attn_output, None
+        return super()._attn(
+            self,
+            query,
+            key,
+            value,
+            attention_mask,
+            head_mask,
+        )
 
 
 class GPTJModelWithCheckpointing(GPTJModel):
@@ -274,6 +261,10 @@ class GPTJModelWithCheckpointing(GPTJModel):
 
 
 class GPTJBlockWithCheckpointing(GPTJBlock):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attn = GPTJAttentionXFormers(config)
+
     def forward(
         self,
         hidden_states: Optional[torch.FloatTensor],
@@ -362,9 +353,3 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
         # Initialize weights and apply final processing
         self.post_init()
-
-
-def change_attn(attention_mode: str = "xformers"):
-    if attention_mode == "xformers":
-        print("Use xFormers")
-        GPTJAttention._attn = _attn_xformers
