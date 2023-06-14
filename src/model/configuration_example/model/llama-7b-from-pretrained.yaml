@@ -20,3 +20,17 @@ args:
 tokenizer:
   pretrained_model_name_or_path: decapoda-research/llama-7b-hf
   tokenizer_class: LlamaTokenizer
+train_dataset:
+  dataset_name: oscar
+  split: train  # type: ignore
+  shuffle: false
+  buffer_size: 10000
+  streaming: false
+  from_disk: false
+val_dataset:
+  dataset_name: oscar
+  split: validation  # type: ignore
+  shuffle: false
+  buffer_size: 10000
+  streaming: false
+  from_disk: false

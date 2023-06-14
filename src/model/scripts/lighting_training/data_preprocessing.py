@@ -2,8 +2,8 @@ import argparse
 from openthaigpt_pretraining_model.data_wrapper import (
     TokenizedDataset,
 )
+from openthaigpt_pretraining_model.utils import load_hydra_config
 from openthaigpt_pretraining_model.datasets import get_dataset
-from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 from re import findall
 from transformers import (
     AutoTokenizer,
@@ -49,23 +49,11 @@ if __name__ == "__main__":
         type=int,
         default=128,
     )
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="oscar",
-    )
-    parser.add_argument(
-        "--split",
-        type=str,
-        default=SPLIT_TRAIN,
-        help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
-    )
-    parser.add_argument("--from_disk", action="store_true")
+    parser.add_argument("dataset_configuration", type=str, required=True)
     args = parser.parse_args()
     print(args)
-    dataset = get_dataset(
-        dataset_name=args.dataset, split=args.split, from_disk=args.from_disk
-    )
+    dataset_configuration = load_hydra_config(args.dataset_configuration)
+    dataset = get_dataset(dataset_configuration)
     if len(findall("llama", args.tokenizer)):
         tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
     else:

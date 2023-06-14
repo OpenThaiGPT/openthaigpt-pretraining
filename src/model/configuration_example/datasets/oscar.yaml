@@ -1,0 +1,6 @@
+dataset_name: oscar
+split: train  # type: ignore
+shuffle: false
+buffer_size: 10000
+streaming: false
+from_disk: false

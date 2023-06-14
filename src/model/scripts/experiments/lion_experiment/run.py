@@ -19,7 +19,7 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from openthaigpt_pretraining_model.data_wrapper import DatasetWrapper
 from openthaigpt_pretraining_model.optimizers import get_optimizer
-from openthaigpt_pretraining_model.datasets import get_dataset
+from openthaigpt_pretraining_model.datasets import get_dataset_for_lion
 from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 
 # https://github.com/d8ahazard/sd_dreambooth_extension/pull/1186#issuecomment-1518694203
@@ -110,8 +110,10 @@ class Trainer:
             eos_token=EOS_TOKEN,
             pad_token=PAD_TOKEN,
         )
-        dataset_train = get_dataset(DATASET_NAME, split=SPLIT_TRAIN, shuffle=True)
-        dataset_val = get_dataset(DATASET_NAME, split=SPLIT_VAL)
+        dataset_train = get_dataset_for_lion(
+            DATASET_NAME, split=SPLIT_TRAIN, shuffle=True
+        )
+        dataset_val = get_dataset_for_lion(DATASET_NAME, split=SPLIT_VAL)
         self.dataset = DatasetWrapper(tokenizer, dataset_train, self.max_tokens)
         self.dataset_val = DatasetWrapper(tokenizer, dataset_val, self.max_tokens)
         self.use_flash = use_flash
