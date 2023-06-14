@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 from .constants import DATASET_ARGS
 from typing import Union
 
@@ -9,6 +9,7 @@ def get_dataset(
     shuffle: bool = False,
     buffer_size: int = 10_000,
     streaming: bool = False,
+    from_disk: bool = False,
 ):
     """
     Args:
@@ -21,15 +22,22 @@ def get_dataset(
     dataset_args = DATASET_ARGS.get(dataset_name, None)  # type: ignore
     if isinstance(dataset_name, dict):
         dataset_args = dataset_name
-    elif isinstance(dataset_name, str) and dataset_args:
-        pass
+    elif isinstance(dataset_name, str) and not dataset_args:
+        dataset_args = {"path": dataset_name}
     else:
         raise NotImplementedError(f"No dataset name {dataset_name}")
-    dataset = load_dataset(
-        **dataset_args,
-        split=split,
-        streaming=streaming,
-    )
+
+    if from_disk:
+        dataset = load_from_disk(
+            dataset_name,
+        )[split]
+    else:
+        dataset = load_dataset(
+            **dataset_args,
+            split=split,
+            streaming=streaming,
+        )
+
     if shuffle:
         dataset = dataset.shuffle(buffer_size=buffer_size)
     return dataset
