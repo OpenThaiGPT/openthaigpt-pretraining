@@ -8,7 +8,8 @@ from datasets import load_dataset, Dataset
 PREPARE_DATASETS_KEY = "text_processed"
 DOC_ID = "id"
 DOC_TEXT = "text"
-USER_DEFINED_SYMBOLS = ["<mask>"]
+EOS_TOKEN = "<eos>"
+USER_DEFINED_SYMBOLS = [EOS_TOKEN]
 
 
 def prepare_datasets(texts: dict) -> dict:

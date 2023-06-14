@@ -60,15 +60,18 @@ if __name__ == "__main__":
         default=SPLIT_TRAIN,
         help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
     )
+    parser.add_argument("--from_disk", action="store_true")
     args = parser.parse_args()
     print(args)
-    dataset = get_dataset(dataset_name=args.dataset, split=args.split)
+    dataset = get_dataset(
+        dataset_name=args.dataset, split=args.split, from_disk=args.from_disk
+    )
     if len(findall("llama", args.tokenizer)):
         tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
-        tokenizer.pad_token = "<pad>"
-        tokenizer.add_special_tokens({"pad_token": "<pad>"})
     else:
         tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+
+    tokenizer.pad_token = tokenizer.eos_token
 
     dataset = TokenizedDataset(
         dataset=dataset,
