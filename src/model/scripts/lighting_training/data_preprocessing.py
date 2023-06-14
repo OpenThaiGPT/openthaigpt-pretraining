@@ -4,7 +4,6 @@ from openthaigpt_pretraining_model.data_wrapper import (
 )
 from openthaigpt_pretraining_model.datasets import get_dataset
 from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
-from openthaigpt_pretraining_model.tokenizers.spm_trainer import EOS_TOKEN
 from re import findall
 from transformers import (
     AutoTokenizer,
@@ -72,8 +71,6 @@ if __name__ == "__main__":
     else:
         tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
 
-    if tokenizer.eos_token is None:
-        tokenizer.eos_token = EOS_TOKEN
     tokenizer.pad_token = tokenizer.eos_token
 
     dataset = TokenizedDataset(
