@@ -1,27 +1,13 @@
-from transformers import AutoTokenizer, GPT2TokenizerFast
-from huggingface_hub import hf_hub_download
-from .constants import FILE_DIR, GPT2_MERGE_DIR, GPTJ_MERGE_DIR
+from transformers import PreTrainedTokenizerFast, GPT2TokenizerFast
 import json
 import os
 from typing import Dict
 
 
-def merge(thai_tokenizer_repo: str = "flax-community/gpt2-base-thai"):
+def merge(tokenizer_dir_1, tokenizer_dir_2, merge_file_1, merge_file_2):
     # load tokenizer
-    gptj_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
-    gpt2_tokenizer = AutoTokenizer.from_pretrained(thai_tokenizer_repo)
-
-    # load vcab and merge rule
-    hf_hub_download(
-        repo_id="EleutherAI/gpt-j-6b",
-        filename="merges.txt",
-        local_dir=f"{FILE_DIR}/GPTJ_merge_rule/",
-    )
-    hf_hub_download(
-        repo_id=thai_tokenizer_repo,
-        filename="merges.txt",
-        local_dir=f"{FILE_DIR}/GPT2_merge_rule/",
-    )
+    gptj_tokenizer = PreTrainedTokenizerFast.from_pretrained(tokenizer_dir_1)
+    gpt2_tokenizer = PreTrainedTokenizerFast.from_pretrained(tokenizer_dir_2)
 
     # retrieve the vocabs
     gptj_vocab = gptj_tokenizer.get_vocab()
@@ -57,8 +43,8 @@ def merge(thai_tokenizer_repo: str = "flax-community/gpt2-base-thai"):
     # merge merged rule
     merge_file_path = os.path.join(folder_path, "new_merged_rule.txt")
 
-    with open(GPT2_MERGE_DIR, "r", encoding="utf-8") as f1, open(
-        GPTJ_MERGE_DIR, "r", encoding="utf-8"
+    with open(merge_file_1, "r", encoding="utf-8") as f1, open(
+        merge_file_2, "r", encoding="utf-8"
     ) as f2, open(merge_file_path, "w", encoding="utf-8") as out_file:
         # Ignore first line of each input file
         next(f1)
