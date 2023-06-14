@@ -1,0 +1,4 @@
+defaults:
+  - optimizer: adamw_optimizer
+  - model: llama-7b-from-scratch.yaml
+  

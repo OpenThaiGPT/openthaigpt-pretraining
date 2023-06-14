@@ -104,13 +104,13 @@ class TokenDatasetWrapper(Dataset):
         dataset_path: str,
         split: str,
     ):
-        self.split = split
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
         self.chunk = None
         self.chunk_start_index = 0
         self.chunk_end_index = 0
+        self.split = split
 
         chunk_count = 0
         file_path = os.path.join(
