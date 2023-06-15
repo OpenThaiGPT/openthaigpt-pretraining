@@ -4,6 +4,7 @@ from openthaigpt_pretraining_model.data_wrapper import (
 )
 from openthaigpt_pretraining_model.utils import load_hydra_config
 from openthaigpt_pretraining_model.datasets import get_dataset
+from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 from re import findall
 from transformers import (
     AutoTokenizer,
@@ -12,12 +13,6 @@ from transformers import (
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default="train",
-        help="train | val",
-    )
     parser.add_argument(
         "--tokenizer",
         type=str,
@@ -54,9 +49,18 @@ if __name__ == "__main__":
         type=str,
         default="src/model/configuration_example/config.yaml",
     )
+    parser.add_argument(
+        "--split",
+        type=str,
+        default=SPLIT_TRAIN,
+        help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
+    )
     args = parser.parse_args()
     print(args)
     dataset_configuration = load_hydra_config(args.configuration).dataset
+    dataset_configuration = dataset_configuration.get(args.split, None)
+    if dataset_configuration is None:
+        raise NotImplementedError(f"dataset don't have split {args.split}")
     dataset = get_dataset(dataset_configuration)
     if len(findall("llama", args.tokenizer)):
         tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
