@@ -44,6 +44,8 @@ class Trainer:
         grad: int = 4,
         context_length: int = 256,
         num_nodes: int = 1,
+        save_steps: int = 10000,
+        save_paths: str = ".",
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
@@ -52,6 +54,8 @@ class Trainer:
         self.step = 0
         self.seed = seed
         self.grad = grad
+        self.save_steps = save_steps
+        self.save_paths = save_paths
         if strategy == "deepspeed":
             strategy = DeepSpeedStrategy(
                 stage=stage,
@@ -124,6 +128,26 @@ class Trainer:
         if self.wandb is not None:
             self.wandb.log(data)
 
+    def save_checkpoint(self, loss, perplexity):
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.opt.state_dict(),
+                "loss": loss,
+                "perplexity": perplexity,
+            },
+            self.save_paths,
+        )
+
+    def load_checkpoint(self, path):
+        if os.path.isfile(path):
+            print(f"=> loading checkpoint {path}")
+            checkpoint = torch.load(path)
+            self.model.load_state_dict(checkpoint["model_state_dict"])
+            self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
+        else:
+            print(f"=> no checkpoint found {path}")
+
     def train_step(self, batch):
         loss = self.model(batch, labels=batch).loss
         return loss
@@ -138,7 +162,7 @@ class Trainer:
                 self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
-        return loss
+        return (loss, perplexity)
 
     def train(self):
         progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
@@ -159,7 +183,11 @@ class Trainer:
                 self.opt.step()
                 self.opt.zero_grad()
 
-        val_loss = self.val_step()
-        print(f"loss_val: {val_loss.item():.3f}")
+            if (i + 1) % self.save_steps == 0:
+                (val_loss, val_perplexity) = self.val_step()
+                self.save_checkpoint(val_loss, val_perplexity)
+
+        (val_loss, val_perplexity) = self.val_step()
+        print(f"val_loss: {val_loss.item():.3f}, val_perplexity: {val_perplexity:.3f})")
 
         self.wandb.finish()

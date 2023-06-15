@@ -42,17 +42,15 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
     parser.add_argument("--context_length", type=int, default=256, help="seq")
-    # parser.add_argument(
-    #     "--attention",
-    #     type=str,
-    #     default="origin",
-    #     help="origin | pytorch (support only llama) | xformers (llama_hf only support origin)",  # noqa
-    # )
     parser.add_argument(
         "--training_configuration",
         type=str,
         default="src/model/configuration_example/config.yaml",
     )
+    parser.add_argument(
+        "--save_steps", type=int, default=10000, help="save every n steps"
+    )
+    parser.add_argument("--save_paths", type=str, default=".")
 
     args = parser.parse_args()
     print(args)
@@ -75,6 +73,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,
-        # attention_mode=args.attention,
+        save_steps=args.save_steps,
+        save_paths=args.save_paths,
     )
     trainer.train()
