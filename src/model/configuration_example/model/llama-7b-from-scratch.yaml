@@ -17,6 +17,12 @@ args:
   tie_word_embeddings: False
   use_checkpointing: True
   checkpoint_only_attention: False
+  lora: False
 tokenizer:
   pretrained_model_name_or_path: decapoda-research/llama-7b-hf
   tokenizer_class: LlamaTokenizer
+lora:
+  lora_r: 8
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_bias: "none"

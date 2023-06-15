@@ -4,6 +4,8 @@ from .constants import (
     MODEL_CONFIGS,
     ATTENTION_MODE,
     GRADIENT_CHECKPOINTING,
+    LORA_MODEL,
+    LORA_CONFIG,
 )
 
 
@@ -44,6 +46,7 @@ def load_model(model_config, tokenizer=None):
 
     attention_mode = model_config.args.get("attenttion_mode", None)
     use_checkpointing = model_config.args.get("use_checkpointing", False)
+    lora = model_config.args.get("lora", False)
     checkpoint_only_attention = model_config.args.get(
         "checkpoint_only_attention", False
     )
@@ -66,6 +69,15 @@ def load_model(model_config, tokenizer=None):
             print("use gradient checkpointing")
             if checkpoint_only_attention:
                 print("use gradient checkpointing only attentions")
+
+    if lora:
+        lora_object = LORA_MODEL.get(model_config.name, None)
+        lora_config = model_config.lora
+        lora_config_object = LORA_CONFIG.get(model_config.name, None)
+        lora_config = lora_config_object(lora_config)
+        if lora_object is None:
+            raise NotImplementedError(f"No lora_avaiable for {model_config.name}")
+        model = lora_object(model, lora_config)
 
     model_size = sum(t.numel() for t in model.parameters())
     print(f"model size: {model_size/1000**2:.1f}M parameters")
