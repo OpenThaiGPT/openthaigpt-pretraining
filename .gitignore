@@ -9,3 +9,4 @@ src/data/**/*.bin
 src/data/**/*.sh
 src/data/**/*.yaml
 src/data/**/full_input*
+/.cache

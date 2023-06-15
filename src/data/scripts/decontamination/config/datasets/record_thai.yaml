@@ -1,0 +1,6 @@
+record_thai:
+  name: Record
+  available_on_hub: True
+  path_name: Patt/ReCoRD_TH
+  split: validation
+  subset:
