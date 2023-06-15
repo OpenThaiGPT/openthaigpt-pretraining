@@ -1,4 +1,4 @@
 defaults:
   - optimizer: adamw_optimizer
   - model: falcon-7b-from-pretrained
-  - dataset: oscar
+  - dataset: mc4
