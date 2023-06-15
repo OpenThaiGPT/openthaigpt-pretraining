@@ -4,7 +4,7 @@ from openthaigpt_pretraining_model.data_wrapper import (
 )
 from openthaigpt_pretraining_model.utils import load_hydra_config
 from openthaigpt_pretraining_model.datasets import get_dataset
-from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN
 from re import findall
 from transformers import (
     AutoTokenizer,
@@ -53,7 +53,6 @@ if __name__ == "__main__":
         "--split",
         type=str,
         default=SPLIT_TRAIN,
-        help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
     )
     args = parser.parse_args()
     print(args)
