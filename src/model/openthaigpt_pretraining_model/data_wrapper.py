@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import IterableDataset
-from datasets import Dataset, load_from_disk
+from datasets import load_from_disk
+from typing import Optional
 import os
 
 
@@ -87,20 +88,13 @@ class TokenizedDataset:
         tokenized_dataset.save_to_disk(os.path.join(self.save_path, self.split))
 
 
-class TokenDatasetWrapper(Dataset):
-    def __init__(
-        self,
-        dataset_path: str,
-        split: str,
-    ):
-        file_path = os.path.join(
-            dataset_path,
-            split,
-        )
-        self.dataset = load_from_disk(file_path)
+def load_token_dataset(dataset_path: str, split: Optional[str] = None):
+    if split is None:
+        split = "train"
+    file_path = os.path.join(
+        dataset_path,
+        split,
+    )
+    dataset = load_from_disk(file_path)
 
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        return torch.tensor(self.dataset[idx][HF_TOKENIZER_INPUT_IDS_NAME])
+    return dataset.with_format("torch")

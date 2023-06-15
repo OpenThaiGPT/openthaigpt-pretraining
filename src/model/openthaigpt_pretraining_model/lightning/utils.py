@@ -11,7 +11,11 @@ from .constants import (
 )
 
 from ..utils import compute_perplexity
-from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
+from ..data_wrapper import (
+    DatasetWrapper,
+    load_token_dataset,
+    HF_TOKENIZER_INPUT_IDS_NAME,
+)
 from ..datasets import get_dataset
 from ..optimizers import get_optimizer
 from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
@@ -93,11 +97,11 @@ class Trainer:
                 self.tokenizer, val_dataset, self.max_tokens
             )
         else:
-            self.dataset = TokenDatasetWrapper(
+            self.dataset = load_token_dataset(
                 dataset_path=dataset_name_or_path,
                 split=SPLIT_TRAIN,
             )
-            self.dataset_val = TokenDatasetWrapper(
+            self.dataset_val = load_token_dataset(
                 dataset_path=dataset_name_or_path,
                 split=SPLIT_VAL,
             )
@@ -125,7 +129,8 @@ class Trainer:
             self.wandb.log(data)
 
     def train_step(self, batch):
-        loss = self.model(batch, labels=batch).loss
+        inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
+        loss = self.model(inputs, labels=inputs).loss
         return loss
 
     def val_step(self):
@@ -133,7 +138,8 @@ class Trainer:
         progress_bar = tqdm(self.dataloader_val)
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
-                loss = self.model(batch, labels=batch).loss
+                inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
+                loss = self.model(inputs, labels=inputs).loss
                 perplexity = compute_perplexity(loss)
                 self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
