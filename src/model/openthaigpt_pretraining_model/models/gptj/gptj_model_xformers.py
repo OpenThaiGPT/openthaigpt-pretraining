@@ -14,6 +14,8 @@ from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
 )
 
+XFORMER_ATTENTION_MODE = "xformers"
+
 
 class GPTJAttentionXFormers(GPTJAttention):
     def __init__(self, config):
@@ -28,7 +30,7 @@ class GPTJAttentionXFormers(GPTJAttention):
         attention_mask=None,
         head_mask=None,
     ):
-        if self.attention_mode == "xformers":
+        if self.attention_mode == XFORMER_ATTENTION_MODE:
             if attention_mask is not None:
                 raise TypeError("Not support manual attention mask")
 
