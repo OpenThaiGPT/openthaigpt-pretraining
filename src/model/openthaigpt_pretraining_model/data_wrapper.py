@@ -104,7 +104,7 @@ class TokenDatasetWrapper(Dataset):
         dataset_path: str,
         split: str,
     ):
-        self.split = split
+        self.split_ = split
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
@@ -115,7 +115,7 @@ class TokenDatasetWrapper(Dataset):
         chunk_count = 0
         file_path = os.path.join(
             dataset_path,
-            f"{self.split}_chunk_{chunk_count}",
+            f"{self.split_}_chunk_{chunk_count}",
         )
         while os.path.exists(file_path):
             dataset = load_from_disk(file_path)
@@ -125,7 +125,7 @@ class TokenDatasetWrapper(Dataset):
             chunk_count += 1
             file_path = os.path.join(
                 dataset_path,
-                f"{self.split}_chunk_{chunk_count}",
+                f"{self.split_}_chunk_{chunk_count}",
             )
 
     def __len__(self):
