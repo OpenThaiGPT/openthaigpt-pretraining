@@ -70,9 +70,9 @@ class Trainer:
         self.tokenizer, self.model = load_model_and_tokenizer(
             training_configuration.model,
         )
-        if training_configuration.tokenized_dataset is None:
-            train_dataset = get_dataset(training_configuration.train_dataset)
-            val_dataset = get_dataset(training_configuration.val_dataset)
+        if training_configuration.dataset.tokenized_path is None:
+            train_dataset = get_dataset(training_configuration.dataset.train)
+            val_dataset = get_dataset(training_configuration.dataset.val)
             self.dataset = DatasetWrapper(
                 self.tokenizer, train_dataset, self.max_tokens
             )
@@ -81,11 +81,11 @@ class Trainer:
             )
         else:
             self.dataset = TokenDatasetWrapper(
-                dataset_path=training_configuration.tokenized_dataset,
+                dataset_path=training_configuration.dataset.tokenized_path,
                 split=SPLIT_TRAIN,
             )
             self.dataset_val = TokenDatasetWrapper(
-                dataset_path=training_configuration.tokenized_dataset,
+                dataset_path=training_configuration.dataset.tokenized_path,
                 split=SPLIT_VAL,
             )
         self.dataloader = DataLoader(

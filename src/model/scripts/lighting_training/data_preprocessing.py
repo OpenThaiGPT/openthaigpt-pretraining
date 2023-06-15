@@ -49,10 +49,14 @@ if __name__ == "__main__":
         type=int,
         default=128,
     )
-    parser.add_argument("dataset_configuration", type=str, required=True)
+    parser.add_argument(
+        "--configuration",
+        type=str,
+        default="src/model/configuration_example/config.yaml",
+    )
     args = parser.parse_args()
     print(args)
-    dataset_configuration = load_hydra_config(args.dataset_configuration)
+    dataset_configuration = load_hydra_config(args.configuration).dataset
     dataset = get_dataset(dataset_configuration)
     if len(findall("llama", args.tokenizer)):
         tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
