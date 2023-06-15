@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import IterableDataset
 from datasets import Dataset, load_from_disk
 import os
-from tqdm import tqdm
 
 
 HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
@@ -49,7 +48,6 @@ class TokenizedDataset:
         tokenizer,
         max_tokens: int = 2048,
         save_path: str = "./",
-        chunk_size: int = 1024 * 1024,
         batch_size: int = 10000,
         num_proc: int = 16,
     ):
@@ -65,13 +63,9 @@ class TokenizedDataset:
         self.split = split
         self.max_tokens = max_tokens
         self.save_path = save_path
-        self.chunk_size = chunk_size
         self.batch_size = batch_size
         self.num_proc = num_proc
         self.dataset = dataset
-
-        self.num_shards = (len(self.dataset) + chunk_size - 1) // chunk_size
-        self.tokenized_data = None
 
     def tokenize_function(self, data):
         tokenized_text = self.tokenizer(
@@ -84,18 +78,13 @@ class TokenizedDataset:
 
     def tokenize_data(self):
         os.makedirs(self.save_path, exist_ok=True)
-        for i in tqdm(range(self.num_shards)):
-            chunk = self.dataset.shard(self.num_shards, i)  # split chunk
-            tokenized_dataset = chunk.map(
-                self.tokenize_function,
-                batched=True,
-                batch_size=self.batch_size,
-                num_proc=self.num_proc,
-            )
-            print(f"save {self.split}_chunk_{i}")
-            tokenized_dataset.save_to_disk(
-                os.path.join(self.save_path, f"{self.split}_chunk_{i}")
-            )
+        tokenized_dataset = self.dataset.map(
+            self.tokenize_function,
+            batched=True,
+            batch_size=self.batch_size,
+            num_proc=self.num_proc,
+        )
+        tokenized_dataset.save_to_disk(os.path.join(self.save_path, self.split))
 
 
 class TokenDatasetWrapper(Dataset):
@@ -104,49 +93,14 @@ class TokenDatasetWrapper(Dataset):
         dataset_path: str,
         split: str,
     ):
-        self.split = split
-        self.file_paths = []
-        self.chunk_lengths = []
-        self.total_length = 0
-        self.chunk = None
-        self.chunk_start_index = 0
-        self.chunk_end_index = 0
-
-        chunk_count = 0
         file_path = os.path.join(
             dataset_path,
-            f"{self.split}_chunk_{chunk_count}",
+            split,
         )
-        while os.path.exists(file_path):
-            dataset = load_from_disk(file_path)
-            self.file_paths.append(file_path)
-            self.chunk_lengths.append(len(dataset))
-            self.total_length += len(dataset)
-            chunk_count += 1
-            file_path = os.path.join(
-                dataset_path,
-                f"{self.split}_chunk_{chunk_count}",
-            )
+        self.dataset = load_from_disk(file_path)
 
     def __len__(self):
-        return self.total_length
+        return len(self.dataset)
 
     def __getitem__(self, idx):
-        if not self.chunk_start_index <= idx < self.chunk_end_index:
-            # Calculate the chunk index
-            file_index = 0
-            file_check = idx
-            for i, chunk_length in enumerate(self.chunk_lengths):
-                if file_check < chunk_length:
-                    file_index = i
-                    break
-                file_check -= chunk_length
-
-            self.chunk = load_from_disk(self.file_paths[file_index])
-            self.chunk_start_index = sum(self.chunk_lengths[:file_index])
-            self.chunk_end_index = (
-                self.chunk_start_index + self.chunk_lengths[file_index]
-            )
-        return torch.tensor(
-            self.chunk[idx - self.chunk_start_index][HF_TOKENIZER_INPUT_IDS_NAME]
-        )
+        return torch.tensor(self.dataset[idx][HF_TOKENIZER_INPUT_IDS_NAME])

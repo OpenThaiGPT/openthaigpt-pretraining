@@ -35,11 +35,6 @@ if __name__ == "__main__":
         default="./tokendata",
     )
     parser.add_argument(
-        "--chunk_size",
-        type=int,
-        default=1024 * 1024,
-    )
-    parser.add_argument(
         "--batch_size",
         type=int,
         default=25000,
@@ -79,7 +74,6 @@ if __name__ == "__main__":
         tokenizer=tokenizer,
         max_tokens=args.max_tokens,
         save_path=args.save_path,
-        chunk_size=args.chunk_size,
         batch_size=args.batch_size,
         num_proc=args.num_proc,
     )
