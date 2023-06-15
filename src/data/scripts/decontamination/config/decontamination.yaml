@@ -28,3 +28,4 @@ decontaminate:
   num_process: 128
   thresold: 0.3
   minhash_path: /scratch/lt200056-opgpth/HF_datasets_minhash
+  save_path: /scratch/lt200056-opgpth/HF_datasets_decontaminated
