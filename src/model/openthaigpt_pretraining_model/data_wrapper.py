@@ -3,6 +3,7 @@ from torch.utils.data import IterableDataset
 from datasets import Dataset, load_from_disk
 import os
 from tqdm import tqdm
+from typing import Optional
 
 
 HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
@@ -102,8 +103,10 @@ class TokenDatasetWrapper(Dataset):
     def __init__(
         self,
         dataset_path: str,
-        split: str,
+        split: Optional[str] = None,
     ):
+        if split is None:
+            split = "train"
         self.split_ = split
         self.file_paths = []
         self.chunk_lengths = []

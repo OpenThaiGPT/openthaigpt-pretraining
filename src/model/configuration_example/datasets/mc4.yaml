@@ -1,13 +1,16 @@
-tokenized_path: None
+tokenized:
+  path: None
+  train_split: None
+  eval_split: None
 train:
-  dataset_name: oscar
+  dataset_name: mc4
   split: train  # type: ignore
   shuffle: false
   buffer_size: 10000
   streaming: false
   from_disk: false
 val:
-  dataset_name: oscar
+  dataset_name: mc4
   split: validation  # type: ignore
   shuffle: false
   buffer_size: 10000

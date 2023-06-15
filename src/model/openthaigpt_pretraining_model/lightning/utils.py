@@ -10,7 +10,6 @@ from ..utils import compute_perplexity
 from ..data_wrapper import DatasetWrapper, TokenDatasetWrapper
 from ..datasets import get_dataset
 from ..optimizers import get_optimizer
-from ..datasets.constants import SPLIT_TRAIN, SPLIT_VAL
 from ..models import load_model_and_tokenizer
 
 from lightning.fabric.strategies import DeepSpeedStrategy
@@ -70,7 +69,7 @@ class Trainer:
         self.tokenizer, self.model = load_model_and_tokenizer(
             training_configuration.model,
         )
-        if training_configuration.dataset.tokenized_path is None:
+        if training_configuration.dataset.tokenized.path is None:
             train_dataset = get_dataset(training_configuration.dataset.train)
             val_dataset = get_dataset(training_configuration.dataset.val)
             self.dataset = DatasetWrapper(
@@ -81,12 +80,12 @@ class Trainer:
             )
         else:
             self.dataset = TokenDatasetWrapper(
-                dataset_path=training_configuration.dataset.tokenized_path,
-                split=SPLIT_TRAIN,
+                dataset_path=training_configuration.dataset.tokenized.path,
+                split=training_configuration.dataset.tokenized.train_split,
             )
             self.dataset_val = TokenDatasetWrapper(
-                dataset_path=training_configuration.dataset.tokenized_path,
-                split=SPLIT_VAL,
+                dataset_path=training_configuration.dataset.tokenized.path,
+                split=training_configuration.dataset.tokenized.eval_split,
             )
         self.dataloader = DataLoader(
             self.dataset,
