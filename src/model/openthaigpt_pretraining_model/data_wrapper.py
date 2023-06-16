@@ -1,8 +1,10 @@
 import torch
 from torch.utils.data import IterableDataset
+from torch.nn.functional import pad
 from datasets import Dataset, load_from_disk
 import os
 from tqdm import tqdm
+from typing import Optional
 
 
 HF_TOKENIZER_INPUT_IDS_NAME = "input_ids"
@@ -74,13 +76,34 @@ class TokenizedDataset:
         self.tokenized_data = None
 
     def tokenize_function(self, data):
-        tokenized_text = self.tokenizer(
-            data["text"],
-            truncation=True,
-            padding=True,
-            max_length=self.max_tokens,
-        )["input_ids"]
-        return {HF_TOKENIZER_INPUT_IDS_NAME: tokenized_text}
+        outputs = self.tokenizer(data["text"])
+
+        result_list = []
+
+        # Iterate over each sublist and extend the result list with sublist elements
+        for sublist in outputs[HF_TOKENIZER_INPUT_IDS_NAME]:
+            result_list.extend(sublist)
+            result_list.append(0)  # Insert 0 between sublist elements
+
+        # desired_dim_2 = 4  # Desired size along the second dimension
+        padding_value = self.tokenizer.eos_token_id  # Number to use for padding
+
+        input_tensor = torch.Tensor(result_list).long()
+
+        # Determine the size of the first dimension based on desired_dim_2
+        desired_dim_1 = -(-input_tensor.size(0) // self.max_tokens)  # Round up division
+
+        # Pad the input tensor if necessary
+        padded_tensor = pad(
+            input_tensor,
+            (0, desired_dim_1 * self.max_tokens - input_tensor.size(0)),
+            value=padding_value,
+        )
+
+        # Reshape the padded tensor
+        reshaped_tensor = padded_tensor.reshape(desired_dim_1, self.max_tokens)
+
+        return {HF_TOKENIZER_INPUT_IDS_NAME: reshaped_tensor}
 
     def tokenize_data(self):
         os.makedirs(self.save_path, exist_ok=True)
@@ -91,6 +114,7 @@ class TokenizedDataset:
                 batched=True,
                 batch_size=self.batch_size,
                 num_proc=self.num_proc,
+                remove_columns=self.dataset.column_names,
             )
             print(f"save {self.split}_chunk_{i}")
             tokenized_dataset.save_to_disk(
@@ -102,20 +126,22 @@ class TokenDatasetWrapper(Dataset):
     def __init__(
         self,
         dataset_path: str,
-        split: str,
+        split: Optional[str] = None,
     ):
+        if split is None:
+            split = "train"
+        self.split_ = split
         self.file_paths = []
         self.chunk_lengths = []
         self.total_length = 0
         self.chunk = None
         self.chunk_start_index = 0
         self.chunk_end_index = 0
-        self.split = split
 
         chunk_count = 0
         file_path = os.path.join(
             dataset_path,
-            f"{self.split}_chunk_{chunk_count}",
+            f"{self.split_}_chunk_{chunk_count}",
         )
         while os.path.exists(file_path):
             dataset = load_from_disk(file_path)
@@ -125,7 +151,7 @@ class TokenDatasetWrapper(Dataset):
             chunk_count += 1
             file_path = os.path.join(
                 dataset_path,
-                f"{self.split}_chunk_{chunk_count}",
+                f"{self.split_}_chunk_{chunk_count}",
             )
 
     def __len__(self):
