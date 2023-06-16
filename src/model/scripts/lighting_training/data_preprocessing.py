@@ -1,6 +1,6 @@
 import argparse
 from openthaigpt_pretraining_model.data_wrapper import (
-    TokenizedDataset,
+    tokenize_function,
 )
 from openthaigpt_pretraining_model.utils import load_hydra_config
 from openthaigpt_pretraining_model.datasets import get_dataset
@@ -10,6 +10,7 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
 )
+import os
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -63,13 +64,18 @@ if __name__ == "__main__":
 
     tokenizer.pad_token = tokenizer.eos_token
 
-    dataset = TokenizedDataset(
-        dataset=dataset,
-        split=args.split,
-        tokenizer=tokenizer,
-        max_tokens=args.max_tokens,
-        save_path=args.save_path,
-        batch_size=args.batch_size,
+    dataset = dataset.map(
+        tokenize_function(tokenizer, args.max_tokens),
+        desc="Tokenizing...",
         num_proc=args.num_proc,
+        batched=True,
+        batch_size=args.batch_size,
+        remove_columns=dataset.column_names,
     )
-    dataset.tokenize_data()
+
+    save_path = os.path.join(
+        args.save_path,
+        args.split,
+    )
+
+    dataset.save_to_disk(save_path)
