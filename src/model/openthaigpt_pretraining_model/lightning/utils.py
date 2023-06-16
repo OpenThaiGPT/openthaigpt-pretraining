@@ -41,6 +41,7 @@ class Trainer:
         grad: int = 4,
         context_length: int = 256,
         num_nodes: int = 1,
+        num_shards: int = 1024,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
@@ -85,10 +86,12 @@ class Trainer:
         else:
             self.dataset = load_token_dataset(
                 dataset_path=training_configuration.dataset.tokenized.path,
+                num_shards=num_shards,
                 split=training_configuration.dataset.tokenized.train_split,
             )
             self.dataset_val = load_token_dataset(
                 dataset_path=training_configuration.dataset.tokenized.path,
+                num_shards=num_shards,
                 split=training_configuration.dataset.tokenized.eval_split,
             )
         self.dataloader = DataLoader(
