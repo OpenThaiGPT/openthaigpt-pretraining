@@ -1,0 +1,6 @@
+multirc_thai:
+  name: MultiRC_TH
+  available_on_hub: True
+  path_name: Patt/MultiRC_TH
+  split: validation
+  subset:

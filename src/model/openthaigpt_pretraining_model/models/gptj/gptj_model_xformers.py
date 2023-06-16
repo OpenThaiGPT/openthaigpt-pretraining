@@ -1,6 +1,5 @@
 import torch
 import xformers.ops as xops
-from xformers.components.attention.core import scaled_query_key_softmax, bmm
 from transformers.models.gptj.modeling_gptj import (
     GPTJAttention,
     GPTJModel,
@@ -15,57 +14,45 @@ from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
 )
 
-
-def _attn_xformers_cpu(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    # compute causal mask from causal mask buffer
-    query_length, key_length = query.size(-2), key.size(-2)
-    causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length]
-    attention_mask = torch.where(causal_mask, 0.0, -torch.inf)
-    # Keep the attention weights computation in fp32 to avoid overflow issues
-    query = query.to(torch.float32)
-    key = key.to(torch.float32)
-    attn_weights = scaled_query_key_softmax(query, key, attention_mask)
-    attn_weights = self.attn_dropout(attn_weights)
-
-    # Mask heads if we want to
-    if head_mask is not None:
-        attn_weights = attn_weights * head_mask
-    # attn_output = bmm(attn_weights, value)
-    attn_output = bmm(attn_weights, value)
-
-    return attn_output, attn_weights
+XFORMER_ATTENTION_MODE = "xformers"
 
 
-def _attn_xformers(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    if attention_mask is not None:
-        raise TypeError("Not support manual attention mask")
+class GPTJAttentionXFormers(GPTJAttention):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attention_mode = config.attention_mode
 
-    if head_mask is not None:
-        raise TypeError("Not support head_mask")
+    def _attn(
+        self,
+        query,
+        key,
+        value,
+        attention_mask=None,
+        head_mask=None,
+    ):
+        if self.attention_mode == XFORMER_ATTENTION_MODE:
+            if attention_mask is not None:
+                raise TypeError("Not support manual attention mask")
 
-    # Attention output
-    attn_output = xops.memory_efficient_attention(
-        query.transpose(2, 1),
-        key.transpose(2, 1),
-        value.transpose(2, 1),
-        xops.LowerTriangularMask(),
-    ).transpose(2, 1)
+            if head_mask is not None:
+                raise TypeError("Not support head_mask")
 
-    return attn_output, None
+            # Attention output
+            attn_output = xops.memory_efficient_attention(
+                query.transpose(2, 1),
+                key.transpose(2, 1),
+                value.transpose(2, 1),
+                xops.LowerTriangularMask(),
+            ).transpose(2, 1)
+
+            return attn_output, None
+        return super()._attn(
+            query,
+            key,
+            value,
+            attention_mask,
+            head_mask,
+        )
 
 
 class GPTJModelWithCheckpointing(GPTJModel):
@@ -274,6 +261,10 @@ class GPTJModelWithCheckpointing(GPTJModel):
 
 
 class GPTJBlockWithCheckpointing(GPTJBlock):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attn = GPTJAttentionXFormers(config)
+
     def forward(
         self,
         hidden_states: Optional[torch.FloatTensor],
@@ -349,9 +340,12 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
+        if config.use_checkpointing:
+            self.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
         if config.use_checkpointing and config.checkpoint_only_attention:
-            print("use model with gradient checkpointing only attention")
             self.transformer = GPTJModelWithCheckpointing(config)
+            print("use model with gradient checkpointing only attention")
         else:
             self.transformer = GPTJModel(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size)
@@ -362,9 +356,3 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
         # Initialize weights and apply final processing
         self.post_init()
-
-
-def change_attn(attention_mode: str = "xformers"):
-    if attention_mode == "xformers":
-        print("Use xFormers")
-        GPTJAttention._attn = _attn_xformers

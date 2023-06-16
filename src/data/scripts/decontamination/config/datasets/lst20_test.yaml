@@ -1,0 +1,7 @@
+lst20:
+  name: LST20
+  available_on_hub: True
+  path_name: lst20
+  path: /scratch/lt200056-opgpth/LST20_Corpus
+  split: test
+  subset: 

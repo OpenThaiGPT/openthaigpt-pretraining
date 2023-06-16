@@ -1,0 +1,6 @@
+xquad:
+  name: xquad
+  available_on_hub: True
+  path_name: xquad
+  split: validation
+  subset: xquad.th
