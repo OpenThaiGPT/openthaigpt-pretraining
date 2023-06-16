@@ -1,5 +1,4 @@
 from datasketch import LeanMinHash
-from openthaigpt_pretraining_data.decontamination.constants import MINHASH_SEED
 
 from openthaigpt_pretraining_data.decontamination.utils import (
     MAPPER,

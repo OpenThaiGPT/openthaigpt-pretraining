@@ -30,6 +30,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args):
     pretrain_dataset = load_data(pretrain_data_args)
     pretrain_dataset_minhash = load_from_disk(decontaminate_args.minhash_path)
     pretrain_dataset_minhash = pretrain_dataset_minhash
+    print(pretrain_dataset, "pretrain_dataset")
     print(pretrain_dataset_minhash, "pretrain_dataset_minhash")
 
     duplicate_results = []
@@ -57,7 +58,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args):
 
         pretrain_dataset_minhash_result = pretrain_dataset_minhash.map(
             lambda doc, idx: query_func(doc, idx, index=globals()[dataset_key]),
-            desc=f"Querying...",
+            desc="Querying...",
             num_proc=decontaminate_args.num_process,
             features=Features(
                 {
@@ -70,7 +71,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args):
         ).filter(
             lambda x: len(x["__neighbors__"]) > 0
             and not np.array_equal(x["hashvalues"], empty_hashvalues),
-            desc=f"Filtering...",
+            desc="Filtering...",
             num_proc=decontaminate_args.num_process,
         )
         print(pretrain_dataset_minhash_result, "pretrain_dataset_minhash_result")
@@ -109,10 +110,11 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args):
 
     pretrain_dataset_decontaminated = pretrain_dataset.filter(
         lambda _, idx: idx not in original_ids_to_remove,
-        desc=f"Filtering...",
+        desc="Filtering...",
         num_proc=decontaminate_args.num_process,
         with_indices=True,
     )
+    print(pretrain_dataset_decontaminated)
     pretrain_dataset_decontaminated.save_to_disk(
-        decontaminate_args.save_path, num_proc=decontaminate_args.num_process
+        decontaminate_args.save_path
     )

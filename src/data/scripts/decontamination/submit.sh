@@ -2,7 +2,7 @@
 #SBATCH -p compute
 #SBATCH -N 1 -c 128
 #SBATCH --ntasks-per-node=1
-#SBATCH -t  15:00:00
+#SBATCH -t  30:00:00
 #SBATCH -A lt200056
 #SBATCH -J test
 
