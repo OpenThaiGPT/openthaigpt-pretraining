@@ -108,7 +108,7 @@ class TokenizedDataset:
     def tokenize_data(self):
         os.makedirs(self.save_path, exist_ok=True)
         for i in tqdm(range(self.num_shards)):
-            chunk = self.data_set.shard(self.num_shards, i)  # split chunk
+            chunk = self.dataset.shard(self.num_shards, i)  # split chunk
             tokenized_dataset = chunk.map(
                 self.tokenize_function,
                 batched=True,
