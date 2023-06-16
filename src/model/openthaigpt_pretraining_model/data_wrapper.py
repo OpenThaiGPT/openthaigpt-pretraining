@@ -78,6 +78,6 @@ def load_token_dataset(dataset_path: str, num_shards: int, split: Optional[str] 
         split,
     )
     dataset = load_from_disk(file_path)
-    dataset = dataset.with_format("torch")
+    dataset = dataset.to_iterable_dataset(num_shards=num_shards)
 
-    return dataset.to_iterable_dataset(num_shards=num_shards)
+    return dataset.with_format("torch")
