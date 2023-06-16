@@ -35,6 +35,7 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument("--num_shards", type=int, default=1024)
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=2)
@@ -65,5 +66,6 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,
+        num_shards=args.num_shards,
     )
     trainer.train()
