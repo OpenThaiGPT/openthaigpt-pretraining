@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from openthaigpt_pretraining_model.tokenizers.spm_trainer import load_local_dataset
 from tokenizers import ByteLevelBPETokenizer
 from nlpo3 import segment, load_dict
 import argparse
@@ -46,18 +46,7 @@ if __name__ == "__main__":
     load_dict(args.dict_file, DICT_NAME)
 
     # load dataset
-    if args.data_type is None:
-        dataset = load_dataset(args.data_path, split="train", streaming=True)
-    else:
-        data_files = {
-            "train": [
-                f"{args.data_path}/{filename}"
-                for filename in os.listdir(args.data_path)
-            ]
-        }
-        dataset = load_dataset(
-            args.data_type, data_files=data_files, split="train", streaming=True
-        )
+    dataset = load_local_dataset(args.data_type, args.data_path)
 
     # Instantiate tokenizer
     tokenizer = ByteLevelBPETokenizer()

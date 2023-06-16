@@ -7,7 +7,7 @@ from transformers.models.gptj.modeling_gptj import (
     GPTJBlock,
     logger,
 )
-from transformers import GPTJConfig, GPTJForCausalLM
+from transformers import GPTJForCausalLM
 from torch import nn
 
 from typing import Optional, Tuple, Union
@@ -349,7 +349,11 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
-        self.transformer = GPTJModelWithCheckpointing(config)
+        if config.use_checkpointing and config.checkpoint_only_attention:
+            print("use model with gradient checkpointing only attention")
+            self.transformer = GPTJModelWithCheckpointing(config)
+        else:
+            self.transformer = GPTJModel(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size)
 
         # Model parallel
@@ -360,69 +364,7 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
         self.post_init()
 
 
-def make_model_gptj(
-    vocab_size,
-    context_length,
-    attention_mode,
-    use_checkpointing,
-    checkpoint_only_attention,
-    device: str = "cuda",
-):
-    """
-    Args:
-        vocab_size: vocabulary size
-        context_length: maximum sequence length
-        use_checkpointing: use gradient checkpointing
-        checkpoint_only_attention: gradient checkpointing only attention
-    """
-    cfg = GPTJConfig(
-        vocab_size=vocab_size,
-        n_positions=context_length,
-        n_embd=1536,
-        n_layer=12,
-        n_head=8,
-        rotary_dim=64,
-        n_inner=None,
-        activation_function="gelu_new",
-        resid_pdrop=0.1,
-        embd_pdrop=0.1,
-        attn_pdrop=0.1,
-        layer_norm_epsilon=1e-5,
-        initializer_range=0.02,
-        use_cache=True,
-        bos_token_id=50256,
-        eos_token_id=50256,
-        tie_word_embeddings=False,
-    )
-
-    if use_checkpointing:
-        cfg.use_cache = False
-    if use_checkpointing and checkpoint_only_attention:
-        model = GPTJForCausalLMWithCheckpointing(cfg)
-        print("use gradient checkpointing only attentions")
-    else:
-        model = GPTJForCausalLM(cfg)
-        if use_checkpointing:
-            print("use gradient checkpointing")
-
+def change_attn(attention_mode: str = "xformers"):
     if attention_mode == "xformers":
         print("Use xFormers")
-        if device == "cpu":
-            GPTJAttention._attn = _attn_xformers_cpu
-        else:
-            GPTJAttention._attn = _attn_xformers
-    elif attention_mode == "origin":
-        print("Use original")
-    else:
-        print("GPTJ attention mode only support origin and xformers")
-
-    if use_checkpointing:
-        model.gradient_checkpointing_enable()
-
-    model_size = sum(t.numel() for t in model.parameters())
-    print(f"GPTJ size: {model_size/1000**2:.1f}M parameters")
-
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"GPTJ size requires_grad: {model_size/1000**2:.1f}M parameters")
-
-    return model
+        GPTJAttention._attn = _attn_xformers

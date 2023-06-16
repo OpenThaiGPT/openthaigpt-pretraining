@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, GPT2TokenizerFast
+from transformers import PreTrainedTokenizerFast, GPT2TokenizerFast
 import json
 import os
 from typing import Dict
@@ -6,8 +6,8 @@ from typing import Dict
 
 def merge(tokenizer_dir_1, tokenizer_dir_2, merge_file_1, merge_file_2):
     # load tokenizer
-    gptj_tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir_1)
-    gpt2_tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir_2)
+    gptj_tokenizer = PreTrainedTokenizerFast.from_pretrained(tokenizer_dir_1)
+    gpt2_tokenizer = PreTrainedTokenizerFast.from_pretrained(tokenizer_dir_2)
 
     # retrieve the vocabs
     gptj_vocab = gptj_tokenizer.get_vocab()
