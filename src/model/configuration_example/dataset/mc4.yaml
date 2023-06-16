@@ -1,7 +1,7 @@
 tokenized:
-  path: None
-  train_split: None
-  eval_split: None
+  path: null
+  train_split: null
+  eval_split: null
 train:
   dataset_name: mc4
   split: train  # type: ignore
@@ -9,7 +9,7 @@ train:
   buffer_size: 10000
   streaming: false
   from_disk: false
-val:
+eval:
   dataset_name: mc4
   split: validation  # type: ignore
   shuffle: false

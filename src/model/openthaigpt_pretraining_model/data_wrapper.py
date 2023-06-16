@@ -38,7 +38,9 @@ class DatasetWrapper(IterableDataset):
                 HF_TOKENIZER_INPUT_IDS_NAME
             ]
             while len(buffer) > self.max_tokens:
-                yield torch.tensor(buffer[: self.max_tokens])
+                yield {
+                    HF_TOKENIZER_INPUT_IDS_NAME: torch.tensor(buffer[: self.max_tokens])
+                }
                 buffer = buffer[self.max_tokens :]
 
 
