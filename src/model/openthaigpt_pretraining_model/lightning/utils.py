@@ -123,7 +123,7 @@ class Trainer:
                 "loss": loss,
                 "perplexity": perplexity,
             },
-            f"{self.save_paths}_{self.epoch}.pt",
+            f"{self.save_paths}_{epoch}.pt",
         )
 
     def load_checkpoint(self, path):
