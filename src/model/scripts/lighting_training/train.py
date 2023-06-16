@@ -36,8 +36,6 @@ if __name__ == "__main__":
         default=1,
     )
     parser.add_argument("--seed", type=int, default=42, help="{13|21|42|87|100}")
-    parser.add_argument("--streaming", action="store_true")
-    parser.add_argument("--dataset_name_or_path", type=str, default="./tokendata")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--grad", type=int, default=4, help="gradient accumulate")
@@ -69,8 +67,6 @@ if __name__ == "__main__":
         num_nodes=args.num_nodes,
         seed=args.seed,
         training_configuration=training_configuration,
-        streaming=args.streaming,
-        dataset_name_or_path=args.dataset_name_or_path,
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,

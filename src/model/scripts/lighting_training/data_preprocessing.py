@@ -2,8 +2,9 @@ import argparse
 from openthaigpt_pretraining_model.data_wrapper import (
     TokenizedDataset,
 )
+from openthaigpt_pretraining_model.utils import load_hydra_config
 from openthaigpt_pretraining_model.datasets import get_dataset
-from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN
 from re import findall
 from transformers import (
     AutoTokenizer,
@@ -12,12 +13,6 @@ from transformers import (
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default="train",
-        help="train | val",
-    )
     parser.add_argument(
         "--tokenizer",
         type=str,
@@ -50,22 +45,22 @@ if __name__ == "__main__":
         default=128,
     )
     parser.add_argument(
-        "--dataset",
+        "--configuration",
         type=str,
-        default="oscar",
+        default="src/model/configuration_example/config.yaml",
     )
     parser.add_argument(
         "--split",
         type=str,
         default=SPLIT_TRAIN,
-        help=f"{SPLIT_TRAIN} | {SPLIT_VAL}",
     )
-    parser.add_argument("--from_disk", action="store_true")
     args = parser.parse_args()
     print(args)
-    dataset = get_dataset(
-        dataset_name=args.dataset, split=args.split, from_disk=args.from_disk
-    )
+    dataset_configuration = load_hydra_config(args.configuration).dataset
+    dataset_configuration = dataset_configuration.get(args.split, None)
+    if dataset_configuration is None:
+        raise NotImplementedError(f"dataset don't have split {args.split}")
+    dataset = get_dataset(dataset_configuration)
     if len(findall("llama", args.tokenizer)):
         tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
     else:
