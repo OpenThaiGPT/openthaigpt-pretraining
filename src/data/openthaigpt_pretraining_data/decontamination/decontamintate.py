@@ -115,6 +115,4 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args):
         with_indices=True,
     )
     print(pretrain_dataset_decontaminated)
-    pretrain_dataset_decontaminated.save_to_disk(
-        decontaminate_args.save_path
-    )
+    pretrain_dataset_decontaminated.save_to_disk(decontaminate_args.save_path)

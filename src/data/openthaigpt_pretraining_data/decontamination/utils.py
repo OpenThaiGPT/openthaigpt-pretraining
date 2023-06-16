@@ -42,7 +42,7 @@ def preprocess_hellaswag(text):
 
 
 def generate_query_hellaswag(doc):
-    """Modified from  https://github.com/EleutherAI/lm-evaluation-harness/blob/9d06c95346ff393273bbb80379267eef094c0c74/lm_eval/tasks/hellaswag.py""" # noqa: E501
+    """Modified from  https://github.com/EleutherAI/lm-evaluation-harness/blob/9d06c95346ff393273bbb80379267eef094c0c74/lm_eval/tasks/hellaswag.py"""  # noqa: E501
     ctx = (
         doc["ctx_a_th"] + " " + ""
         if doc["ctx_b_th"] is None
@@ -52,7 +52,7 @@ def generate_query_hellaswag(doc):
 
 
 def generate_query_xquad(doc):
-    """Reference from  https://github.com/EleutherAI/lm-evaluation-harness/blob/4c08d72acdf7c6f5cab5d708e8ef400aea08314c/lm_eval/tasks/squad.py""" # noqa: E501
+    """Reference from  https://github.com/EleutherAI/lm-evaluation-harness/blob/4c08d72acdf7c6f5cab5d708e8ef400aea08314c/lm_eval/tasks/squad.py"""  # noqa: E501
     return doc["context"]
 
 
