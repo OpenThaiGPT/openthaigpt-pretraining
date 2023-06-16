@@ -44,6 +44,7 @@ class Trainer:
         grad: int = 4,
         context_length: int = 256,
         num_nodes: int = 1,
+        epochs: int = 1,
         save_steps: int = 10000,
         save_paths: str = ".",
     ):
@@ -128,7 +129,7 @@ class Trainer:
         if self.wandb is not None:
             self.wandb.log(data)
 
-    def save_checkpoint(self, loss, perplexity):
+    def save_checkpoint(self, epoch, loss, perplexity):
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),
@@ -136,7 +137,7 @@ class Trainer:
                 "loss": loss,
                 "perplexity": perplexity,
             },
-            self.save_paths,
+            f"{self.save_paths}_{self.epoch}.pt",
         )
 
     def load_checkpoint(self, path):
@@ -167,27 +168,29 @@ class Trainer:
     def train(self):
         progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
+        for epoch in range(self.epochs):
+            for i, batch in enumerate(progress_bar):
+                is_accumulating = (i + 1) % self.grad != 0
 
-        for i, batch in enumerate(progress_bar):
-            is_accumulating = (i + 1) % self.grad != 0
+                with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
+                    loss = self.train_step(batch)
 
-            with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
-                loss = self.train_step(batch)
+                    self.fabric.backward(loss)
+                    perplexity = compute_perplexity(loss)
+                    self.log(
+                        {"train_loss": loss.item(), "train_perplexity": perplexity}
+                    )
+                    progress_bar.set_description(f"loss: {loss.item():.3f}")
 
-                self.fabric.backward(loss)
-                perplexity = compute_perplexity(loss)
-                self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
-                progress_bar.set_description(f"loss: {loss.item():.3f}")
+                if not is_accumulating:
+                    self.opt.step()
+                    self.opt.zero_grad()
 
-            if not is_accumulating:
-                self.opt.step()
-                self.opt.zero_grad()
+                if (i + 1) % self.save_steps == 0:
+                    (val_loss, val_perplexity) = self.val_step()
+                    self.save_checkpoint(epoch, val_loss, val_perplexity)
 
-            if (i + 1) % self.save_steps == 0:
-                (val_loss, val_perplexity) = self.val_step()
-                self.save_checkpoint(val_loss, val_perplexity)
-
-        (val_loss, val_perplexity) = self.val_step()
-        print(f"val_loss: {val_loss.item():.3f}, val_perplexity: {val_perplexity:.3f})")
+            (val_loss, val_perplexity) = self.val_step()
+            print(f"val_loss: {val_loss.item():.3f}, perplexity: {val_perplexity:.3f})")
 
         self.wandb.finish()

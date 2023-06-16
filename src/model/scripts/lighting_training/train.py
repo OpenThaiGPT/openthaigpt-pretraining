@@ -47,6 +47,7 @@ if __name__ == "__main__":
         type=str,
         default="src/model/configuration_example/config.yaml",
     )
+    parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument(
         "--save_steps", type=int, default=10000, help="save every n steps"
     )
@@ -73,6 +74,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         grad=args.grad,
         context_length=args.context_length,
+        epochs=args.epochs,
         save_steps=args.save_steps,
         save_paths=args.save_paths,
     )
