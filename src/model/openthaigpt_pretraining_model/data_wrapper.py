@@ -142,6 +142,6 @@ def load_token_dataset(dataset_path: str, split: Optional[str] = None):
             f"{split}_chunk_{chunk_count}",
         )
 
-    dataset_concat = concatenate_datasets(dataset)
+    dataset_concat = concatenate_datasets(datasets)
 
     return dataset_concat.with_format("torch")
