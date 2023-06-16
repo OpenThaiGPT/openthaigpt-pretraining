@@ -1,0 +1,6 @@
+copa_thai:
+  name: copa_th
+  available_on_hub: True
+  path_name: Patt/copa_th
+  split: validation
+  subset:

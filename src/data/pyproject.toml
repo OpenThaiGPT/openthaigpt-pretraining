@@ -25,6 +25,7 @@ dependencies = [
     "pythainlp>=4.0.0",
     "kenlm==0.1",
     "scipy==1.10.1",
-    "jsonlines==3.1.0"
+    "jsonlines==3.1.0",
+    "datasketch<2.0.0"
 ]
 

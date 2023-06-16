@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y git && pip install -U pip setuptools dv
 
 WORKDIR /app
 COPY ./src /app
+RUN pip install -e ./core
 RUN pip install -e ./data
 RUN pip install -e ./model
 RUN pip install -e ./evaluation

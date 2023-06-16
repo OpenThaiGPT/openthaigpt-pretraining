@@ -1,0 +1,6 @@
+rte_thai:
+  name: RTE_TH
+  available_on_hub: True
+  path_name: Patt/RTE_TH
+  split: validation
+  subset:

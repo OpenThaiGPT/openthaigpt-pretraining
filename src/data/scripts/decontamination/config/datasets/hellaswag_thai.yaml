@@ -1,0 +1,6 @@
+hellaswag_thai:
+  name: HellaSwag_thai
+  available_on_hub: True
+  path_name: Patt/HellaSwag_thai
+  split: validation
+  subset:
