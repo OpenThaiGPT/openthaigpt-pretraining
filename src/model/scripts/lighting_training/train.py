@@ -18,8 +18,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    seed_everything(args.seed)
     training_configuration = load_hydra_config(args.training_configuration)
+    seed_everything(training_configuration.training.seed)
     trainer = Trainer(
         training_configuration=training_configuration,
     )

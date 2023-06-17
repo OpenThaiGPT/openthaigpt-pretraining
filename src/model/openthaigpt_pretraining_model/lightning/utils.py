@@ -34,7 +34,8 @@ class Trainer:
         self.step = 0
         self.seed = config.seed
         self.grad = config.grad
-        if config.strategy == "deepspeed":
+        strategy = config.strategy
+        if strategy == "deepspeed":
             strategy = DeepSpeedStrategy(
                 stage=config.stage,
                 offload_optimizer=config.offload_optimizer,

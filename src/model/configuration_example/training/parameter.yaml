@@ -11,3 +11,4 @@ batch_size: 2
 grad: 4
 max_tokens: 2048
 num_shards: 1024
+num_workers: 2
