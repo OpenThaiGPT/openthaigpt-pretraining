@@ -3,7 +3,7 @@ from sentencepiece import sentencepiece_model_pb2 as sp_pb2_model
 import sentencepiece as spm
 
 
-def merge(llama_tokenizer_dir, thai_sp_model_dir):
+def merge(llama_tokenizer_dir, thai_sp_model_dir, get_spm_tokenizer=False):
     llama_tokenizer = LlamaTokenizer.from_pretrained(llama_tokenizer_dir)
     thai_sp_model = spm.SentencePieceProcessor()
     thai_sp_model.Load(thai_sp_model_dir)
@@ -22,6 +22,9 @@ def merge(llama_tokenizer_dir, thai_sp_model_dir):
             new_p.piece = piece
             new_p.score = 0.0
             llama_spm.pieces.append(new_p)
+
+    if get_spm_tokenizer:
+        return llama_spm
 
     llama_tokenizer.sp_model = spm.SentencePieceProcessor(
         model_proto=llama_spm.SerializeToString()
