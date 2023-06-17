@@ -53,19 +53,6 @@ if __name__ == "__main__":
     seed_everything(args.seed)
     training_configuration = load_hydra_config(args.training_configuration)
     trainer = Trainer(
-        accelerator=args.accelerator,
-        strategy=args.strategy,
-        stage=args.stage,
-        offload_optimizer=args.offload_opt,
-        offload_parameters=args.offload_par,
-        devices=args.devices,
-        precision=args.precision,
-        num_nodes=args.num_nodes,
-        seed=args.seed,
         training_configuration=training_configuration,
-        batch_size=args.batch_size,
-        grad=args.grad,
-        context_length=args.context_length,
-        num_shards=args.num_shards,
     )
     trainer.train()

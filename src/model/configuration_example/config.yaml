@@ -2,3 +2,5 @@ defaults:
   - optimizer: adamw_optimizer
   - model: llama-7b-from-scratch.yaml
   - dataset: mc4
+  - data_process: parameter
+  - training: parameter

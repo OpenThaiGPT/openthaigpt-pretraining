@@ -1,10 +1,7 @@
 from tqdm import tqdm
 import lightning as L
-from lightning.fabric.accelerators import Accelerator
-from lightning.fabric.strategies import Strategy
 import torch
 from torch.utils.data import DataLoader
-from typing import List, Union
 
 from ..utils import compute_perplexity
 from ..data_wrapper import (
@@ -27,44 +24,31 @@ os.environ["WANDB_MODE"] = "offline"
 class Trainer:
     def __init__(
         self,
-        accelerator: Union[str, Accelerator] = "auto",
-        strategy: Union[str, Strategy] = "auto",
-        stage: int = 2,
-        offload_optimizer: bool = False,
-        offload_parameters: bool = False,
-        devices: Union[List[int], str, int] = "auto",
-        precision: Union[str, int] = "32-true",
-        seed: int = 42,
-        training_configuration=None,  # type : ignore
-        batch_size: int = 8,
-        num_workers: int = 2,
-        grad: int = 4,
-        context_length: int = 256,
-        num_nodes: int = 1,
-        num_shards: int = 1024,
+        training_configuration,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
+        config = training_configuration.training
         self.wandb = None
-        self.max_tokens = context_length
+        self.max_tokens = config.max_tokens
         self.step = 0
-        self.seed = seed
-        self.grad = grad
-        if strategy == "deepspeed":
+        self.seed = config.seed
+        self.grad = config.grad
+        if config.strategy == "deepspeed":
             strategy = DeepSpeedStrategy(
-                stage=stage,
-                offload_optimizer=offload_optimizer,
-                offload_parameters=offload_parameters,
+                stage=config.stage,
+                offload_optimizer=config.offload_optimizer,
+                offload_parameters=config.offload_parameters,
             )
-        elif offload_optimizer or offload_parameters:
+        elif config.offload_optimizer or config.offload_parameters:
             raise NotImplementedError("offload only support for deepspeed strategy")
         self.fabric = L.Fabric(
-            accelerator=accelerator,
+            accelerator=config.accelerator,
             strategy=strategy,
-            devices=devices,
-            precision=precision,
+            devices=config.devices,
+            precision=config.precision,
             loggers=self.wandb,
-            num_nodes=num_nodes,
+            num_nodes=config.num_nodes,
         )
         self.fabric.launch()
         print(f"device:{self.fabric.device}")
@@ -86,28 +70,28 @@ class Trainer:
         else:
             self.dataset = load_token_dataset(
                 dataset_path=training_configuration.dataset.tokenized.path,
-                num_shards=num_shards,
+                num_shards=config.num_shards,
                 split=training_configuration.dataset.tokenized.train_split,
             )
             self.dataset_val = load_token_dataset(
                 dataset_path=training_configuration.dataset.tokenized.path,
-                num_shards=num_shards,
+                num_shards=config.num_shards,
                 split=training_configuration.dataset.tokenized.eval_split,
             )
         self.dataloader = DataLoader(
             self.dataset,
-            batch_size=batch_size,
-            num_workers=num_workers,
+            batch_size=config.batch_size,
+            num_workers=config.num_workers,
         )
-        self.dataloader_val = DataLoader(self.dataset_val, batch_size=batch_size)
+        self.dataloader_val = DataLoader(self.dataset_val, batch_size=config.batch_size)
 
         self.model = self.model.to("cuda")
         self.model, self.opt = get_optimizer(
             model=self.model,
             optimizer_configuration=training_configuration.optimizer,
-            batch_size=batch_size,
-            offload_optimizer=offload_optimizer,
-            offload_parameters=offload_parameters,
+            batch_size=config.batch_size,
+            offload_optimizer=config.offload_optimizer,
+            offload_parameters=config.offload_parameters,
         )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)

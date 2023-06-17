@@ -2,3 +2,5 @@ defaults:
   - optimizer: adamw_optimizer
   - model: falcon-7b-from-pretrained
   - dataset: mc4
+  - data_process: parameter
+  - training: parameter
