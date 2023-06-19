@@ -76,7 +76,7 @@ class Trainer:
         )
         if training_configuration.dataset.tokenized.path is None:
             train_dataset = get_dataset(training_configuration.dataset.train)
-            val_dataset = get_dataset(training_configuration.dataset.val)
+            val_dataset = get_dataset(training_configuration.dataset.eval)
             self.dataset = DatasetWrapper(
                 self.tokenizer, train_dataset, self.max_tokens
             )

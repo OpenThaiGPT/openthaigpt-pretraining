@@ -9,7 +9,8 @@ PREPARE_DATASETS_KEY = "text_processed"
 DOC_ID = "id"
 DOC_TEXT = "text"
 EOS_TOKEN = "<eos>"
-USER_DEFINED_SYMBOLS = [EOS_TOKEN]
+UNK_TOKEN = "<unk>"
+USER_DEFINED_SYMBOLS = [EOS_TOKEN, UNK_TOKEN]
 
 
 def prepare_datasets(texts: dict) -> dict:

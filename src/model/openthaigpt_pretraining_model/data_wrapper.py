@@ -38,7 +38,9 @@ class DatasetWrapper(IterableDataset):
                 HF_TOKENIZER_INPUT_IDS_NAME
             ]
             while len(buffer) > self.max_tokens:
-                yield torch.tensor(buffer[: self.max_tokens])
+                yield {
+                    HF_TOKENIZER_INPUT_IDS_NAME: torch.tensor(buffer[: self.max_tokens])
+                }
                 buffer = buffer[self.max_tokens :]
 
 
@@ -78,6 +80,6 @@ def load_token_dataset(dataset_path: str, num_shards: int, split: Optional[str] 
         split,
     )
     dataset = load_from_disk(file_path)
-    dataset = dataset.with_format("torch")
+    dataset = dataset.to_iterable_dataset(num_shards=num_shards)
 
-    return dataset.to_iterable_dataset(num_shards=num_shards)
+    return dataset.with_format("torch")
