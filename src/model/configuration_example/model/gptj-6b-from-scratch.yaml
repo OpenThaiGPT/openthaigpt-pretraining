@@ -20,7 +20,7 @@ args:
   tie_word_embeddings: False
   use_checkpointing: True
   checkpoint_only_attention: True
-  attention_mode: xformers #xformers
+  attention_mode: xformers
   lora: False
 tokenizer:
   pretrained_model_name_or_path: EleutherAI/gpt-j-6b

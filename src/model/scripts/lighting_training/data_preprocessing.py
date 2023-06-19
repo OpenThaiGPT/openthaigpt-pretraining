@@ -1,81 +1,49 @@
 import argparse
 from openthaigpt_pretraining_model.data_wrapper import (
-    TokenizedDataset,
+    tokenize_function,
 )
 from openthaigpt_pretraining_model.utils import load_hydra_config
+from openthaigpt_pretraining_model.models import load_tokenizer
 from openthaigpt_pretraining_model.datasets import get_dataset
-from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN
-from re import findall
-from transformers import (
-    AutoTokenizer,
-    LlamaTokenizer,
-)
+import os
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--tokenizer",
-        type=str,
-        default="decapoda-research/llama-7b-hf",
-        help="train | val",
-    )
-    parser.add_argument(
-        "--max_tokens",
-        type=int,
-        default=2048,
-    )
-    parser.add_argument(
-        "--save_path",
-        type=str,
-        default="./tokendata",
-    )
-    parser.add_argument(
-        "--chunk_size",
-        type=int,
-        default=1024 * 1024,
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=25000,
-    )
-    parser.add_argument(
-        "--num_proc",
-        type=int,
-        default=128,
-    )
-    parser.add_argument(
         "--configuration",
         type=str,
-        default="src/model/configuration_example/config.yaml",
-    )
-    parser.add_argument(
-        "--split",
-        type=str,
-        default=SPLIT_TRAIN,
+        default="../configuration_example/data_preprocess.yaml",
     )
     args = parser.parse_args()
     print(args)
-    dataset_configuration = load_hydra_config(args.configuration).dataset
-    dataset_configuration = dataset_configuration.get(args.split, None)
-    if dataset_configuration is None:
-        raise NotImplementedError(f"dataset don't have split {args.split}")
-    dataset = get_dataset(dataset_configuration)
-    if len(findall("llama", args.tokenizer)):
-        tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer)
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
 
-    tokenizer.pad_token = tokenizer.eos_token
+    configuration = load_hydra_config(args.configuration)
+    data_process_configuration = configuration.data_process
 
-    dataset = TokenizedDataset(
-        dataset=dataset,
-        split=args.split,
-        tokenizer=tokenizer,
-        max_tokens=args.max_tokens,
-        save_path=args.save_path,
-        chunk_size=args.chunk_size,
-        batch_size=args.batch_size,
-        num_proc=args.num_proc,
+    dataset_configuration = configuration.dataset
+    dataset_configuration = dataset_configuration.get(
+        data_process_configuration.split, None
     )
-    dataset.tokenize_data()
+    if dataset_configuration is None:
+        raise NotImplementedError(
+            f"dataset don't have split {data_process_configuration.split}"
+        )
+    dataset = get_dataset(dataset_configuration)
+
+    tokenizer = load_tokenizer(configuration.model.tokenizer)
+
+    dataset = dataset.map(
+        tokenize_function(tokenizer, data_process_configuration.max_tokens),
+        desc="Tokenizing...",
+        num_proc=data_process_configuration.num_proc,
+        batched=True,
+        batch_size=data_process_configuration.batch_size,
+        remove_columns=dataset.column_names,
+    )
+
+    save_path = os.path.join(
+        data_process_configuration.save_path,
+        data_process_configuration.split,
+    )
+
+    dataset.save_to_disk(save_path)

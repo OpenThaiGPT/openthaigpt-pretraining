@@ -2,7 +2,7 @@ from .constants import (
     TOKENIZERS,
     MODELS,
     MODEL_CONFIGS,
-    ATTENTION_MODE,
+    # ATTENTION_MODE,
     GRADIENT_CHECKPOINTING,
     LORA_MODEL,
     LORA_CONFIG,
@@ -40,23 +40,23 @@ def load_model(model_config, tokenizer=None):
         )
         model = model_object(config)
     else:
-        model = model_object.from_pretrained(model_pretrained)
+        model = model_object.from_pretrained(model_pretrained, **model_config.args)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
 
-    attention_mode = model_config.args.get("attenttion_mode", None)
+    # attention_mode = model_config.args.get("attenttion_mode", None)
     use_checkpointing = model_config.args.get("use_checkpointing", False)
     lora = model_config.args.get("lora", False)
     checkpoint_only_attention = model_config.args.get(
         "checkpoint_only_attention", False
     )
-    if attention_mode is not None:
-        attention_object = ATTENTION_MODE.get(model_config.name, None)
-        if attention_object is None:
-            raise NotImplementedError(
-                f"No attention mode: {attention_mode} for {model_config.name}"
-            )
-        attention_object(attention_mode=attention_mode)
+    # if attention_mode is not None:
+    #     attention_object = ATTENTION_MODE.get(model_config.name, None)
+    #     if attention_object is None:
+    #         raise NotImplementedError(
+    #             f"No attention mode: {attention_mode} for {model_config.name}"
+    #         )
+    #     attention_object(attention_mode=attention_mode)
 
     if use_checkpointing:
         checkpointing = GRADIENT_CHECKPOINTING.get(model_config.name, None)

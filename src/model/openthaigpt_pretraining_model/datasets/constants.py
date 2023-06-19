@@ -13,4 +13,4 @@ DATASET_ARGS = {
 }
 
 SPLIT_TRAIN = "train"
-SPLIT_VAL = "validation"
+SPLIT_VAL = "eval"
