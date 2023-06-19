@@ -52,8 +52,8 @@ parser.add_argument(
 parser.add_argument(
     "--sampled_back_ratio",
     help="""Ratio of data classified as spam to sampled back to the dataset.
-    (Default: 0.1)""",
-    default=0.1,
+    (Default: 0.6)""",
+    default=0.6,
 )
 
 args = parser.parse_args()
