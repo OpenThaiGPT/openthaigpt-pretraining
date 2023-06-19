@@ -14,12 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "xformers>=0.0.18",
-    "llama@git+https://github.com/facebookresearch/llama.git",
-    "sentencepiece>=0.1.98",
-    "fairscale>=0.4.13",
-    "lion-pytorch>=0.0.7",
-    "transformers>=4.28.1",
+    "sentencepiece",
     "datasets>=2.12.0",
     "zstandard>=0.21.0",
     "pythainlp>=4.0.0",

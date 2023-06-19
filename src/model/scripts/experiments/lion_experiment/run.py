@@ -23,8 +23,6 @@ from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn
 from openthaigpt_pretraining_model.data_wrapper import DatasetWrapper
 from openthaigpt_pretraining_model.optimizers import get_optimizer
 from openthaigpt_pretraining_model.datasets.constants import (
-    SPLIT_TRAIN,
-    SPLIT_VAL,
     DATASET_ARGS,
 )
 
@@ -39,6 +37,9 @@ BOS_TOKEN = "<|startoftext|>"
 EOS_TOKEN = "<|endoftext|>"
 PAD_TOKEN = "<|pad|>"
 DATASET_NAME = "mc4"
+
+SPLIT_TRAIN = "train"
+SPLIT_VAL = "validation"
 
 DTYPE_CHOICE = {
     "float32": torch.float32,
