@@ -8,8 +8,8 @@ import hydra
 
 @hydra.main(version_base=None, config_path="./config", config_name="decontamination")
 def main(cfg):
-    generate_minhash(cfg.datasets, cfg.train_dataset, cfg.minhash)
-    decontaminate(cfg.datasets, cfg.train_dataset, cfg.decontaminate)
+    generate_minhash(cfg.datasets, cfg.train_dataset, cfg.minhash, cfg.num_perm)
+    decontaminate(cfg.datasets, cfg.train_dataset, cfg.decontaminate, cfg.num_perm)
 
 
 if __name__ == "__main__":

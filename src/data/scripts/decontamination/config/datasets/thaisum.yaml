@@ -2,5 +2,5 @@ thaisum:
   name: thaisum
   available_on_hub: True
   path_name: thaisum
-  split: test
+  split: validation
   subset:

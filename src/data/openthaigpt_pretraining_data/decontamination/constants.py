@@ -1,1 +1,0 @@
-MINHASH_SEED = 1

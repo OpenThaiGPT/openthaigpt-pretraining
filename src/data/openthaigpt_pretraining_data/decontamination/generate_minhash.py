@@ -1,8 +1,8 @@
 from datasketch import LeanMinHash
+from openthaigpt_pretraining_data.core.minhash import generate_minhash_signature, generate_minhash_signature_hf
 
 from openthaigpt_pretraining_data.decontamination.utils import (
     MAPPER,
-    generate_minhash_signature,
     load_data,
 )
 from tqdm.auto import tqdm
@@ -12,16 +12,12 @@ from multiprocessing import Pool
 from nlpo3 import load_dict
 
 
-def generate_minhash_signature_hf(doc):
-    minhash = generate_minhash_signature(doc["text"])
-    return {"hashvalues": minhash.hashvalues}
+def generate_minhash_item(item):
+    text, num_perm = item
+    return generate_minhash_signature(text, num_perm)
 
 
-def minhash_func(item):
-    return LeanMinHash(seed=item["seed"], hashvalues=item["hashvalues"])
-
-
-def generate_minhash(dataset_groups, pretrain_data_args, minhash_config):
+def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, num_perm):
     load_dict(minhash_config.newmm_dict, "newmm")
 
     for dataset_key in dataset_groups.keys():
@@ -31,21 +27,22 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config):
             MAPPER[dataset_key](item) for item in dataset[dataset_arg.split].to_list()
         ]
         dataset1 = list(set(dataset1))
+        dataset1_map = [(item, num_perm)for item in dataset1]
 
         print(dataset1[:5], dataset_key)
 
         with Pool(processes=minhash_config.num_process) as pool:
             signatures = list(
                 tqdm(
-                    pool.imap(generate_minhash_signature, dataset1),
-                    total=len(dataset1),
+                    pool.imap(generate_minhash_item, dataset1_map),
+                    total=len(dataset1_map),
                     desc="Processing dataset",
                 )
             )
             signature_path = (
-                f"./temp/{dataset_key}_{dataset_arg.split}_signature.pickle"
+                f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
             )
-            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file.pickle"
+            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{num_perm}.pickle"
 
             with open(signature_path, "wb") as file:
                 pickle.dump(signatures, file)
@@ -56,7 +53,7 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config):
 
     dataset1 = pretrain_dataset[pretrain_data_args.split]
     signatures = dataset1.map(
-        generate_minhash_signature_hf, num_proc=minhash_config.num_process
+        lambda x: generate_minhash_signature_hf(x, num_perm, pretrain_data_args.col_name), num_proc=minhash_config.num_process
     )
     signatures.save_to_disk(
         minhash_config.minhash_path, num_proc=minhash_config.num_process
