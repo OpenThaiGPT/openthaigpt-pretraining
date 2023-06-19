@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--configuration",
         type=str,
-        default="../configuration_example/config.yaml",
+        default="../configuration_example/data_preprocess.yaml",
     )
     args = parser.parse_args()
     print(args)
