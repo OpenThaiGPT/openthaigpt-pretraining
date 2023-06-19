@@ -24,32 +24,35 @@ os.environ["WANDB_MODE"] = "offline"
 class Trainer:
     def __init__(
         self,
-        training_configuration,
+        configuration,
     ):
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
-        config = training_configuration.training
+        training_configuration = configuration.training
         self.wandb = None
-        self.max_tokens = config.max_tokens
+        self.max_tokens = training_configuration.max_tokens
         self.step = 0
-        self.seed = config.seed
-        self.grad = config.grad
-        strategy = config.strategy
+        self.seed = training_configuration.seed
+        self.grad = training_configuration.grad
+        strategy = training_configuration.strategy
         if strategy == "deepspeed":
             strategy = DeepSpeedStrategy(
-                stage=config.stage,
-                offload_optimizer=config.offload_optimizer,
-                offload_parameters=config.offload_parameters,
+                stage=training_configuration.stage,
+                offload_optimizer=training_configuration.offload_optimizer,
+                offload_parameters=training_configuration.offload_parameters,
             )
-        elif config.offload_optimizer or config.offload_parameters:
+        elif (
+            training_configuration.offload_optimizer
+            or training_configuration.offload_parameters
+        ):
             raise NotImplementedError("offload only support for deepspeed strategy")
         self.fabric = L.Fabric(
-            accelerator=config.accelerator,
+            accelerator=training_configuration.accelerator,
             strategy=strategy,
-            devices=config.devices,
-            precision=config.precision,
+            devices=training_configuration.num_gpus,
+            precision=training_configuration.precision,
             loggers=self.wandb,
-            num_nodes=config.num_nodes,
+            num_nodes=training_configuration.num_nodes,
         )
         self.fabric.launch()
         print(f"device:{self.fabric.device}")
@@ -57,11 +60,11 @@ class Trainer:
             self.wandb = wandb.init(project="Fabric")
 
         self.tokenizer, self.model = load_model_and_tokenizer(
-            training_configuration.model,
+            configuration.model,
         )
-        if training_configuration.dataset.tokenized.path is None:
-            train_dataset = get_dataset(training_configuration.dataset.train)
-            val_dataset = get_dataset(training_configuration.dataset.eval)
+        if configuration.dataset.tokenized.path is None:
+            train_dataset = get_dataset(configuration.dataset.train)
+            val_dataset = get_dataset(configuration.dataset.eval)
             self.dataset = DatasetWrapper(
                 self.tokenizer, train_dataset, self.max_tokens
             )
@@ -70,29 +73,31 @@ class Trainer:
             )
         else:
             self.dataset = load_token_dataset(
-                dataset_path=training_configuration.dataset.tokenized.path,
-                num_shards=config.num_shards,
-                split=training_configuration.dataset.tokenized.train_split,
+                dataset_path=configuration.dataset.tokenized.path,
+                num_shards=training_configuration.num_shards,
+                split=configuration.dataset.tokenized.train_split,
             )
             self.dataset_val = load_token_dataset(
-                dataset_path=training_configuration.dataset.tokenized.path,
-                num_shards=config.num_shards,
-                split=training_configuration.dataset.tokenized.eval_split,
+                dataset_path=configuration.dataset.tokenized.path,
+                num_shards=training_configuration.num_shards,
+                split=configuration.dataset.tokenized.eval_split,
             )
         self.dataloader = DataLoader(
             self.dataset,
-            batch_size=config.batch_size,
-            num_workers=config.num_workers,
+            batch_size=training_configuration.batch_size,
+            num_workers=training_configuration.num_workers,
         )
-        self.dataloader_val = DataLoader(self.dataset_val, batch_size=config.batch_size)
+        self.dataloader_val = DataLoader(
+            self.dataset_val, batch_size=training_configuration.batch_size
+        )
 
         self.model = self.model.to("cuda")
         self.model, self.opt = get_optimizer(
             model=self.model,
-            optimizer_configuration=training_configuration.optimizer,
-            batch_size=config.batch_size,
-            offload_optimizer=config.offload_optimizer,
-            offload_parameters=config.offload_parameters,
+            optimizer_configuration=configuration.optimizer,
+            batch_size=training_configuration.batch_size,
+            offload_optimizer=training_configuration.offload_optimizer,
+            offload_parameters=training_configuration.offload_parameters,
         )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)

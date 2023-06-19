@@ -1,4 +1,4 @@
 defaults:
   - model: falcon-7b-from-pretrained
   - dataset: mc4
-  - data_process: v1
+  - data_process: data_process_v1
