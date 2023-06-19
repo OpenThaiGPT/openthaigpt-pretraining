@@ -30,8 +30,6 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
     empty_hashvalues = generate_minhash_signature("", num_perm).hashvalues
     pretrain_dataset = load_data(pretrain_data_args)
     pretrain_dataset_minhash = load_from_disk(decontaminate_args.minhash_path)
-    print(pretrain_dataset, "pretrain_dataset")
-    print(pretrain_dataset_minhash, "pretrain_dataset_minhash")
 
     contaminated_results = []
     for dataset_key in tqdm(dataset_groups.keys()):

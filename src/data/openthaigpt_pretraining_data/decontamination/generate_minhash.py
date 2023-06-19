@@ -17,7 +17,7 @@ def generate_minhash_item(item):
     return generate_minhash_signature(text, num_perm)
 
 
-def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, num_perm):
+def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_config):
     load_dict(minhash_config.newmm_dict, "newmm")
 
     for dataset_key in dataset_groups.keys():
@@ -27,11 +27,11 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, num_per
             MAPPER[dataset_key](item) for item in dataset[dataset_arg.split].to_list()
         ]
         dataset1 = list(set(dataset1))
-        dataset1_map = [(item, num_perm)for item in dataset1]
+        dataset1_map = [(item, global_config.num_perm)for item in dataset1]
 
         print(dataset1[:5], dataset_key)
 
-        with Pool(processes=minhash_config.num_process) as pool:
+        with Pool(processes=global_config.num_process) as pool:
             signatures = list(
                 tqdm(
                     pool.imap(generate_minhash_item, dataset1_map),
@@ -40,9 +40,9 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, num_per
                 )
             )
             signature_path = (
-                f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+                f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
             )
-            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{num_perm}.pickle"
+            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle"
 
             with open(signature_path, "wb") as file:
                 pickle.dump(signatures, file)
@@ -53,8 +53,8 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, num_per
 
     dataset1 = pretrain_dataset[pretrain_data_args.split]
     signatures = dataset1.map(
-        lambda x: generate_minhash_signature_hf(x, num_perm, pretrain_data_args.col_name), num_proc=minhash_config.num_process
+        lambda x: generate_minhash_signature_hf(x, global_config.num_perm, pretrain_data_args.col_name), num_proc=global_config.num_process
     )
     signatures.save_to_disk(
-        minhash_config.minhash_path, num_proc=minhash_config.num_process
+        minhash_config.save_path, num_proc=global_config.num_process
     )

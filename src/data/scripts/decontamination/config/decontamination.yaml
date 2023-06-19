@@ -19,26 +19,16 @@ train_dataset:
   split: train
   subset:
   col_name: text
-  # key: thaisum_train
-  # name: thaisum_train
-  # available_on_hub: True
-  # path_name: thaisum
-  # split: train
-  # subset:
-  # col_name: body
 
 minhash:
-  num_process: 128
   newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
-  minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
-  # minhash_path: /scratch/lt200056-opgpth/Thaisum_train_minhash
+  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
 
 decontaminate:
-  num_process: 128
   thresold: 0.3
   minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
   save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_decontaminated_128
-  # minhash_path: /scratch/lt200056-opgpth/Thaisum_train_minhash
-  # save_path: /scratch/lt200056-opgpth/Thaisum_train_decontaminated
 
-num_perm: 128
+global_config:
+  num_process: 128
+  num_perm: 128
