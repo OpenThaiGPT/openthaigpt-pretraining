@@ -1,0 +1,9 @@
+output_path: 'tokenizer'
+vocab_size: 30000
+is_slurm: false
+load_dataset_path: oscar
+load_dataset_name: unshuffled_deduplicated_th
+load_dataset_local_path: None
+load_dataset_data_type: None
+large_corpus: false
+mode: spm # spm | bpe

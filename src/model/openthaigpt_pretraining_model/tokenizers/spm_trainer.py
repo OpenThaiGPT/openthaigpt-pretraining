@@ -2,6 +2,7 @@ import os
 from typing import Optional, Union
 from tqdm import tqdm
 import sentencepiece as spm
+from transformers import LlamaTokenizer
 from datasets import load_dataset, load_from_disk, Dataset
 
 # CONSTANTS
@@ -11,6 +12,9 @@ DOC_TEXT = "text"
 EOS_TOKEN = "<eos>"
 UNK_TOKEN = "<unk>"
 USER_DEFINED_SYMBOLS = [EOS_TOKEN, UNK_TOKEN]
+
+SPM_MODE = "spm"
+BPE_MODE = "bpe"
 
 
 def prepare_datasets(texts: dict) -> dict:
@@ -75,6 +79,7 @@ def train_tokenizer(
     load_dataset_local_path: Optional[str] = None,
     load_dataset_data_type: Optional[str] = None,
     large_corpus: bool = False,
+    mode: str = SPM_MODE,
 ) -> None:
     """
     Train a SentencePiece tokenizer on a large text dataset.
@@ -93,6 +98,10 @@ def train_tokenizer(
     Returns:
         None
     """  # noqa: E501
+
+    if not (mode == SPM_MODE or mode == BPE_MODE):
+        KeyError(f"mode mush be {SPM_MODE} or {BPE_MODE}")
+
     if load_dataset_local_path is None:
         if not is_slurm:
             text_dataset = load_dataset(
@@ -136,9 +145,17 @@ def train_tokenizer(
         sentence_iterator=iter(
             DataSetColumnIterator(text_processed_dataset, PREPARE_DATASETS_KEY)
         ),
-        model_prefix=output_path,
+        model_prefix=output_path + "/spm_tokenizer",
         vocab_size=vocab_size,
         user_defined_symbols=USER_DEFINED_SYMBOLS,
         num_threads=num_proc,
         train_extremely_large_corpus=large_corpus,
+        model_type=mode,
     )
+
+    tokenizer = LlamaTokenizer(vocab_file=output_path + "/spm_tokenizer.model")
+
+    tokenizer.eos_token = EOS_TOKEN
+    tokenizer.unk_token = UNK_TOKEN
+
+    tokenizer.save_pretrained(output_path)
