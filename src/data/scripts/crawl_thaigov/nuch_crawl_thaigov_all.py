@@ -61,7 +61,7 @@ def get_soup_dict(soup_in):
 
 
 # Get list for crawling, extract only the site with news_format contents
-site_map = pd.read_csv("Thaigov_crawl_lists.csv")
+site_map = pd.read_csv("src/data/scripts/crawl_thaigov/Thaigov_crawl_lists.csv")
 crawl_list = site_map.loc[site_map["news_format"] == "y", ["href"]]
 
 # Create df for receiving data
@@ -149,5 +149,5 @@ for list in crawl_list.href:
         error_urls.loc[len(error_urls)] = {"url": url_news_main, "error_code": soup[1]}
 
 
-content_news.to_csv("testCrawl.csv", index=False)
+content_news.to_csv("test_crawl_lists.csv", index=False)
 # error_urls
