@@ -103,12 +103,14 @@ class Trainer:
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
+        self.accelerator = training_configuration.accelerator
+
     def log(self, data):
         if self.wandb is not None:
             self.wandb.log(data)
 
     def train_step(self, batch):
-        inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
+        inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME].to(self.accelerator)
         loss = self.model(inputs, labels=inputs).loss
         return loss
 
@@ -117,7 +119,7 @@ class Trainer:
         progress_bar = tqdm(self.dataloader_val)
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
-                inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
+                inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME].to(self.accelerator)
                 loss = self.model(inputs, labels=inputs).loss
                 perplexity = compute_perplexity(loss)
                 self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
