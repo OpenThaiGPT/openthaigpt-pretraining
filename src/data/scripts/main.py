@@ -52,13 +52,13 @@ parser.add_argument(
 parser.add_argument(
     "--sampled_back_ratio",
     help="""Ratio of data classified as spam to sampled back to the dataset.
-    (Default: 0.1)""",
-    default=0.1,
+    (Default: 0.6)""",
+    default=0.6,
 )
 
 args = parser.parse_args()
 
-do_perplexity = eval(args.do_perplexity)
+do_perplexity = bool(args.do_perplexity)
 
 
 def clean_text(text):
@@ -115,10 +115,12 @@ def process_chunk_data(chunk):
 
     if do_perplexity:
         spam_idx = [i for i, p in enumerate(chunk["prediction"]) if p == 1]
-        spam_idx = set(spam_idx)
+        spam_idx_set = set(spam_idx)
 
         spam_log_pps = [
-            log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx
+            log_pp
+            for i, log_pp in enumerate(chunk["log_pp_score"])
+            if i in spam_idx_set
         ]
         log_pp_array = np.array(spam_log_pps)
 
@@ -133,6 +135,10 @@ def process_chunk_data(chunk):
             probs,
             percentage=float(args.sampled_back_ratio),
         )
+        sampled_back_idx_set = set(sampled_back_idx)
+        sampled_back_idx = [
+            spam_idx[i] for i in range(len(spam_idx)) if i in sampled_back_idx_set
+        ]  # Map Idx Back to the original index
 
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
