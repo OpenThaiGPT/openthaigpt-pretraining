@@ -35,4 +35,5 @@ if __name__ == "__main__":
         load_dataset_local_path=args.data_path,
         load_dataset_data_type=args.data_type,
         large_corpus=args.large_corpus,
+        mode=args.mode,
     )
