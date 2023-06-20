@@ -25,16 +25,6 @@ MODEL_CONFIGS = {
     "llama": LLaMAArgs,
 }
 
-# ATTENTION_MODE = {
-#     "gptj": change_attn,
-# }
-
-GRADIENT_CHECKPOINTING = {
-    "llama_hf": True,
-    "gptj": True,
-    "llama": False,
-}
-
 LORA_CONFIG = {
     "llama_hf": LoraConfig,
     "gptj": LoraConfig,
