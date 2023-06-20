@@ -194,8 +194,8 @@ if __name__ == "__main__":
             batch_size=int(args.batch_size),
         )
 
-        if 'train' in dataset.column_names:
-            dataset = dataset['train']
-        
+        if "train" in dataset.column_names:
+            dataset = dataset["train"]
+
         for data in dataset:
             writer.write(filter_field(data, args.source))
