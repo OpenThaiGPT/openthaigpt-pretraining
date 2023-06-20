@@ -29,15 +29,14 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
         threshold=deduplicate_args.thresold,
         num_perm=global_config.num_perm,
     )
-    batch_size = 10000
     count = 0
     with minhash_index.insertion_session() as session:
         for i in tqdm(
-            range(0, len(pretrain_dataset_minhash), batch_size),
+            range(0, len(pretrain_dataset_minhash), deduplicate_args.batch_size),
             dynamic_ncols=True,
             desc="Iterating MinHashes...",  # noqa: E501
         ):
-            batch = pretrain_dataset_minhash[i : i + batch_size]
+            batch = pretrain_dataset_minhash[i : i + deduplicate_args.batch_size]
             for j, hash_value in enumerate(batch["hashvalues"]):
                 count += 1
                 key = i + j
@@ -46,11 +45,11 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
                 )
     duplicate_results = []
     for i in tqdm(
-        range(0, len(pretrain_dataset_minhash), batch_size),
+        range(0, len(pretrain_dataset_minhash), deduplicate_args.batch_size),
         dynamic_ncols=True,
         desc="Iterating MinHashes...",  # noqa: E501
     ):
-        batch = pretrain_dataset_minhash[i : i + batch_size]
+        batch = pretrain_dataset_minhash[i : i + deduplicate_args.batch_size]
         hashvalues = batch["hashvalues"]
         for j in range(len(hashvalues)):
             key = i + j

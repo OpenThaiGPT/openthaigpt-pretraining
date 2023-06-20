@@ -14,6 +14,7 @@ deduplication:
   thresold: 0.9
   minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_minhash_128
   save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_128
+  batch_size: 10000
 
 global_config:
   num_process: 128
