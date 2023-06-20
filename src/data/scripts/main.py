@@ -118,7 +118,9 @@ def process_chunk_data(chunk):
         spam_idx_set = set(spam_idx)
 
         spam_log_pps = [
-            log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx_set
+            log_pp
+            for i, log_pp in enumerate(chunk["log_pp_score"])
+            if i in spam_idx_set
         ]
         log_pp_array = np.array(spam_log_pps)
 
