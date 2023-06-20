@@ -1,5 +1,5 @@
-lst20:
-  name: LST20
+lst20_test:
+  name: LST20_Test
   available_on_hub: True
   path_name: lst20
   path: /scratch/lt200056-opgpth/LST20_Corpus
