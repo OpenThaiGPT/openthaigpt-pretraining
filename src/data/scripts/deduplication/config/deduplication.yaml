@@ -1,0 +1,20 @@
+train_dataset:
+  key: openthaigpt
+  name: openthaigpt_pretraining_dataset
+  available_on_hub: False
+  path_name: /scratch/lt200056-opgpth/HF_V4_Dataset
+  split: train
+  subset:
+
+minhash:
+  newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
+  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_minhash_128
+
+deduplication:
+  thresold: 0.9
+  minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_minhash_128
+  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_128
+
+global_config:
+  num_process: 128
+  num_perm: 128
