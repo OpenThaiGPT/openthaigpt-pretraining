@@ -1,13 +1,12 @@
 import torch
 import xformers.ops as xops
-from xformers.components.attention.core import scaled_query_key_softmax, bmm
 from transformers.models.gptj.modeling_gptj import (
     GPTJAttention,
     GPTJModel,
     GPTJBlock,
     logger,
 )
-from transformers import GPTJConfig, GPTJForCausalLM
+from transformers import GPTJForCausalLM
 from torch import nn
 
 from typing import Optional, Tuple, Union
@@ -15,57 +14,45 @@ from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
 )
 
-
-def _attn_xformers_cpu(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    # compute causal mask from causal mask buffer
-    query_length, key_length = query.size(-2), key.size(-2)
-    causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length]
-    attention_mask = torch.where(causal_mask, 0.0, -torch.inf)
-    # Keep the attention weights computation in fp32 to avoid overflow issues
-    query = query.to(torch.float32)
-    key = key.to(torch.float32)
-    attn_weights = scaled_query_key_softmax(query, key, attention_mask)
-    attn_weights = self.attn_dropout(attn_weights)
-
-    # Mask heads if we want to
-    if head_mask is not None:
-        attn_weights = attn_weights * head_mask
-    # attn_output = bmm(attn_weights, value)
-    attn_output = bmm(attn_weights, value)
-
-    return attn_output, attn_weights
+XFORMER_ATTENTION_MODE = "xformers"
 
 
-def _attn_xformers(
-    self,
-    query,
-    key,
-    value,
-    attention_mask=None,
-    head_mask=None,
-):
-    if attention_mask is not None:
-        raise TypeError("Not support manual attention mask")
+class GPTJAttentionXFormers(GPTJAttention):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attention_mode = config.attention_mode
 
-    if head_mask is not None:
-        raise TypeError("Not support head_mask")
+    def _attn(
+        self,
+        query,
+        key,
+        value,
+        attention_mask=None,
+        head_mask=None,
+    ):
+        if self.attention_mode == XFORMER_ATTENTION_MODE:
+            if attention_mask is not None:
+                raise TypeError("Not support manual attention mask")
 
-    # Attention output
-    attn_output = xops.memory_efficient_attention(
-        query.transpose(2, 1),
-        key.transpose(2, 1),
-        value.transpose(2, 1),
-        xops.LowerTriangularMask(),
-    ).transpose(2, 1)
+            if head_mask is not None:
+                raise TypeError("Not support head_mask")
 
-    return attn_output, None
+            # Attention output
+            attn_output = xops.memory_efficient_attention(
+                query.transpose(2, 1),
+                key.transpose(2, 1),
+                value.transpose(2, 1),
+                xops.LowerTriangularMask(),
+            ).transpose(2, 1)
+
+            return attn_output, None
+        return super()._attn(
+            query,
+            key,
+            value,
+            attention_mask,
+            head_mask,
+        )
 
 
 class GPTJModelWithCheckpointing(GPTJModel):
@@ -274,6 +261,10 @@ class GPTJModelWithCheckpointing(GPTJModel):
 
 
 class GPTJBlockWithCheckpointing(GPTJBlock):
+    def __init__(self, config):
+        super().__init__(config)
+        self.attn = GPTJAttentionXFormers(config)
+
     def forward(
         self,
         hidden_states: Optional[torch.FloatTensor],
@@ -349,7 +340,14 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
     def __init__(self, config):
         super().__init__(config)
-        self.transformer = GPTJModelWithCheckpointing(config)
+        if config.use_checkpointing:
+            self.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
+        if config.use_checkpointing and config.checkpoint_only_attention:
+            self.transformer = GPTJModelWithCheckpointing(config)
+            print("use model with gradient checkpointing only attention")
+        else:
+            self.transformer = GPTJModel(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size)
 
         # Model parallel
@@ -358,71 +356,3 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
 
         # Initialize weights and apply final processing
         self.post_init()
-
-
-def make_model_gptj(
-    vocab_size,
-    context_length,
-    attention_mode,
-    use_checkpointing,
-    checkpoint_only_attention,
-    device: str = "cuda",
-):
-    """
-    Args:
-        vocab_size: vocabulary size
-        context_length: maximum sequence length
-        use_checkpointing: use gradient checkpointing
-        checkpoint_only_attention: gradient checkpointing only attention
-    """
-    cfg = GPTJConfig(
-        vocab_size=vocab_size,
-        n_positions=context_length,
-        n_embd=1536,
-        n_layer=12,
-        n_head=8,
-        rotary_dim=64,
-        n_inner=None,
-        activation_function="gelu_new",
-        resid_pdrop=0.1,
-        embd_pdrop=0.1,
-        attn_pdrop=0.1,
-        layer_norm_epsilon=1e-5,
-        initializer_range=0.02,
-        use_cache=True,
-        bos_token_id=50256,
-        eos_token_id=50256,
-        tie_word_embeddings=False,
-    )
-
-    if use_checkpointing:
-        cfg.use_cache = False
-    if use_checkpointing and checkpoint_only_attention:
-        model = GPTJForCausalLMWithCheckpointing(cfg)
-        print("use gradient checkpointing only attentions")
-    else:
-        model = GPTJForCausalLM(cfg)
-        if use_checkpointing:
-            print("use gradient checkpointing")
-
-    if attention_mode == "xformers":
-        print("Use xFormers")
-        if device == "cpu":
-            GPTJAttention._attn = _attn_xformers_cpu
-        else:
-            GPTJAttention._attn = _attn_xformers
-    elif attention_mode == "origin":
-        print("Use original")
-    else:
-        print("GPTJ attention mode only support origin and xformers")
-
-    if use_checkpointing:
-        model.gradient_checkpointing_enable()
-
-    model_size = sum(t.numel() for t in model.parameters())
-    print(f"GPTJ size: {model_size/1000**2:.1f}M parameters")
-
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"GPTJ size requires_grad: {model_size/1000**2:.1f}M parameters")
-
-    return model

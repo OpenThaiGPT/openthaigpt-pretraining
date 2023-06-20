@@ -1,0 +1,18 @@
+tokenized:
+  path: null
+  train_split: null
+  eval_split: null
+train:
+  dataset_name: mc4
+  split: train  # type: ignore
+  shuffle: false
+  buffer_size: 10000
+  streaming: false
+  from_disk: false
+eval:
+  dataset_name: mc4
+  split: validation  # type: ignore
+  shuffle: false
+  buffer_size: 10000
+  streaming: false
+  from_disk: false

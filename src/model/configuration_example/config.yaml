@@ -1,5 +1,5 @@
 defaults:
   - optimizer: adamw_optimizer
-  - model: falcon-7b-from-pretrained
+  - model: llama-7b-from-scratch.yaml
   - dataset: mc4
   - training: training_v1

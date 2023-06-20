@@ -1,4 +1,8 @@
-from .constants import TOKENIZERS, MODELS, MODEL_CONFIGS
+from .constants import (
+    TOKENIZERS,
+    MODELS,
+    MODEL_CONFIGS,
+)
 
 
 def load_model_and_tokenizer(model_config):
@@ -16,6 +20,7 @@ def load_model(model_config, tokenizer=None):
         raise NotImplementedError(f"No model name: {model_config.name}")
 
     model_pretrained = model_config.pretrained_model_name_or_path
+
     if model_pretrained is None:
         model_config_args = model_config.args
         if tokenizer is not None:
@@ -28,16 +33,17 @@ def load_model(model_config, tokenizer=None):
             }
         config = model_config_object(
             **model_config.args,
-            vocab_size=len(tokenizer),
-            bos_token_id=tokenizer.bos_token_id,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id,
         )
         model = model_object(config)
     else:
-        model = model_object.from_pretrained(model_pretrained)
+        model = model_object.from_pretrained(model_pretrained, **model_config.args)
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
+
+    model_size = sum(t.numel() for t in model.parameters())
+    print(f"model size: {model_size/1000**2:.1f}M parameters")
+    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"model size requires_grad: {model_size/1000**2:.1f}M parameters")
     return model
 
 

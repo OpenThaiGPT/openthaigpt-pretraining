@@ -1,0 +1,5 @@
+max_tokens: 2048
+save_path: ./tokendata
+batch_size: 1000
+num_proc: 128
+split: train

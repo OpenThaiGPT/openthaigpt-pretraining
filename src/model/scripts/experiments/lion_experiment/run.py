@@ -5,6 +5,7 @@ from openthaigpt_pretraining_model.utils import (
 )
 import os
 from contextlib import nullcontext
+from typing import Union
 import time
 import torch
 from torch.utils.data import DataLoader
@@ -16,11 +17,14 @@ from tqdm import tqdm
 from transformers import GPT2TokenizerFast
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention
 
+from datasets import load_dataset, load_from_disk
+
 from openthaigpt_pretraining_model.models.nanoGPT.model import make_model, _attn_wrapper
 from openthaigpt_pretraining_model.data_wrapper import DatasetWrapper
 from openthaigpt_pretraining_model.optimizers import get_optimizer
-from openthaigpt_pretraining_model.datasets import get_dataset
-from openthaigpt_pretraining_model.datasets.constants import SPLIT_TRAIN, SPLIT_VAL
+from openthaigpt_pretraining_model.datasets.constants import (
+    DATASET_ARGS,
+)
 
 # https://github.com/d8ahazard/sd_dreambooth_extension/pull/1186#issuecomment-1518694203
 if os.name == "posix":
@@ -34,11 +38,54 @@ EOS_TOKEN = "<|endoftext|>"
 PAD_TOKEN = "<|pad|>"
 DATASET_NAME = "mc4"
 
+SPLIT_TRAIN = "train"
+SPLIT_VAL = "validation"
+
 DTYPE_CHOICE = {
     "float32": torch.float32,
     "bfloat16": torch.bfloat16,
     "float16": torch.float16,
 }
+
+
+def get_dataset(
+    dataset_name: Union[str, dict],
+    split: str = None,  # type: ignore
+    shuffle: bool = False,
+    buffer_size: int = 10_000,
+    streaming: bool = False,
+    from_disk: bool = False,
+):
+    """
+    Args:
+        dataset_name: dataset name in `DATASET_ARGS` or HF datasets
+            `load_dataset` arguments in dictionary.
+        split: `train` or `validation` default is `None`.
+        shuffle: If `True`, it will be shuffle the dataset.
+        buffer_size: Shuffle buffer size.
+    """
+    dataset_args = DATASET_ARGS.get(dataset_name, None)  # type: ignore
+    if isinstance(dataset_name, dict):
+        dataset_args = dataset_name
+    elif isinstance(dataset_name, str) and not dataset_args:
+        dataset_args = {"path": dataset_name}
+    else:
+        raise NotImplementedError(f"No dataset name {dataset_name}")
+
+    if from_disk:
+        dataset = load_from_disk(
+            dataset_name,
+        )[split]
+    else:
+        dataset = load_dataset(
+            **dataset_args,
+            split=split,
+            streaming=streaming,
+        )
+
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=buffer_size)
+    return dataset
 
 
 def closest_power_of_2(x):

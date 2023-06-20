@@ -1,0 +1,4 @@
+defaults:
+  - model: llama-7b-from-scratch.yaml
+  - dataset: mc4
+  - data_process: data_process_v1
