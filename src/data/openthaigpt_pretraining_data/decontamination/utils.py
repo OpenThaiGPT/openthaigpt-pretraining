@@ -1,27 +1,10 @@
 from datasets import load_dataset, load_from_disk
-from nlpo3 import segment
-from datasketch import MinHash
-
-from openthaigpt_pretraining_data.decontamination.constants import MINHASH_SEED
 
 import re
 
 
-def generate_minhash_signature(text):
-    minhash = MinHash(seed=MINHASH_SEED)
-    tokens = segment(text, "newmm")
-    n_gram = 5
-
-    for i in range(len(tokens) - n_gram + 1):
-        token_gram = "".join(tokens[i : i + n_gram])
-
-        minhash.update(token_gram.encode("utf-8"))
-
-    return minhash
-
-
 def load_data(dataset_arg):
-    if dataset_arg.name == "LST20":
+    if dataset_arg.name == "LST20" or dataset_arg.name == "LST20_Test":
         dataset = load_dataset(
             dataset_arg.path_name, dataset_arg.subset, data_dir=dataset_arg.path
         )
@@ -91,5 +74,6 @@ MAPPER = {
     "copa_thai": generate_query_copa_thai,
     "rte_thai": generate_query_rte_thai,
     "lst20": generate_query_lst20,
+    "lst20_test": generate_query_lst20,
     "record_thai": generate_query_record_thai,
 }
