@@ -171,11 +171,11 @@ def filter_field(data, source):
 
 
 NUM_PROC = int(args.num_proc)
-DATASET_TO_FILETYPE = {"mc4": "json", "cc100": "txt"}
+DATASET_TO_FILETYPE = {"mc4": "json"}
 
 if __name__ == "__main__":
     with jsonlines.open(args.output_file, "w") as writer:
-        if args.source != "oscar":
+        if args.source in DATASET_TO_FILETYPE.keys():
             dataset = load_dataset(
                 DATASET_TO_FILETYPE[args.source],
                 data_files=args.input_file,
@@ -194,5 +194,8 @@ if __name__ == "__main__":
             batch_size=int(args.batch_size),
         )
 
+        if 'train' in dataset.column_names:
+            dataset = dataset['train']
+        
         for data in dataset:
             writer.write(filter_field(data, args.source))
