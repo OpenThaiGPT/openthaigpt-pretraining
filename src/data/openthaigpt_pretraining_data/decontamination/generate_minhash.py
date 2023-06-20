@@ -1,6 +1,7 @@
-from datasketch import LeanMinHash
-from openthaigpt_pretraining_data.core.minhash import generate_minhash_signature, generate_minhash_signature_hf
-
+from openthaigpt_pretraining_data.core.minhash import (
+    generate_minhash_signature,
+    generate_minhash_signature_hf,
+)
 from openthaigpt_pretraining_data.decontamination.utils import (
     MAPPER,
     load_data,
@@ -17,7 +18,7 @@ def generate_minhash_item(item):
     return generate_minhash_signature(text, num_perm)
 
 
-def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_config):
+def generate_minhash(dataset_groups, pretrain_data_args, minhash_config):
     load_dict(minhash_config.newmm_dict, "newmm")
 
     for dataset_key in dataset_groups.keys():
@@ -27,7 +28,7 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_
             MAPPER[dataset_key](item) for item in dataset[dataset_arg.split].to_list()
         ]
         dataset1 = list(set(dataset1))
-        dataset1_map = [(item, global_config.num_perm)for item in dataset1]
+        dataset1_map = [(item, global_config.num_perm) for item in dataset1]
 
         print(dataset1[:5], dataset_key)
 
@@ -39,9 +40,7 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_
                     desc="Processing dataset",
                 )
             )
-            signature_path = (
-                f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
-            )
+            signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
             file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle"
 
             with open(signature_path, "wb") as file:
@@ -53,7 +52,10 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_
 
     dataset1 = pretrain_dataset[pretrain_data_args.split]
     signatures = dataset1.map(
-        lambda x: generate_minhash_signature_hf(x, global_config.num_perm, pretrain_data_args.col_name), num_proc=global_config.num_process
+        lambda x: generate_minhash_signature_hf(
+            x, global_config.num_perm, pretrain_data_args.col_name
+        ),
+        num_proc=global_config.num_process,
     )
     signatures.save_to_disk(
         minhash_config.save_path, num_proc=global_config.num_process

@@ -13,9 +13,6 @@ from openthaigpt_pretraining_data.decontamination.utils import (
 )
 
 
-
-
-
 def query_func(item, idx, index):
     neighbors = [
         str(dup_idx)
@@ -37,7 +34,9 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
 
         dataset_arg = dataset_groups[dataset_key]
 
-        signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+        signature_path = (
+            f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+        )
         file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{num_perm}.pickle"
 
         with open(file_path, "rb") as file:
@@ -79,9 +78,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
             pretrain_dataset_minhash_result, desc="Calculation Jaccard Distance..."
         ):
             neighbors = set(doc["__neighbors__"])
-            minhash = LeanMinHash(
-                seed=MINHASH_SEED, hashvalues=doc["hashvalues"]
-            )
+            minhash = LeanMinHash(seed=MINHASH_SEED, hashvalues=doc["hashvalues"])
             for neighbor in neighbors:
                 reference = data[int(neighbor)]
                 reference_signature = signature[int(neighbor)]
@@ -108,7 +105,9 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
     for item in contaminated_results:
         original_ids_to_remove.add(item["original_id"])
 
-    pretrain_dataset[pretrain_data_args.split] = pretrain_dataset[pretrain_data_args.split].filter(
+    pretrain_dataset[pretrain_data_args.split] = pretrain_dataset[
+        pretrain_data_args.split
+    ].filter(
         lambda _, idx: idx not in original_ids_to_remove,
         desc="Filtering...",
         num_proc=decontaminate_args.num_process,

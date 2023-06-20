@@ -8,3 +8,7 @@ src/data/**/*.vocab
 src/data/**/*.bin
 src/data/**/full_input*
 /.cache
+/pythainlp-data
+/outputs
+/etc/
+/image_sandbox
