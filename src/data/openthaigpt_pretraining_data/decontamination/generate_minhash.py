@@ -40,8 +40,8 @@ def generate_minhash(dataset_groups, pretrain_data_args, minhash_config, global_
                     desc="Processing dataset",
                 )
             )
-            signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle" # noqa: E501
-            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle" # noqa: E501
+            signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"  # noqa: E501
+            file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle"  # noqa: E501
 
             with open(signature_path, "wb") as file:
                 pickle.dump(signatures, file)
