@@ -118,7 +118,7 @@ def process_chunk_data(chunk):
         spam_idx_set = set(spam_idx)
 
         spam_log_pps = [
-            log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx
+            log_pp for i, log_pp in enumerate(chunk["log_pp_score"]) if i in spam_idx_set
         ]
         log_pp_array = np.array(spam_log_pps)
 
@@ -134,7 +134,9 @@ def process_chunk_data(chunk):
             percentage=float(args.sampled_back_ratio),
         )
         sampled_back_idx_set = set(sampled_back_idx)
-        sampled_back_idx = [spam_idx[i] for i in range(len(spam_idx)) if i in sampled_back_idx_set] # Map Idx Back to the original index
+        sampled_back_idx = [
+            spam_idx[i] for i in range(len(spam_idx)) if i in sampled_back_idx_set
+        ]  # Map Idx Back to the original index
 
     selected_idx = set(non_spam_idx + sampled_back_idx)
     for field in chunk:
