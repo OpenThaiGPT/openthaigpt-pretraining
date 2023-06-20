@@ -12,7 +12,8 @@ def generate_minhash(pretrain_data_args, minhash_config, global_config):
 
     dataset1 = pretrain_dataset[pretrain_data_args.split]
     signatures = dataset1.map(
-        lambda x: generate_minhash_signature_hf(x, global_config.num_perm), num_proc=global_config.num_process
+        lambda x: generate_minhash_signature_hf(x, global_config.num_perm),
+        num_proc=global_config.num_process,
     )
     signatures.save_to_disk(
         minhash_config.save_path, num_proc=minhash_config.num_process
