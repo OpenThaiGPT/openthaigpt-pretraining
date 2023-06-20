@@ -1,5 +1,9 @@
 import argparse
-from openthaigpt_pretraining_model.tokenizers.spm_trainer import train_tokenizer
+from openthaigpt_pretraining_model.tokenizers.spm_trainer import (
+    train_tokenizer,
+    SPM_MODE,
+    BPE_MODE,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -18,6 +22,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--large_corpus", action="store_true", help="use large corpus in train"
+    )
+    parser.add_argument(
+        "--mode", type=str, default=SPM_MODE, help=f"{SPM_MODE} | {BPE_MODE}"
     )
 
     args = parser.parse_args()
