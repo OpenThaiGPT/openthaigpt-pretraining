@@ -101,6 +101,4 @@ if __name__ == "__main__":
     print(f"Splitting file: {file_path}")
     split_jsonl_file(file_path, test_size, validation_size)
 
-    print(
-        "Splitting of .jsonl file into train/test/validation sets completed successfully."
-    )
+    print("Splitting of .jsonl file into train/test/validation sets completed.")
