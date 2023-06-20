@@ -1,0 +1,6 @@
+thaisum:
+  name: thaisum
+  available_on_hub: True
+  path_name: thaisum
+  split: validation
+  subset:

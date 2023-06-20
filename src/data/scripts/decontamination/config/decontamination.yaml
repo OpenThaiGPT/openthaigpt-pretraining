@@ -1,0 +1,34 @@
+defaults:
+  - datasets: 
+    - copa_thai
+    - hellaswag_thai
+    - lst20
+    - lst20_test
+    - multirc_thai
+    - record_thai
+    - rte_thai
+    - thaisum
+    - thaisum_test
+    - xquad
+
+train_dataset:
+  key: openthaigpt
+  name: openthaigpt_pretraining_dataset
+  available_on_hub: False
+  path_name: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_128
+  split: train
+  subset:
+  col_name: text
+
+minhash:
+  newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
+  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
+
+decontaminate:
+  thresold: 0.3
+  minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
+  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_decontaminated_128
+
+global_config:
+  num_process: 128
+  num_perm: 128
