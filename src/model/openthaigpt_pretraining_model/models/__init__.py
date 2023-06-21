@@ -43,14 +43,13 @@ def load_model(model_config, tokenizer=None):
             model.resize_token_embeddings(len(tokenizer))
 
     lora = model_config.args.get("lora", False)
-
     if lora:
         lora_object = LORA_MODEL.get(model_config.name, None)
-        lora_config = model_config.lora
         lora_config_object = LORA_CONFIG.get(model_config.name, None)
-        lora_config = lora_config_object(lora_config)
-        if lora_object is None:
+        if lora_object is None or lora_config_object is None:
             raise NotImplementedError(f"No lora_avaiable for {model_config.name}")
+        lora_config = model_config.lora
+        lora_config = lora_config_object(**lora_config)
         model = lora_object(model, lora_config)
 
     model_size = sum(t.numel() for t in model.parameters())
