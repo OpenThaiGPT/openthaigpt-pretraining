@@ -270,12 +270,12 @@ class LlamaForCausalLMWithCheckpointing(LlamaForCausalLM):
         super().__init__(config)
         if config.use_checkpointing:
             self.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
         if config.use_checkpointing and config.checkpoint_only_attention:
             self.model = LlamaModelWithWithCheckpointing(config)
             print("use model with gradient checkpointing only attention")
         else:
             self.model = LlamaModel(config)
-            print("use gradient checkpointing")
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         # Initialize weights and apply final processing
