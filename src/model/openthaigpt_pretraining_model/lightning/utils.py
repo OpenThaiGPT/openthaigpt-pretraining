@@ -101,7 +101,7 @@ class Trainer:
         )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
-        self.dataloder_val = self.fabric.setup_dataloaders(self.dataloader_val)
+        self.dataloader_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
     def log(self, data):
         if self.wandb is not None:
