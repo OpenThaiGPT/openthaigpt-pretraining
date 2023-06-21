@@ -21,6 +21,7 @@ dependencies = [
     "kenlm==0.1",
     "scipy==1.10.1",
     "jsonlines==3.1.0",
-    "datasketch<2.0.0"
+    "datasketch<2.0.0",
+    "beautifulsoup4==4.12.2"
 ]
 
