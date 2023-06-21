@@ -51,7 +51,9 @@ def tokenize_function(tokenizer, max_tokens):
         # Iterate over each sublist and extend the result list with sublist elements
         for sublist in outputs[HF_TOKENIZER_INPUT_IDS_NAME]:
             result_list.extend(sublist)
-            result_list.append(0)  # Insert 0 between sublist elements
+            result_list.append(
+                tokenizer.eos_token_id
+            )  # Insert 0 between sublist elements
         # desired_dim_2 = 4  # Desired size along the second dimension
         padding_value = tokenizer.eos_token_id  # Number to use for padding
         input_tensor = torch.Tensor(result_list).long()
