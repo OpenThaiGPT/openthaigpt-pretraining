@@ -2,6 +2,8 @@ from .constants import (
     TOKENIZERS,
     MODELS,
     MODEL_CONFIGS,
+    LORA_MODEL,
+    LORA_CONFIG,
 )
 
 
@@ -57,3 +59,15 @@ def load_tokenizer(tokenizer_config):
         tokenizer_config.pretrained_model_name_or_path
     )
     return tokenizer
+
+
+def load_lora(model, lora_config, model_name):
+    lora_object = LORA_MODEL.get(model_name, None)
+    lora_config_object = LORA_CONFIG.get(model_name, None)
+    if lora_object is None or lora_config_object is None:
+        raise NotImplementedError(f"No lora_avaiable for {model_name}")
+    lora_config = lora_config.lora
+    lora_config = lora_config_object(**lora_config)
+    model = lora_object(model, lora_config)
+
+    return model
