@@ -32,11 +32,11 @@ class Trainer:
         self.model_name = configuration.model.name
         self.wandb = None
         self.max_tokens = training_configuration.max_tokens
-        self.step = 0
         self.seed = training_configuration.seed
         self.grad = training_configuration.grad
         strategy = training_configuration.strategy
         self.epochs = training_configuration.epochs
+        self.start_steps = training_configuration.start_steps
         self.eval_steps = training_configuration.eval_steps
         self.save_steps = training_configuration.save_steps
         self.save_paths = training_configuration.save_paths
@@ -118,12 +118,14 @@ class Trainer:
         if self.wandb is not None:
             self.wandb.log(data)
 
-    def save_checkpoint(self, step):
+    def save_checkpoint(self, step, epoch):
         self.fabric.save(
-            f"{self.save_paths}/{self.model_name}_{step}.pt",
+            f"{self.save_paths}/{self.model_name}_{epoch}_{step}.pt",
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.opt.state_dict(),
+                "iteration": step,
+                "epoch": epoch,
             },
         )
         self.fabric.barrier()
@@ -133,6 +135,7 @@ class Trainer:
         with self.fabric.device:
             self.model.load_state_dict(checkpoint["model_state_dict"])
         self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
+        self.start_steps = checkpoint.get("iteration", 0)
         self.fabric.barrier()
 
     def train_step(self, batch):
@@ -155,10 +158,12 @@ class Trainer:
         return (loss, perplexity)
 
     def train(self):
-        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
         for epoch in range(self.epochs):
+            progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
             for i, batch in enumerate(progress_bar):
+                if i < self.start_steps and epoch == 0:
+                    continue
                 is_accumulating = (i + 1) % self.grad != 0
 
                 with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
@@ -183,6 +188,6 @@ class Trainer:
 
                 if (i + 1) % self.save_steps == 0:
                     self.fabric.print(f"Saving weights : {self.save_paths}")
-                    self.save_checkpoint(i + 1)
+                    self.save_checkpoint(i + 1, epoch)
 
         self.wandb.finish()
