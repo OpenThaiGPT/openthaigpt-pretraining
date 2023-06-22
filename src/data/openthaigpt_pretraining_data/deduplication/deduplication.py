@@ -12,7 +12,7 @@ def query_func(item, idx, index):
         str(dup_idx)
         for dup_idx in index.query(
             LeanMinHash(seed=MINHASH_SEED, hashvalues=item["hashvalues"]),
-        ) 
+        )
         if dup_idx != idx
     ]
     return {"__neighbors__": neighbors, "idx": idx}
@@ -49,17 +49,18 @@ def process_data(batch, idx, pretrain_dataset_minhash, thresold):
                     }
                 )
                 break
-    
+
     dict_of_lists = {}
-    
+
     for dictionary in duplicate_results:
         for key, value in dictionary.items():
             if key not in dict_of_lists:
                 dict_of_lists[key] = []
-            
+
             dict_of_lists[key].append(value)
-    
+
     return dict_of_lists
+
 
 def deduplicate(pretrain_data_args, deduplicate_args, global_config):
     pretrain_dataset = load_from_disk(pretrain_data_args.path_name)
@@ -69,11 +70,11 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
 
     empty_hashvalues = generate_minhash_signature("", global_config.num_perm).hashvalues
 
-    globals()['minhash_index'] = MinHashLSH(
+    globals()["minhash_index"] = MinHashLSH(
         threshold=deduplicate_args.thresold,
         num_perm=global_config.num_perm,
     )
-    with globals()['minhash_index'].insertion_session() as session:
+    with globals()["minhash_index"].insertion_session() as session:
         for i in tqdm(
             range(0, len(pretrain_dataset_minhash), deduplicate_args.batch_size),
             dynamic_ncols=True,
@@ -85,9 +86,9 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
                 session.insert(
                     key, LeanMinHash(seed=MINHASH_SEED, hashvalues=hash_value)
                 )
-    
+
     pretrain_dataset_minhash_result = pretrain_dataset_minhash.map(
-        lambda doc, idx: query_func(doc, idx, index=globals()['minhash_index']),
+        lambda doc, idx: query_func(doc, idx, index=globals()["minhash_index"]),
         desc="Querying...",
         num_proc=global_config.num_process,
         features=Features(
@@ -105,14 +106,16 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
         desc="Filtering...",
         num_proc=global_config.num_process,
     )
-    
-    print(pretrain_dataset_minhash_result, 'pretrain_dataset_minhash_result')
-    
+
+    print(pretrain_dataset_minhash_result, "pretrain_dataset_minhash_result")
+
     duplicate_results = pretrain_dataset_minhash_result.map(
-        lambda batch, idx: process_data(batch, idx, pretrain_dataset_minhash, deduplicate_args.thresold),
-        batched = True,
-        with_indices = True,
-        num_proc = global_config.num_process,
+        lambda batch, idx: process_data(
+            batch, idx, pretrain_dataset_minhash, deduplicate_args.thresold
+        ),
+        batched=True,
+        with_indices=True,
+        num_proc=global_config.num_process,
         remove_columns=pretrain_dataset_minhash_result.column_names,
         load_from_cache_file=False,
         features=Features(
@@ -125,10 +128,10 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
                 "original_id": Value("string"),
                 "score": Value("float32"),
             }
-        )
+        ),
     )
 
-    print(duplicate_results, 'duplicate_results')
+    print(duplicate_results, "duplicate_results")
 
     duplicate_results.save_to_disk(deduplicate_args.save_path_duplicated)
 
@@ -152,6 +155,6 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
         with_indices=True,
     )
 
-    print(pretrain_dataset, 'pretrain_dataset')
+    print(pretrain_dataset, "pretrain_dataset")
 
     pretrain_dataset.save_to_disk(deduplicate_args.save_path)
