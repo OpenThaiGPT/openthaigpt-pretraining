@@ -21,13 +21,6 @@ args:
   use_checkpointing: True
   checkpoint_only_attention: True
   attention_mode: xformers
-  lora: False
 tokenizer:
   pretrained_model_name_or_path: EleutherAI/gpt-j-6b
   tokenizer_class: AutoTokenizer
-lora:
-  r: 8
-  lora_alpha: 32
-  lora_dropout: 0.05
-  bias: "none"
-  task_type: "CAUSAL_LM"
