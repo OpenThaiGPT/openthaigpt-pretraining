@@ -130,6 +130,8 @@ def deduplicate(pretrain_data_args, deduplicate_args, global_config):
 
     print(duplicate_results, 'duplicate_results')
 
+    duplicate_results.save_to_disk(deduplicate_args.save_path_duplicated)
+
     original_ids_to_remove = set()
 
     for i in tqdm(
