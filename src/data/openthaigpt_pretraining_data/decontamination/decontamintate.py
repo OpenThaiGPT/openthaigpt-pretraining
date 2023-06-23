@@ -23,7 +23,9 @@ def query_func(item, idx, index):
     return {"__neighbors__": neighbors, "idx": idx}
 
 
-def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, global_config):
+def decontaminate(
+    dataset_groups, pretrain_data_args, decontaminate_args, global_config
+):
     empty_hashvalues = generate_minhash_signature("", global_config.num_perm).hashvalues
     pretrain_dataset = load_data(pretrain_data_args)
     pretrain_dataset_minhash = load_from_disk(decontaminate_args.minhash_path)
@@ -34,9 +36,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, global
 
         dataset_arg = dataset_groups[dataset_key]
 
-        signature_path = (
-            f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
-        )
+        signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
         file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle"
 
         with open(file_path, "rb") as file:
