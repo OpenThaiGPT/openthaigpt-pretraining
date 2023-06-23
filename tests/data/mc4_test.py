@@ -11,6 +11,8 @@ from openthaigpt_pretraining_data.mc4.preprocess import (
 )
 from utils_test import compare_dataset
 
+import copy
+
 
 def test_document_remove():
     for test_case in DOCUMENT_REMOVE_TEST_CASES:
@@ -24,4 +26,5 @@ def test_clean_text():
 
 def test_clean_dataset():
     for test_case in CLEAN_DATASET_TEST_CASES:
+        test_case = copy.deepcopy(test_case)
         compare_dataset(clean_dataset(test_case["dataset"]), test_case["new_dataset"])
