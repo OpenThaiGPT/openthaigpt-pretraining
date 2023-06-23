@@ -717,8 +717,8 @@ np.random.seed(0)
 docs = []
 new_docs = []
 for testcase in CLEAN_TEXT_TEST_CASES:
-    docs.append(testcase["doc"])
-    new_docs.append(testcase["new_doc"])
+    docs.append({"text": testcase["doc"]})
+    new_docs.append({"text": testcase["new_doc"]})
 
 for i in range(10):
     n = np.random.randint(1, 5, 1)

@@ -13,6 +13,7 @@ from openthaigpt_pretraining_data.oscar.preprocess import (
     clean_text,
     clean_dataset,
 )
+from utils_test import compare_dataset
 
 
 def test_document_remove():
@@ -39,4 +40,4 @@ def test_clean_text():
 
 def test_clean_dataset():
     for test_case in CLEAN_DATASET_TEST_CASES:
-        assert clean_dataset(test_case["dataset"]) == test_case["new_dataset"]
+        compare_dataset(clean_dataset(test_case["dataset"]), test_case["new_dataset"])
