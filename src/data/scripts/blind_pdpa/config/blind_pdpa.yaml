@@ -1,0 +1,12 @@
+train_dataset:
+  key: openthaigpt
+  name: openthaigpt_pretraining_dataset
+  available_on_hub: False
+  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_decontaminated_128_03
+  split: train
+  subset:
+
+blind_config:
+  engine: openthaigpt
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_decontaminated_128_03_blinded
+  num_proc: 128
