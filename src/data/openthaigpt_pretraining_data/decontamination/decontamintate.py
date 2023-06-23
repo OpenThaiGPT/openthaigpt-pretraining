@@ -37,7 +37,9 @@ def decontaminate(
 
         dataset_arg = dataset_groups[dataset_key]
 
-        signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+        signature_path = (
+            f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+        )
         file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{num_perm}.pickle"
 
         with open(file_path, "rb") as file:
