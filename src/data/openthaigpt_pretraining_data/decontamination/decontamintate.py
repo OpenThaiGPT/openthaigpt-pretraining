@@ -23,7 +23,10 @@ def query_func(item, idx, index):
     return {"__neighbors__": neighbors, "idx": idx}
 
 
-def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_perm):
+def decontaminate(
+    dataset_groups, pretrain_data_args, decontaminate_args, global_config
+):
+    num_perm = global_config.num_perm
     empty_hashvalues = generate_minhash_signature("", num_perm).hashvalues
     pretrain_dataset = load_data(pretrain_data_args)
     pretrain_dataset_minhash = load_from_disk(decontaminate_args.minhash_path)
@@ -56,7 +59,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
         pretrain_dataset_minhash_result = pretrain_dataset_minhash.map(
             lambda doc, idx: query_func(doc, idx, index=globals()[dataset_key]),
             desc="Querying...",
-            num_proc=decontaminate_args.num_process,
+            num_proc=global_config.num_process,
             features=Features(
                 {
                     **pretrain_dataset_minhash.features,
@@ -70,7 +73,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
             lambda x: len(x["__neighbors__"]) > 0
             and not np.array_equal(x["hashvalues"], empty_hashvalues),
             desc="Filtering...",
-            num_proc=decontaminate_args.num_process,
+            num_proc=global_config.num_process,
         )
         print(pretrain_dataset_minhash_result, "pretrain_dataset_minhash_result")
 
@@ -110,7 +113,7 @@ def decontaminate(dataset_groups, pretrain_data_args, decontaminate_args, num_pe
     ].filter(
         lambda _, idx: idx not in original_ids_to_remove,
         desc="Filtering...",
-        num_proc=decontaminate_args.num_process,
+        num_proc=global_config.num_process,
         with_indices=True,
     )
     print(pretrain_dataset)
