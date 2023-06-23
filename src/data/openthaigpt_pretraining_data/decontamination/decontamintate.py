@@ -26,7 +26,8 @@ def query_func(item, idx, index):
 def decontaminate(
     dataset_groups, pretrain_data_args, decontaminate_args, global_config
 ):
-    empty_hashvalues = generate_minhash_signature("", global_config.num_perm).hashvalues
+    num_perm = global_config.num_perm
+    empty_hashvalues = generate_minhash_signature("", num_perm).hashvalues
     pretrain_dataset = load_data(pretrain_data_args)
     pretrain_dataset_minhash = load_from_disk(decontaminate_args.minhash_path)
 
@@ -36,8 +37,8 @@ def decontaminate(
 
         dataset_arg = dataset_groups[dataset_key]
 
-        signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{global_config.num_perm}.pickle"
-        file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{global_config.num_perm}.pickle"
+        signature_path = f"./temp/{dataset_key}_{dataset_arg.split}_signature_{num_perm}.pickle"
+        file_path = f"./temp/{dataset_key}_{dataset_arg.split}_file_{num_perm}.pickle"
 
         with open(file_path, "rb") as file:
             data = pickle.load(file)
@@ -47,7 +48,7 @@ def decontaminate(
 
         globals()[dataset_key] = MinHashLSH(
             threshold=decontaminate_args.thresold,
-            num_perm=global_config.num_perm,
+            num_perm=num_perm,
         )
         with globals()[dataset_key].insertion_session() as session:
             for i, item in enumerate(signature):
@@ -99,7 +100,7 @@ def decontaminate(
         print(len(contaminated_results), "len(contaminated_results)")
 
     df = pd.DataFrame(contaminated_results)
-    df.to_csv(f"contaminated_results_{global_config.num_perm}.csv")
+    df.to_csv(f"contaminated_results_{num_perm}.csv")
 
     original_ids_to_remove = set()
     for item in contaminated_results:
