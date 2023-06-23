@@ -7,12 +7,9 @@
 #SBATCH -J test
 
 module purge
-module load Apptainer
-# module load Miniconda3/22.11.1-1
+module load Miniconda3/22.11.1-1
 
-
-# conda deactivate
-# conda activate /project/lt200056-opgpth/decontamination/.conda/env
+conda activate /project/lt200056-opgpth/decontamination/.conda/env
 
 export HF_DATASETS_CACHE="/project/lt200056-opgpth/openthaigpt-refactor/.cache"
 
@@ -22,5 +19,4 @@ export HTTP_PROXY=$http_proxy
 export https_proxy=http://$proxy_server
 export HTTPS_PROXY=$https_proxy
 
-apptainer run -B /lustrefs/flash/scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/blind_pdpa/blind.py
-# python ./src/data/scripts/blind_pdpa/blind.py
+python ./src/data/scripts/blind_pdpa/blind.py
