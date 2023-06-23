@@ -21,6 +21,8 @@ def test_read_jsonl():
         assert read_jsonl(test_case["filename"]) == test_case["expected_output"]
 
 
-def compare_dataset(dataset1, dataset2):
-    for i in range(len(dataset1)):
-        assert dataset1[i]['text'] == dataset2[i]['text']
+def compare_dataset(clean_dataset, test_dataset):
+    test_dataset = [item for item in test_dataset if item['text'] != '']
+
+    for i in range(len(clean_dataset)):
+        assert clean_dataset[i]['text'] == test_dataset[i]['text']
