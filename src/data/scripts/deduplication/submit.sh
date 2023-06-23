@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -p compute
+#SBATCH -p memory
 #SBATCH -N 1 -c 128
 #SBATCH --ntasks-per-node=1
-#SBATCH -t  30:00:00
+#SBATCH -t  20:00:00
 #SBATCH -A lt200056
 #SBATCH -J test
 
@@ -20,7 +20,6 @@ export HTTP_PROXY=$http_proxy
 export https_proxy=http://$proxy_server
 export HTTPS_PROXY=$https_proxy
 
-# apptainer run -B /scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/deduplication/deduplicate.py
-apptainer run -B /scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/deduplication/deduplicate.py
-apptainer run -B /scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/decontamination/decontaminate.py
+apptainer run -B /lustrefs/flash/scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/deduplication/deduplicate.py
+apptainer run -B /lustrefs/flash/scratch --home /project/lt200056-opgpth/openthaigpt-refactor image_sandbox python ./src/data/scripts/decontamination/decontaminate.py
 # python ./src/data/scripts/deduplication/deduplicate.py

@@ -16,5 +16,5 @@ def generate_minhash(pretrain_data_args, minhash_config, global_config):
         num_proc=global_config.num_process,
     )
     signatures.save_to_disk(
-        minhash_config.save_path, num_proc=minhash_config.num_process
+        minhash_config.save_path, num_proc=global_config.num_process
     )

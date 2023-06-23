@@ -15,19 +15,19 @@ train_dataset:
   key: openthaigpt
   name: openthaigpt_pretraining_dataset
   available_on_hub: False
-  path_name: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_128
+  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09
   split: train
   subset:
   col_name: text
 
 minhash:
   newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
-  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_minhash_128
 
 decontaminate:
   thresold: 0.3
-  minhash_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_minhash_128
-  save_path: /scratch/lt200056-opgpth/HF_V4_Dataset_deduplicated_decontaminated_128
+  minhash_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_decontaminated_128_03
 
 global_config:
   num_process: 128
