@@ -16,6 +16,7 @@ from openthaigpt_pretraining_data.core.preprocess import (
 
 import copy
 
+
 def test_document_remove():
     for test_case in DOCUMENT_REMOVE_TEST_CASES:
         assert (

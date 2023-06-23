@@ -22,7 +22,7 @@ def test_read_jsonl():
 
 
 def compare_dataset(clean_dataset, test_dataset):
-    test_dataset = [item for item in test_dataset if item['text'] != '']
+    test_dataset = [item for item in test_dataset if item["text"] != ""]
 
     for i in range(len(clean_dataset)):
-        assert clean_dataset[i]['text'] == test_dataset[i]['text']
+        assert clean_dataset[i]["text"] == test_dataset[i]["text"]
