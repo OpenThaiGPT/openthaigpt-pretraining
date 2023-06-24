@@ -17,5 +17,5 @@ start_epochs: 0
 start_steps: 0
 save_steps: 10000
 eval_steps: 10000
-save_paths: path/to/weight
+save_paths: ./weight
 weight_path: False
