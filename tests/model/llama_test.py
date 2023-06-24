@@ -1,5 +1,5 @@
 from openthaigpt_pretraining_model.models.llama.model import (
-    ModelArgs,
+    LLaMAArgs,
     Transformer,
     ORIGIN_ATTENTION_MODE,
     PYTORCH_ATTENTION_MODE,
@@ -23,8 +23,8 @@ KEYERROR_TEST_CASE = ["", "torch", "formger", "false", "true"]
 
 
 def test_llama_efficient_for_torch():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
-    torch_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=PYTORCH_ATTENTION_MODE)
+    base_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    torch_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=PYTORCH_ATTENTION_MODE)
 
     base_model = Transformer(base_args).to(device)
     torch_model = Transformer(torch_args).to(device)
@@ -43,8 +43,8 @@ def test_llama_efficient_for_torch():
 
 
 def test_llama_efficient_for_xformer():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
-    xformer_args = ModelArgs(
+    base_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    xformer_args = LLaMAArgs(
         vocab_size=VOCAB_SIZE, attention_mode=XFORMER_ATTENTION_MODE
     )
 
@@ -66,5 +66,5 @@ def test_llama_efficient_for_xformer():
 def test_key_error():
     for key in KEYERROR_TEST_CASE:
         with pytest.raises(KeyError):
-            args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=key)
+            args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=key)
             Transformer(args)
