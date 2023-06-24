@@ -36,8 +36,10 @@ class Trainer:
         self.grad = training_configuration.grad
         strategy = training_configuration.strategy
         self.epochs = training_configuration.epochs
+        self.start_epochs = training_configuration.start_epochs
         self.start_steps = training_configuration.start_steps
         self.eval_steps = training_configuration.eval_steps
+        self.global_steps = 0
         self.save_steps = training_configuration.save_steps
         self.save_paths = training_configuration.save_paths
         if strategy == "deepspeed":
@@ -124,7 +126,8 @@ class Trainer:
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.opt.state_dict(),
-                "iteration": step,
+                "global_steps": self.global_steps,
+                "local_step": step,
                 "epoch": epoch,
             },
         )
@@ -135,7 +138,9 @@ class Trainer:
         with self.fabric.device:
             self.model.load_state_dict(checkpoint["model_state_dict"])
         self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.start_steps = checkpoint.get("iteration", 0)
+        self.start_epochs = checkpoint.get("epoch", 0)
+        self.start_steps = checkpoint.get("local_step", 0)
+        self.global_steps = checkpoint.get("global_steps", 0)
         self.fabric.barrier()
 
     def train_step(self, batch):
@@ -159,11 +164,13 @@ class Trainer:
 
     def train(self):
         self.opt.zero_grad()
-        for epoch in range(self.epochs):
+        for epoch in range(self.start_epochs, self.epochs):
             progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
             for i, batch in enumerate(progress_bar):
-                if i < self.start_steps and epoch == 0:
+                if i < self.start_steps and epoch == self.start_epochs:
                     continue
+                self.globa_steps += 1
+
                 is_accumulating = (i + 1) % self.grad != 0
 
                 with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):

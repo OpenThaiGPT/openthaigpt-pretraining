@@ -13,8 +13,9 @@ max_tokens: 2048
 num_shards: 1024
 num_workers: 2
 epochs: 1
+start_epochs: 0
 start_steps: 0
 save_steps: 10000
 eval_steps: 10000
-save_paths: /home/swongpra/save_weight
+save_paths: path/to/weight
 weight_path: False
