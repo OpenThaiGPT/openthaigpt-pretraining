@@ -34,6 +34,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip" # caching pip dependencies
+      
+      - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('src/model/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
