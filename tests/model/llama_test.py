@@ -3,7 +3,7 @@ from openthaigpt_pretraining_model.models.llama.model import (
     LLaMA,
     ORIGIN_ATTENTION_MODE,
     PYTORCH_ATTENTION_MODE,
-    XFORMER_ATTENTION_MODE,
+    XFORMERS_ATTENTION_MODE,
 )
 import torch
 import pytest
@@ -45,7 +45,7 @@ def test_llama_efficient_for_torch():
 def test_llama_efficient_for_xformer():
     base_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
     xformer_args = LLaMAArgs(
-        vocab_size=VOCAB_SIZE, attention_mode=XFORMER_ATTENTION_MODE
+        vocab_size=VOCAB_SIZE, attention_mode=XFORMERS_ATTENTION_MODE
     )
 
     base_model = LLaMA(base_args).to(device)
