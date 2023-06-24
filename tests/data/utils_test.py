@@ -19,3 +19,10 @@ READ_JSONL_TEST_CASES = [
 def test_read_jsonl():
     for test_case in READ_JSONL_TEST_CASES:
         assert read_jsonl(test_case["filename"]) == test_case["expected_output"]
+
+
+def compare_dataset(clean_dataset, test_dataset):
+    test_dataset = [item for item in test_dataset if item["text"] != ""]
+
+    for i in range(len(clean_dataset)):
+        assert clean_dataset[i]["text"] == test_dataset[i]["text"]
