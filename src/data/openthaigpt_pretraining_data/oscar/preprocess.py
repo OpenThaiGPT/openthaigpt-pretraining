@@ -80,7 +80,8 @@ def clean_text(text: str) -> str:
     """
 
     if (
-        contains_document_removal_keywords(text)
+        len(text) == 0
+        or contains_document_removal_keywords(text)
         or check_ratio_bad_substring(text)
         or countthai(text) < 50
     ):
@@ -97,7 +98,6 @@ def clean_dataset(dataset: List[Dict[str, str]]) -> List[Dict[str, str]]:
     Input text : An input dataset having each element as a document in the dataset.
     Output : A clean dataset.
     """
-
     for i, data_point in enumerate(dataset):
         cleaned_text = clean_text(data_point["text"])
         if cleaned_text != dataset[i]["text"]:

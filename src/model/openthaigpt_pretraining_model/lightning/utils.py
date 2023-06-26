@@ -11,7 +11,7 @@ from ..data_wrapper import (
 )
 from ..datasets import get_dataset
 from ..optimizers import get_optimizer
-from ..models import load_model_and_tokenizer
+from ..models import load_model_and_tokenizer, load_lora
 
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
@@ -71,6 +71,12 @@ class Trainer:
                 configuration.model,
             )
 
+        if configuration.lora is not None:
+            self.model = load_lora(
+                self.model,
+                configuration.lora,
+                self.model_name,
+            )
         if configuration.dataset.tokenized.path is None:
             train_dataset = get_dataset(configuration.dataset.train)
             val_dataset = get_dataset(configuration.dataset.eval)
