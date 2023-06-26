@@ -63,7 +63,7 @@ class Trainer:
         self.tokenizer, self.model = load_model_and_tokenizer(
             configuration.model,
         )
-        if configuration.lora is not None:
+        if configuration.get("lora", None) is not None:
             self.model = load_lora(
                 self.model,
                 configuration.lora,
