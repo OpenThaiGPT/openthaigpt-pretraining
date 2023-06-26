@@ -15,14 +15,11 @@ import hydra
 )
 def main(cfg):
     data_process_configuration = cfg.data_process
-
-    dataset_configuration = cfg.dataset
-    dataset_configuration = cfg.get(data_process_configuration.split, None)
-    if dataset_configuration is None:
-        raise NotImplementedError(
-            f"dataset don't have split {data_process_configuration.split}"
-        )
-    dataset = get_dataset(dataset_configuration)
+    dataset_split = data_process_configuration.get("split", None)
+    dataset_config = cfg.dataset.get(dataset_split, None)
+    if dataset_config is None:
+        raise NotImplementedError(f"dataset don't have split {dataset_split}")
+    dataset = get_dataset(dataset_config)
 
     tokenizer = load_tokenizer(cfg.model.tokenizer)
 
