@@ -11,7 +11,7 @@ from ..data_wrapper import (
 )
 from ..datasets import get_dataset
 from ..optimizers import get_optimizer
-from ..models import load_model_and_tokenizer
+from ..models import load_model_and_tokenizer, load_lora
 
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
@@ -29,6 +29,7 @@ class Trainer:
         if torch.cuda.get_device_name(0) == "NVIDIA A100-SXM4-40GB":
             torch.set_float32_matmul_precision("medium")  # high
         training_configuration = configuration.training
+        self.model_name = configuration.model.name
         self.wandb = None
         self.max_tokens = training_configuration.max_tokens
         self.step = 0
@@ -62,6 +63,12 @@ class Trainer:
         self.tokenizer, self.model = load_model_and_tokenizer(
             configuration.model,
         )
+        if configuration.lora is not None:
+            self.model = load_lora(
+                self.model,
+                configuration.lora,
+                self.model_name,
+            )
         if configuration.dataset.tokenized.path is None:
             train_dataset = get_dataset(configuration.dataset.train)
             val_dataset = get_dataset(configuration.dataset.eval)

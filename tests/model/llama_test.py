@@ -1,9 +1,9 @@
 from openthaigpt_pretraining_model.models.llama.model import (
-    ModelArgs,
-    Transformer,
+    LLaMAArgs,
+    LLaMA,
     ORIGIN_ATTENTION_MODE,
     PYTORCH_ATTENTION_MODE,
-    XFORMER_ATTENTION_MODE,
+    XFORMERS_ATTENTION_MODE,
 )
 import torch
 import pytest
@@ -23,11 +23,11 @@ KEYERROR_TEST_CASE = ["", "torch", "formger", "false", "true"]
 
 
 def test_llama_efficient_for_torch():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
-    torch_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=PYTORCH_ATTENTION_MODE)
+    base_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    torch_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=PYTORCH_ATTENTION_MODE)
 
-    base_model = Transformer(base_args).to(device)
-    torch_model = Transformer(torch_args).to(device)
+    base_model = LLaMA(base_args).to(device)
+    torch_model = LLaMA(torch_args).to(device)
 
     torch_model.load_state_dict(base_model.state_dict())
 
@@ -43,13 +43,13 @@ def test_llama_efficient_for_torch():
 
 
 def test_llama_efficient_for_xformer():
-    base_args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
-    xformer_args = ModelArgs(
-        vocab_size=VOCAB_SIZE, attention_mode=XFORMER_ATTENTION_MODE
+    base_args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=ORIGIN_ATTENTION_MODE)
+    xformer_args = LLaMAArgs(
+        vocab_size=VOCAB_SIZE, attention_mode=XFORMERS_ATTENTION_MODE
     )
 
-    base_model = Transformer(base_args).to(device)
-    xformer_model = Transformer(xformer_args).to(device)
+    base_model = LLaMA(base_args).to(device)
+    xformer_model = LLaMA(xformer_args).to(device)
 
     xformer_model.load_state_dict(base_model.state_dict())
     with torch.no_grad():
@@ -66,5 +66,5 @@ def test_llama_efficient_for_xformer():
 def test_key_error():
     for key in KEYERROR_TEST_CASE:
         with pytest.raises(KeyError):
-            args = ModelArgs(vocab_size=VOCAB_SIZE, attention_mode=key)
-            Transformer(args)
+            args = LLaMAArgs(vocab_size=VOCAB_SIZE, attention_mode=key)
+            LLaMA(args)

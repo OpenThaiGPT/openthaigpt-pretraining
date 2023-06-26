@@ -1,29 +1,17 @@
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
-    _attn_xformers,
-    _attn_xformers_cpu,
+    XFORMER_ATTENTION_MODE,
+    GPTJForCausalLMWithCheckpointing,
 )
 import torch
-from transformers.models.gptj.modeling_gptj import (
-    GPTJAttention,
-    GPTJModel,
-)
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, GPTJConfig
 
-_attn_orig = GPTJAttention._attn
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def get_output(pretrained_name, use_xformers, input_text):
-    model = GPTJModel.from_pretrained(pretrained_name).to(device)
-    if use_xformers:
-        print("Use xFormers")
-        if device == "cpu":
-            GPTJAttention._attn = _attn_xformers_cpu
-        else:
-            GPTJAttention._attn = _attn_xformers
-    else:
-        print("Use original")
-        GPTJAttention._attn = _attn_orig
+    config = GPTJConfig.from_pretrained(pretrained_name)
+    config.attention_mode = XFORMER_ATTENTION_MODE if use_xformers else "original"
+    model = GPTJForCausalLMWithCheckpointing(config).to(device)
 
     tokenizer = AutoTokenizer.from_pretrained(pretrained_name)
     inputs = tokenizer(input_text, return_tensors="pt").to(device)
