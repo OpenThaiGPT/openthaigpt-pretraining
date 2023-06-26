@@ -113,10 +113,10 @@ class Trainer:
             offload_parameters=training_configuration.offload_parameters,
         )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
-        if training_configuration.get("weight_path", False):
-            self.load_checkpoint(training_configuration.weight_path)
+        if training_configuration.get("load_weight_path", False):
+            self.load_checkpoint(training_configuration.load_weight_path)
             self.fabric.print(
-                f"loading weight from {training_configuration.weight_path} success!"
+                f"loading weight from {training_configuration.load_weight_path} success"
             )
 
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
@@ -175,7 +175,7 @@ class Trainer:
             for i, batch in enumerate(progress_bar):
                 if i < self.start_steps and epoch == self.start_epochs:
                     continue
-                self.globa_steps += 1
+                self.global_steps += 1
 
                 is_accumulating = (i + 1) % self.grad != 0
 
