@@ -32,10 +32,16 @@ class Trainer:
         self.model_name = configuration.model.name
         self.wandb = None
         self.max_tokens = training_configuration.max_tokens
-        self.step = 0
         self.seed = training_configuration.seed
         self.grad = training_configuration.grad
         strategy = training_configuration.strategy
+        self.epochs = training_configuration.epochs
+        self.start_epochs = training_configuration.start_epochs
+        self.start_steps = training_configuration.start_steps
+        self.eval_steps = training_configuration.eval_steps
+        self.global_steps = 0
+        self.save_steps = training_configuration.save_steps
+        self.save_paths = training_configuration.save_paths
         if strategy == "deepspeed":
             strategy = DeepSpeedStrategy(
                 stage=training_configuration.stage,
@@ -60,10 +66,12 @@ class Trainer:
         if self.fabric.global_rank == 0:
             self.wandb = wandb.init(project="Fabric")
 
-        self.tokenizer, self.model = load_model_and_tokenizer(
-            configuration.model,
-        )
-        if configuration.get("lora", None) is not None:
+        with self.fabric.device:
+            self.tokenizer, self.model = load_model_and_tokenizer(
+                configuration.model,
+            )
+
+        if configuration.lora is not None:
             self.model = load_lora(
                 self.model,
                 configuration.lora,
@@ -97,8 +105,6 @@ class Trainer:
         self.dataloader_val = DataLoader(
             self.dataset_val, batch_size=training_configuration.batch_size
         )
-
-        self.model = self.model.to("cuda")
         self.model, self.opt = get_optimizer(
             model=self.model,
             optimizer_configuration=configuration.optimizer,
@@ -107,12 +113,41 @@ class Trainer:
             offload_parameters=training_configuration.offload_parameters,
         )
         self.model, self.opt = self.fabric.setup(self.model, self.opt)
+        if training_configuration.get("load_weight_path", False):
+            self.load_checkpoint(training_configuration.load_weight_path)
+            self.fabric.print(
+                f"loading weight from {training_configuration.load_weight_path} success"
+            )
+
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloader_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
     def log(self, data):
         if self.wandb is not None:
             self.wandb.log(data)
+
+    def save_checkpoint(self, step, epoch):
+        self.fabric.save(
+            f"{self.save_paths}/{self.model_name}_{epoch}_{step}.pt",
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.opt.state_dict(),
+                "global_steps": self.global_steps,
+                "local_step": step,
+                "epoch": epoch,
+            },
+        )
+        self.fabric.barrier()
+
+    def load_checkpoint(self, path):
+        checkpoint = torch.load(path)
+        with self.fabric.device:
+            self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
+        self.start_epochs = checkpoint.get("epoch", 0)
+        self.start_steps = checkpoint.get("local_step", 0)
+        self.global_steps = checkpoint.get("global_steps", 0)
+        self.fabric.barrier()
 
     def train_step(self, batch):
         inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
@@ -121,7 +156,7 @@ class Trainer:
 
     def val_step(self):
         self.model.eval()
-        progress_bar = tqdm(self.dataloader_val)
+        progress_bar = tqdm(self.dataloader_val, disable=(self.fabric.global_rank != 0))
         with torch.no_grad():
             for i, batch in enumerate(progress_bar):
                 inputs = batch[HF_TOKENIZER_INPUT_IDS_NAME]
@@ -130,29 +165,43 @@ class Trainer:
                 self.log({"val_loss": loss.item(), "val_perplexity": perplexity})
             progress_bar.set_description(f"loss_val: {loss.item():.3f}")
         self.model.train()
-        return loss
+        self.fabric.barrier()
+        return (loss, perplexity)
 
     def train(self):
-        progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
         self.opt.zero_grad()
+        for epoch in range(self.start_epochs, self.epochs):
+            progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
+            for i, batch in enumerate(progress_bar):
+                if i < self.start_steps and epoch == self.start_epochs:
+                    continue
+                self.global_steps += 1
 
-        for i, batch in enumerate(progress_bar):
-            is_accumulating = (i + 1) % self.grad != 0
+                is_accumulating = (i + 1) % self.grad != 0
 
-            with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
-                loss = self.train_step(batch)
+                with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
+                    loss = self.train_step(batch)
+                    self.fabric.backward(loss)
+                    perplexity = compute_perplexity(loss)
+                    self.log(
+                        {"train_loss": loss.item(), "train_perplexity": perplexity}
+                    )
+                    progress_bar.set_description(f"loss: {loss.item():.3f}")
 
-                self.fabric.backward(loss)
-                perplexity = compute_perplexity(loss)
-                self.log({"train_loss": loss.item(), "train_perplexity": perplexity})
-                progress_bar.set_description(f"loss: {loss.item():.3f}")
+                if not is_accumulating:
+                    self.opt.step()
+                    self.opt.zero_grad()
 
-            if not is_accumulating:
-                self.opt.step()
-                self.opt.zero_grad()
+                    if (i + 1) % self.eval_steps == 0:
+                        (val_loss, perplexity) = self.val_step()
+                        self.fabric.print(
+                            f"val_loss: {val_loss.item():.3f}, "
+                            f"perplexity: {perplexity:.3f})"
+                        )
 
-        val_loss = self.val_step()
-        print(f"loss_val: {val_loss.item():.3f}")
+                if (i + 1) % self.save_steps == 0:
+                    self.fabric.print(f"Saving weights : {self.save_paths}")
+                    self.save_checkpoint(i + 1, epoch)
 
         if self.fabric.global_rank == 0:
             self.wandb.finish()

@@ -12,3 +12,10 @@ grad: 4
 max_tokens: 2048
 num_shards: 1024
 num_workers: 2
+epochs: 1               # numbers of epochs
+start_epochs: 0         # start epoch for resume training
+start_steps: 0          # start steps of start epochs
+save_steps: 10000       # save every n steps
+eval_steps: 10000       # eval every n steps
+save_paths: ./weight    # path to save model
+load_weight_path: False # path to load weight of model

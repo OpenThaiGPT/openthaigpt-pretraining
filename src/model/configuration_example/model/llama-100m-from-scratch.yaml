@@ -1,0 +1,17 @@
+name: llama
+pretrained_model_name_or_path: null
+args:
+  dim: 768
+  n_layers: 8
+  n_heads: 8
+  vocab_size: 32000
+  multiple_of: 256
+  norm_eps: 1e-5
+  max_batch_size: 2
+  max_seq_len: 2048
+  attention_mode: origin # pytorch, xformers
+  use_checkpointing: False
+  checkpoint_only_attention: False
+tokenizer:
+  pretrained_model_name_or_path: decapoda-research/llama-7b-hf
+  tokenizer_class: LlamaTokenizer
