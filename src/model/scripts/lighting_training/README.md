@@ -21,6 +21,6 @@ tokenizer: path to tokenizer
 note: if vocab size or special token id of tokenizer don't match with model config you shold update model config 
 
 ## Train
-```python src/model/scripts/lighting_training/train.py --model_name llama```
+```python src/model/scripts/lighting_training/train.py```
 
 change config in ../../configuration_example/config.yaml
