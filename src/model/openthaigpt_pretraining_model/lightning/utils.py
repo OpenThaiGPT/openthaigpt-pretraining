@@ -123,9 +123,11 @@ class Trainer:
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloader_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
-        self.warmup_iters
-        self.lr_decay_iters
-        self.min_lr
+        self.decay_lr = training_configuration.decay_lr
+        self.warmup_iters = training_configuration.warmup_iters
+        self.lr_decay_iters = training_configuration.lr_decay_iters
+        self.min_lr = training_configuration.min_lr
+        self.learning_rate = configuration.optimizer.hyps.lr
 
     def log(self, data):
         if self.wandb is not None:
@@ -196,6 +198,10 @@ class Trainer:
                 if i < self.start_steps and epoch == self.start_epochs:
                     continue
                 self.global_steps += 1
+
+                lr = self.get_lr(i) if self.decay_lr else self.learning_rate
+                for param_group in self.opt.param_groups:
+                    param_group["lr"] = lr
 
                 is_accumulating = (i + 1) % self.grad != 0
 

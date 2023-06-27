@@ -19,3 +19,7 @@ save_steps: 10000       # save every n steps
 eval_steps: 10000       # eval every n steps
 save_paths: ./weight    # path to save model
 load_weight_path: False # path to load weight of model
+decay_lr: true
+warmup_iters: 2000
+lr_decay_iters: 600000
+min_lr: 6e-5
