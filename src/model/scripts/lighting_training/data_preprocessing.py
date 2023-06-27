@@ -16,13 +16,14 @@ import hydra
 def main(cfg):
     data_process_configuration = cfg.data_process
     dataset_split = data_process_configuration.get("split", None)
-    if dataset_config is None:
-        raise NotImplementedError(f"dataset don't have split {dataset_split}")
     if isinstance(dataset_split, str):
         dataset_split = [dataset_split]
 
     for split in dataset_split:
         dataset_config = cfg.dataset.get(split, None)
+
+        if dataset_config is None:
+            raise NotImplementedError(f"dataset don't have split {dataset_split}")
 
         dataset = get_dataset(dataset_config)
 
