@@ -229,4 +229,5 @@ class Trainer:
                     self.fabric.print(f"Saving weights : {self.save_paths}")
                     self.save_checkpoint(i + 1, epoch)
 
-        self.wandb.finish()
+        if self.fabric.global_rank == 0:
+            self.wandb.finish()

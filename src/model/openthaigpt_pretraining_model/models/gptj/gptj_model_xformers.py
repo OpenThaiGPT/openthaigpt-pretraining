@@ -352,6 +352,8 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
             self.transformer = GPTJModel(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size)
 
+        self.vocab_size = config.vocab_size
+
         # Model parallel
         self.model_parallel = False
         self.device_map = None
