@@ -1,37 +1,26 @@
-## preprocess dataset if don't want to use streaming dataset
-```python src/model/scripts/lighting_training/data_preprocessing.py --mode train --model path/to/tokenizer --max_tokens 2048 --save_path ./tokendata```
-argument of preprocessing
-- mode: train | val
-- model
-- max_tokens
-- save_path
-- chunk_size
-- batch_size
-- num_proc
-- dataset_name
-- dataset_dir
-## to test it with default argument
-```python src/model/scripts/lighting_training/train.py --model_name llama```
-## to test it with custom argument
-```torchrun --standalone --nproc_per_node=num_gpu src/model/scripts/lighting_training/train.py --model_name llama --optimizer lion```
-argument that can custom
-- accelerator: dp | ddp | ddp_spawn | xla | deepspeed | fsdp
-- strategy: Union[str, Strategy] = "auto"
-- devices: number of gpus
-- precision: 32-true | 32 | 16-mixed | bf16-mixed | 64-true
-- seed
-- batch_size
-- num_workers
-- streaming
-- dataset_name_or_path
-- dataset_dir
-- grad
-- context_length
-- model_name= llama | llama_hf | gptj
-- optimizer= adamw | lion
-- weight_decay
-- vocab_size
-- lr
-- attention origin | pytorch | xformers (llama_hf only support origin)
-- checkpoint
-- checkpoint_only_attention
+## Preprocess dataset if don't want to use raw dataset
+```python src/model/scripts/lighting_training/data_preprocessing.py```
+
+change config in ../../configuration_example/data_preprocess.yaml
+note: after preprocess you should update config in dataset in term tokenized to use preprocessed dataset
+
+## Load model
+
+use load model to local for use in lanta
+```python src/model/scripts/lighting_training/load_model.py --model_name --output_path```
+
+model_name: model name in huggingface
+output_path: path to save model
+
+## Check Tokenizer
+
+use check tokenizer information
+```python src/model/scripts/lighting_training/tokenizer_info.py --tokenizer```
+
+tokenizer: path to tokenizer
+note: if vocab size or special token id of tokenizer don't match with model config you shold update model config 
+
+## Train
+```python src/model/scripts/lighting_training/train.py```
+
+change config in ../../configuration_example/config.yaml
