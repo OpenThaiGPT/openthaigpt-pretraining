@@ -12,7 +12,7 @@ import hydra
 def main(cfg):
     seed_everything(cfg.training.seed)
     trainer = Trainer(
-        training_configuration=cfg,
+        configuration=cfg,
     )
     trainer.train()
 

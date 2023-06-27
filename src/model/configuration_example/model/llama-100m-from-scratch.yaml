@@ -1,7 +1,7 @@
 name: llama
 pretrained_model_name_or_path: null
 args:
-  dim: 512
+  dim: 768
   n_layers: 8
   n_heads: 8
   vocab_size: 32000
