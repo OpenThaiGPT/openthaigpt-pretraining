@@ -154,4 +154,5 @@ class Trainer:
         val_loss = self.val_step()
         print(f"loss_val: {val_loss.item():.3f}")
 
-        self.wandb.finish()
+        if self.fabric.global_rank == 0:
+            self.wandb.finish()

@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    config = load_hydra_config(args.configuration)
+    config = load_hydra_config(args.configuration).spm
 
     train_tokenizer(
         output_path=config.output_path,
