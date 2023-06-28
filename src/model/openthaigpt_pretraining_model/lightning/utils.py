@@ -71,7 +71,7 @@ class Trainer:
                 configuration.model,
             )
 
-        if configuration.lora is not None:
+        if configuration.get("lora", None) is not None:
             self.model = load_lora(
                 self.model,
                 configuration.lora,
