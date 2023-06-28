@@ -15,6 +15,7 @@ from ..models import load_model_and_tokenizer, load_lora
 
 from lightning.fabric.strategies import DeepSpeedStrategy
 import wandb
+import math
 import os
 
 # os.environ["WANDB_API_KEY"] = "<your-api-key>"
@@ -122,9 +123,30 @@ class Trainer:
         self.dataloader = self.fabric.setup_dataloaders(self.dataloader)
         self.dataloader_val = self.fabric.setup_dataloaders(self.dataloader_val)
 
+        self.decay_lr = training_configuration.decay_lr
+        self.warmup_iters = training_configuration.warmup_iters
+        self.lr_decay_iters = training_configuration.lr_decay_iters
+        self.min_lr = training_configuration.min_lr
+        self.learning_rate = configuration.optimizer.hyps.lr
+
     def log(self, data):
         if self.wandb is not None:
             self.wandb.log(data)
+
+    def get_lr(self, it):
+        # 1) linear warmup for warmup_iters steps
+        if it < self.warmup_iters:
+            return self.learning_rate * it / self.warmup_iters
+        # 2) if it > lr_decay_iters, return min learning rate
+        if it > self.lr_decay_iters:
+            return self.min_lr
+        # 3) in between, use cosine decay down to min learning rate
+        decay_ratio = (it - self.warmup_iters) / (
+            self.lr_decay_iters - self.warmup_iters
+        )
+        assert 0 <= decay_ratio <= 1
+        coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
+        return self.min_lr + coeff * (self.learning_rate - self.min_lr)
 
     def save_checkpoint(self, step, epoch):
         self.fabric.save(
@@ -176,6 +198,10 @@ class Trainer:
                 if i < self.start_steps and epoch == self.start_epochs:
                     continue
                 self.global_steps += 1
+
+                lr = self.get_lr(i) if self.decay_lr else self.learning_rate
+                for param_group in self.opt.param_groups:
+                    param_group["lr"] = lr
 
                 is_accumulating = (i + 1) % self.grad != 0
 

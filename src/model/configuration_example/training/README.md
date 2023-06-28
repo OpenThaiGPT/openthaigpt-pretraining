@@ -20,3 +20,7 @@
 - eval_steps: eval every n steps
 - save_paths: path to save model
 - load_weight_path: path to load weight of model
+- decay_lr: when true will use learning rate scheduler
+- warmup_iters: number of warmup iteration
+- lr_decay_iters: number iteration to activate learning rate scheduler
+- min_lr: minimun of learning rate
