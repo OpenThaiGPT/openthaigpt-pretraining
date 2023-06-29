@@ -43,7 +43,9 @@ class Trainer:
         self.global_steps = 0
         self.save_steps = training_configuration.save_steps
         self.save_paths = training_configuration.save_paths
+        self.deepspeed = False
         if strategy == "deepspeed":
+            self.deepspeed = True
             strategy = DeepSpeedStrategy(
                 stage=training_configuration.stage,
                 offload_optimizer=training_configuration.offload_optimizer,
@@ -149,26 +151,54 @@ class Trainer:
         return self.min_lr + coeff * (self.learning_rate - self.min_lr)
 
     def save_checkpoint(self, step, epoch):
-        self.fabric.save(
-            f"{self.save_paths}/{self.model_name}_{epoch}_{step}.pt",
-            {
-                "model_state_dict": self.model.state_dict(),
-                "optimizer_state_dict": self.opt.state_dict(),
-                "global_steps": self.global_steps,
-                "local_step": step,
-                "epoch": epoch,
-            },
-        )
+        if self.deepspeed:
+            self.fabric.save(
+                f"{self.save_paths}/{self.model_name}_{epoch}_{step}",
+                {
+                    "model": self.model,
+                    "_optimizer": self.opt,
+                    "_global_steps": self.global_steps,
+                    "local_step": step,
+                    "epoch": epoch,
+                },
+            )
+        else:
+            self.fabric.save(
+                f"{self.save_paths}/{self.model_name}_{epoch}_{step}.pt",
+                {
+                    "model_state_dict": self.model.state_dict(),
+                    "optimizer_state_dict": self.opt.state_dict(),
+                    "_global_steps": self.global_steps,
+                    "local_step": step,
+                    "epoch": epoch,
+                },
+            )
         self.fabric.barrier()
 
     def load_checkpoint(self, path):
-        checkpoint = torch.load(path)
-        with self.fabric.device:
-            self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.start_epochs = checkpoint.get("epoch", 0)
-        self.start_steps = checkpoint.get("local_step", 0)
-        self.global_steps = checkpoint.get("global_steps", 0)
+        if self.deepspeed:
+            state = {
+                "model": self.model,
+                "_optimizer": self.opt,
+                "_global_steps": self.global_steps,
+                "epoch": self.start_epochs,
+                "local_step": self.start_steps,
+            }
+
+            self.fabric.load(path, state)
+
+            self.start_epochs = state["epoch"]
+            self.start_steps = state["local_step"]
+            self.global_steps = state["_global_steps"]
+        else:
+            checkpoint = torch.load(path)
+            with self.fabric.device:
+                self.model.load_state_dict(checkpoint["model_state_dict"])
+            self.opt.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.start_epochs = checkpoint.get("epoch", 0)
+            self.start_steps = checkpoint.get("local_step", 0)
+            self.global_steps = checkpoint.get("_global_steps", 0)
+
         self.fabric.barrier()
 
     def train_step(self, batch):
