@@ -1,0 +1,6 @@
+lmppl==0.2.5
+sentence-transformers==2.2.2
+setfit==0.7.0
+torch==2.0.0
+transformers
+datasets==2.10.1
