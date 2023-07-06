@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import time
 
 ROOT = "https://www.mfa.go.th"
-TOP_STORIES_URL = "https://www.mfa.go.th/th/page/%E0%B8%82%E0%B9%88%E0%B8%B2%E0%B8%A7%E0%B9%80%E0%B8%94%E0%B9%88%E0%B8%99?menu=5d5bd3d815e39c306002aac4"
 UNWANTED_CLASSES = [("div", "d-inline-block"), ("div", "pt-3 col")]
 DIV_TAG = "div"
 P_TAG = "p"
