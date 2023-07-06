@@ -1,5 +1,8 @@
 import pandas as pd
-from openthaigpt_pretraining_data.web_crawls_mfa import get_title_date, get_info
+from openthaigpt_pretraining_data.web_crawls_mfa.crawl_top_news import (
+    get_title_date,
+    get_info
+)
 
 TOP_STORIES_URL = "https://www.mfa.go.th/th/page/%E0%B8%82%E0%B9%88%E0%B8%B2%E0%B8%A7%E0%B9%80%E0%B8%94%E0%B9%88%E0%B8%99?menu=5d5bd3d815e39c306002aac4"
 
