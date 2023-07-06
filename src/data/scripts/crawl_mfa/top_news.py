@@ -1,5 +1,5 @@
 import pandas as pd
-from openthaigpt_pretraining_data.web_crawls_mfa.crawl_top_news import (
+from openthaigpt_pretraining_data.web_crawls_mfa.crawl_news import (
     get_title_date,
     get_info
 )
