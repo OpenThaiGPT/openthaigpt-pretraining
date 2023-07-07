@@ -51,6 +51,3 @@ CLEAN_HTML_TAGS_TEST_CASES = [
 def test_clean_data():
     for test_case in CLEAN_HTML_TAGS_TEST_CASES:
         assert clean_data(test_case["data"]) == test_case["expected_output"]
-        print(clean_data(test_case["data"]))
-        print(test_case["expected_output"])
-        print("\n\n========================================================")
