@@ -29,39 +29,77 @@ def remove_error(text):
     Input: pain text, List of data text[].
     Output: data cleaned system error message.
     """
+    text_lenght = len(text)
+    # Finding index of [Ee]rror occured
+    error_detected_index_object = re.finditer(pattern="[eE]rror", string=text)
+    error_detected_index = [index.start() for index in error_detected_index_object]
+    # error_detected_index.append(text_lenght - 1)
+    # Set up range of thai character
+    first_thai_character_order = ord("ก")
+    last_thai_character_order = ord("๛")
+    # Set up clean_flag if it 0 not clean, but 1 need to clean error
+    clean_flag = 0
+    previous_index = 0
+    # This for store cleaned data
+    error_cleaned = ""
+    for index in error_detected_index:
+        current_index = index
+        # print(current_index)
+        sub_sentence = text[previous_index:current_index]
+        # check for to be clean or not
+        # Thai character [^\u0E00-\u0E7F]=[ก-๛]"
+        if clean_flag == 1:
+            thai_char_pattern = re.compile(r"[\u0E00-\u0E7F]", re.UNICODE)
+            matches = thai_char_pattern.findall(sub_sentence)
 
-    text_index = 0
-    prevent_out_of_index = 10
-    # privote of range - prevent_out_of_index
-    len_text = len(text)
-    while text_index < len_text - prevent_out_of_index:
-        # Chekinf word "error" or "Error"
-        if (text[text_index] == "e" or text[text_index] == "E") and (
-            text_index < len_text - prevent_out_of_index
-        ):
-            if (
-                text[text_index + 1] == "r"
-                and text[text_index + 4] == "r"
-                and not (
-                    ("ก" < text[text_index + 7] < "๛")
-                    or ("ก" < text[text_index - 3] < "๛")
+            if len(matches) > 0:
+                cleaned_error_sub_sentence = re.sub(
+                    r"Error|error.*?[^\u0E00-\u0E7F]+", "", sub_sentence
                 )
-            ):
-                temp_of_error_message = ""
-                error_counter_index = 0
-                # If it found error find untill the last line of error message
-                while not ("ก" < text[text_index + error_counter_index] < "๛") and (
-                    text_index + error_counter_index < len_text - prevent_out_of_index
-                ):
-                    temp_of_error_message += text[text_index + error_counter_index]
-                    error_counter_index += 1
-                # Replace error message
-                text = text.replace(temp_of_error_message, "")
-        # Update checkpoint
-        text_index += 1
-        len_text = len(text)
+                error_cleaned = error_cleaned + cleaned_error_sub_sentence
+            else:
+                error_cleaned = error_cleaned + ""
+
+        else:
+            error_cleaned = error_cleaned + sub_sentence
+
+        # For check that 3 indexs before and after the word error not surrounding by thai word
+        if (0 <= current_index - 3) and (current_index + 7 < text_lenght):
+            three_index_before_error = ord(text[current_index - 3])
+            three_index_after_error = ord(text[current_index + 7])
+        # check Is it surrounding by thai word or not
+        if (
+            first_thai_character_order
+            <= three_index_before_error
+            <= last_thai_character_order
+        ) or (
+            first_thai_character_order
+            <= three_index_after_error
+            <= last_thai_character_order
+        ):
+            clean_flag = 0
+        else:
+            clean_flag = 1
+        previous_index = current_index
+
+    sub_sentence = text[previous_index:text_lenght]
+    # check for to be clean or not
+    if clean_flag == 1:
+        thai_char_pattern = re.compile(r"[\u0E00-\u0E7F]", re.UNICODE)
+        matches = thai_char_pattern.findall(sub_sentence)
+
+        if len(matches) > 0:
+            cleaned_error_sub_sentence = re.sub(
+                r"Error|error.*?[^\u0E00-\u0E7F]+", "", sub_sentence
+            )
+            error_cleaned = error_cleaned + cleaned_error_sub_sentence
+        else:
+            error_cleaned = error_cleaned + ""
+
+    else:
+        error_cleaned = error_cleaned + sub_sentence
     # return cleaned data
-    return text
+    return error_cleaned
 
 
 def clean_data(text):
