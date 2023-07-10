@@ -8,17 +8,18 @@ def remove_web_and_tag(text):
     Input: pain text, List of data text[].
     Output: text removed website and html tag.
     """
+    website = " website"
     # Remove HTML tags
     text = re.sub(r"\<.*?\>", "", text, flags=re.MULTILINE)
     # Remove tags '[' text ']'
     text = re.sub(r"\[.*?\/.*?\]", "", text)
     # Remove website
     # Remove http
-    text = re.sub(r"http\S+", " website", text, flags=re.MULTILINE)
+    text = re.sub(r"http\S+", website, text, flags=re.MULTILINE)
     # remove www
-    text = re.sub(r"(www|WWW).\S+", " website", text, flags=re.MULTILINE)
+    text = re.sub(r"(www|WWW).\S+", website, text, flags=re.MULTILINE)
     # remove other condition
-    text = re.sub(r".+\.com.\S+", " website", text, flags=re.MULTILINE)
+    text = re.sub(r".+\.com.\S+", website, text, flags=re.MULTILINE)
     # Return cleaned website data
     return text
 
@@ -63,11 +64,11 @@ def remove_error(text):
         else:
             error_cleaned = error_cleaned + sub_sentence
 
-        # For check that 3 indexs before and after the word error not surrounding by thai word
+        # For check that 3 indexs before and after the website error not surrounding by thai website
         if (0 <= current_index - 3) and (current_index + 7 < text_lenght):
             three_index_before_error = ord(text[current_index - 3])
             three_index_after_error = ord(text[current_index + 7])
-        # check Is it surrounding by thai word or not
+        # check Is it surrounding by thai website or not
         if (
             first_thai_character_order
             <= three_index_before_error
