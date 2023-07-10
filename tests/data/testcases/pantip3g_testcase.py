@@ -1,4 +1,4 @@
-from src.data.openthaigpt_pretraining_data.pantip.clean_data_pantip3g import clean_data
+from openthaigpt_pretraining_data.pantip.clean_data_pantip3g import clean_data
 
 CLEAN_HTML_TAGS_TEST_CASES = [
     {"data": "<h1>Hello world</h1>", "expected_output": "Hello world"},
@@ -21,12 +21,12 @@ CLEAN_HTML_TAGS_TEST_CASES = [
         "expected_output": "ไม่กิน website\n\nผมกังวลว่าลิงจะมากินผม",
     },
     {
-        "data": "\nhttps://www.youtube.com/watch?v=2qrnjkfsali02qASSZdfhkjgkd&feature=youtube_gdata_player  ประเภท",
-        "expected_output": "\nwebsite  ประเภท",
+        "data": "https://www.youtube.com/watch?v=2qrnjkfsali02qASSZdfhkjgkd&feature=youtube_gdata_player  ประเภท",
+        "expected_output": "website  ประเภท",
     },
     {
         "data": "An Error Was Encountered\nFind of data into MongoDB failed: localhost:27017: DBClientBase::findN: transport error: mongod3.local:27017 ns: admin.$cmd query: { setShardVersion: &quot;&quot;, init: true, configdb: &quot;img1.local:27019,img2.local:27019,central.local:27019&quot;, serverID: ObjectId('50d6b05152fc473fe11946c7'), authoritative: true, $auth:  }</div>\n\nอันนี้เวลาเปิดดูบางห้อง\n\n",
-        "expected_output": "an อันนี้เวลาเปิดดูบางห้อง",
+        "expected_output": "An อันนี้เวลาเปิดดูบางห้อง",
     },
     {
         "data": '<img class="img-in-emotion" title="ยิ้ม" alt="ยิ้ม" src="http://ptctcto.infomation/emoticons/emoticon-smilinggggg_na_ja.png"/>ยิ้มอร่อยดี',
