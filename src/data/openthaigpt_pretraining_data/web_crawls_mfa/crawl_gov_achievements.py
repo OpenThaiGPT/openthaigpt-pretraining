@@ -40,13 +40,13 @@ def process_response(text_response):
     return news_list
 
 
-def get_title_date(cur_url):
+def get_title_date(cur_url, time_delay):
     """
     Description:
         Get data processed by the function process_response.
     Args:
         cur_url: The desired URL to be used as a root.
-        page_no: The total number of pages.
+        time_delay: Delay before another request (in second).
     Returns:
         news_list: A list containing titles and dates.
     """
@@ -59,12 +59,12 @@ def get_title_date(cur_url):
         processed_data = process_response(res.text)
         news_list.extend(processed_data)
 
-    time.sleep(0.5)
+    time.sleep(time_delay)
 
     return news_list
 
 
-def process_info(text_response):
+def process_info(text_response, time_delay):
     info_list = []
     href_list = []
 
@@ -86,19 +86,19 @@ def process_info(text_response):
             detail = element.get_text(strip=True, separator=" ")
             info_list.append(detail)
 
-        time.sleep(0.5)
+        time.sleep(time_delay)
 
     return info_list
 
 
-def get_info(cur_url):
+def get_info(cur_url, time_delay):
     """
     Description:
-        get data inside a link for every pafe
+        get data inside a link for every page.
     Args:
-        desired url and total of pages.
+        desired url and time delay.
     Returns:
-        info_list contains details of the news
+        info_list contains details of the news.
     """
     info_list = []
 
@@ -106,9 +106,9 @@ def get_info(cur_url):
     res.encoding = "utf-8"
 
     if res.status_code == 200:
-        processed_data = process_info(res.text)
+        processed_data = process_info(res.text, time_delay)
         info_list.extend(processed_data)
 
-    time.sleep(0.5)
+    time.sleep(time_delay)
 
     return info_list
