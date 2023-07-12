@@ -12,6 +12,6 @@ CRAWL_GOV_ACHIEVEMENT_TEST_CASES = [
 ]
 
 
-def process_response():
+def test_process_response():
     for test_case in CRAWL_GOV_ACHIEVEMENT_TEST_CASES:
         assert process_response(test_case["data"]) == test_case["expected_output"]
