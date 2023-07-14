@@ -64,8 +64,15 @@ def get_title_date(cur_url, time_delay):
     return news_list
 
 
-def process_info(text_response, time_delay):
-    info_list = []
+def get_href(text_response):
+    """
+    Description:
+        fetch href from text response.
+    Args:
+        response.
+    Returns:
+        href_list: A list containing href.
+    """
     href_list = []
 
     soup = BeautifulSoup(text_response, "lxml")
@@ -76,15 +83,38 @@ def process_info(text_response, time_delay):
         if link:
             href_list.append(link["href"])
 
-    for href in href_list:
-        result = requests.get(f"{ROOT}{href}")
-        content = result.text
-        soup = BeautifulSoup(content, "lxml")
+    return href_list
 
-        details = soup.find_all(DIV_TAG, class_=DETAIL_CLASS)
-        for element in details:
-            detail = element.get_text(strip=True, separator=" ")
-            info_list.append(detail)
+
+def href_info(text_response):
+    """
+    Description:
+        fetch news details.
+    Args:
+        response.
+    Returns:
+        info_list: A list containing news details.
+    """
+    info_list = []
+
+    soup = BeautifulSoup(text_response, "lxml")
+    details = soup.find_all(DIV_TAG, class_=DETAIL_CLASS)
+    for element in details:
+        detail = element.get_text(strip=True, separator=" ")
+        info_list.append(detail)
+
+    return info_list
+
+
+def process_info(text_response, time_delay):
+    info_list = []
+    href_list = get_href(text_response)
+
+    for href in href_list:
+        res = requests.get(f"{ROOT}{href}")
+
+        info = href_info(res.text)
+        info_list.extend(info)
 
         time.sleep(time_delay)
 
