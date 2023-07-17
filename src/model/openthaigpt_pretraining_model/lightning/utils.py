@@ -229,7 +229,10 @@ class Trainer:
                     continue
                 self.global_steps += 1
 
-                lr = self.get_lr(i) if self.decay_lr else self.learning_rate
+                if self.decay_lr:
+                    lr = self.get_lr(self.global_steps)
+                else:
+                    lr = self.learning_rate
                 for param_group in self.opt.param_groups:
                     param_group["lr"] = lr
 
