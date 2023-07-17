@@ -223,8 +223,6 @@ class Trainer:
     def train(self):
         self.opt.zero_grad()
         for epoch in range(self.start_epochs, self.epochs):
-            if epoch < self.start_epochs:
-                continue
             progress_bar = tqdm(self.dataloader, disable=(self.fabric.global_rank != 0))
             for i, batch in enumerate(progress_bar):
                 if i < self.start_steps and epoch == self.start_epochs:
