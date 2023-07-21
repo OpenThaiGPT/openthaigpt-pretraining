@@ -3,8 +3,8 @@ from .constants import (
     MODELS,
     MODEL_CONFIGS,
     LORA_MODEL,
-    LORA_CONFIG,
 )
+from peft import LoraConfig, get_peft_model
 
 
 def load_model_and_tokenizer(model_config):
@@ -65,12 +65,11 @@ def load_tokenizer(tokenizer_config):
 
 
 def load_lora(model, lora_config, model_name):
-    lora_object = LORA_MODEL.get(model_name, None)
-    lora_config_object = LORA_CONFIG.get(model_name, None)
-    if lora_object is None or lora_config_object is None:
+    lora_support = LORA_MODEL.get(model_name, False)
+    if lora_support is False:
         raise NotImplementedError(f"No lora_avaiable for {model_name}")
     lora_config = lora_config.lora
-    lora_config = lora_config_object(**lora_config)
-    model = lora_object(model, lora_config)
+    lora_config = LoraConfig(**lora_config)
+    model = get_peft_model(model, lora_config)
 
     return model

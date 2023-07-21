@@ -4,7 +4,6 @@ from .falcon.configuration_RW import RWConfig
 from .llama.model import LLaMAArgs, LLaMA
 from .llama_hf.model import LlamaForCausalLMWithCheckpointing
 from .gptj.gptj_model_xformers import GPTJForCausalLMWithCheckpointing
-from peft import LoraConfig, get_peft_model
 
 TOKENIZERS = {
     "AutoTokenizer": AutoTokenizer,
@@ -24,14 +23,9 @@ MODEL_CONFIGS = {
     "gptj": GPTJConfig,
     "llama": LLaMAArgs,
 }
-
-LORA_CONFIG = {
-    "llama_hf": LoraConfig,
-    "gptj": LoraConfig,
-    "falcon": LoraConfig,
-}
 LORA_MODEL = {
-    "llama_hf": get_peft_model,
-    "gptj": get_peft_model,
-    "falcon": get_peft_model,
+    "llama_hf": True,
+    "gptj": True,
+    "falcon": True,
+    "llama": False,
 }
