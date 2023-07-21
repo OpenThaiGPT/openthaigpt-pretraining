@@ -28,8 +28,10 @@ MODEL_CONFIGS = {
 LORA_CONFIG = {
     "llama_hf": LoraConfig,
     "gptj": LoraConfig,
+    "falcon": LoraConfig,
 }
 LORA_MODEL = {
     "llama_hf": get_peft_model,
     "gptj": get_peft_model,
+    "falcon": get_peft_model,
 }
