@@ -341,7 +341,7 @@ class GPTJForCausalLMWithCheckpointing(GPTJForCausalLM):
     def __init__(self, config):
         super().__init__(config)
         use_checkpointing = config.get("use_checkpointing", False)
-        checkpoint_only_attention = config.get("use_checkpointing", False)
+        checkpoint_only_attention = config.get("checkpoint_only_attention", False)
         if use_checkpointing and checkpoint_only_attention:
             self.transformer = GPTJModelWithCheckpointing(config)
             print("use model with gradient checkpointing only attention")

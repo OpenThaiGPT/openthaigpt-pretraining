@@ -1245,3 +1245,298 @@ class RWForQuestionAnswering(RWPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+
+class DecoderLayerWithCheckpointing(DecoderLayer):
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        alibi: torch.Tensor,
+        attention_mask: torch.Tensor,
+        layer_past: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        use_cache: bool = False,
+        output_attentions: bool = False,
+    ):
+        layernorm_output = self.input_layernorm(hidden_states)
+        residual = hidden_states
+
+        if self.training:
+
+            def create_custom_forward(module):
+                def custom_forward(*inputs):
+                    return module(
+                        *inputs,
+                        layer_past=layer_past,
+                        attention_mask=attention_mask,
+                        alibi=alibi,
+                        head_mask=head_mask,
+                        use_cache=use_cache,
+                        output_attentions=output_attentions,
+                    )
+
+                return custom_forward
+
+            attn_outputs = torch.utils.checkpoint.checkpoint(
+                create_custom_forward(self.self_attention),
+                layernorm_output,
+            )
+        else:
+            attn_outputs = self.self_attention(
+                layernorm_output,
+                layer_past=layer_past,
+                attention_mask=attention_mask,
+                alibi=alibi,
+                head_mask=head_mask,
+                use_cache=use_cache,
+                output_attentions=output_attentions,
+            )
+
+        attention_output = attn_outputs[0]
+
+        if not self.config.parallel_attn:
+            residual = dropout_add(
+                attention_output,
+                residual,
+                self.config.attention_dropout,
+                training=self.training,
+            )
+            layernorm_output = self.post_attention_layernorm(residual)
+
+        outputs = attn_outputs[1:]
+
+        # MLP.
+        mlp_output = self.mlp(layernorm_output)
+
+        if self.config.parallel_attn:
+            mlp_output += attention_output
+
+        output = dropout_add(
+            mlp_output, residual, self.config.hidden_dropout, training=self.training
+        )
+
+        if use_cache:
+            outputs = (output,) + outputs
+        else:
+            outputs = (output,) + outputs[1:]
+
+        return outputs  # hidden_states, present, attentions
+
+
+class RWModelWithCheckpointing(RWModel):
+    def __init__(self, config: RWConfig):
+        super().__init__(config)
+
+        self.embed_dim = config.hidden_size
+        self.num_heads = config.n_head
+        self.alibi = config.alibi
+
+        # Embedding + LN Embedding
+        self.word_embeddings = nn.Embedding(config.vocab_size, self.embed_dim)
+
+        # Transformer blocks
+        self.h = nn.ModuleList(
+            [
+                DecoderLayerWithCheckpointing(config)
+                for _ in range(config.num_hidden_layers)
+            ]
+        )
+
+        # Final Layer Norm
+        self.ln_f = LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
+
+        self.gradient_checkpointing = False
+
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def forward(
+        self,
+        input_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[Tuple[Tuple[torch.Tensor, torch.Tensor], ...]] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.LongTensor] = None,
+        inputs_embeds: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        **deprecated_arguments,
+    ) -> Union[Tuple[torch.Tensor, ...], BaseModelOutputWithPastAndCrossAttentions]:
+        if deprecated_arguments.pop("position_ids", False) is not False:
+            # `position_ids` could have been `torch.Tensor` or `None` so defaulting pop to `False` allows to detect if users were passing explicitly `None`  # noqa: E501
+            warnings.warn(
+                "`position_ids` have no functionality in BLOOM and will be removed in v5.0.0. You can safely ignore"  # noqa: E501
+                " passing `position_ids`.",
+                FutureWarning,
+            )
+        if len(deprecated_arguments) > 0:
+            raise ValueError(f"Got unexpected arguments: {deprecated_arguments}")
+
+        output_attentions = (
+            output_attentions
+            if output_attentions is not None
+            else self.config.output_attentions
+        )
+        output_hidden_states = (
+            output_hidden_states
+            if output_hidden_states is not None
+            else self.config.output_hidden_states
+        )
+        use_cache = use_cache if use_cache is not None else self.config.use_cache
+        return_dict = (
+            return_dict if return_dict is not None else self.config.use_return_dict
+        )
+
+        if input_ids is not None and inputs_embeds is not None:
+            raise ValueError(
+                "You cannot specify both input_ids and inputs_embeds at the same time"
+            )
+        elif input_ids is not None:
+            batch_size, seq_length = input_ids.shape
+        elif inputs_embeds is not None:
+            batch_size, seq_length, _ = inputs_embeds.shape
+        else:
+            raise ValueError("You have to specify either input_ids or inputs_embeds")
+
+        if past_key_values is None:
+            past_key_values = tuple([None] * len(self.h))  # type: ignore
+
+        # Prepare head mask if needed
+        # 1.0 in head_mask indicate we keep the head
+        # attention_probs has shape batch_size x num_heads x N x N
+        # head_mask has shape n_layer x batch x num_heads x N x N
+        head_mask = self.get_head_mask(head_mask, self.config.n_layer)
+
+        if inputs_embeds is None:
+            inputs_embeds = self.word_embeddings(input_ids)
+
+        hidden_states = inputs_embeds
+
+        presents = () if use_cache else None
+        all_self_attentions = () if output_attentions else None
+        all_hidden_states = () if output_hidden_states else None
+
+        # Compute alibi tensor: check build_alibi_tensor documentation
+        seq_length_with_past = seq_length
+        past_key_values_length = 0
+        if past_key_values[0] is not None:
+            past_key_values_length = past_key_values[0][0].shape[2]
+            seq_length_with_past = seq_length_with_past + past_key_values_length
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), device=hidden_states.device
+            )
+        else:
+            attention_mask = attention_mask.to(hidden_states.device)
+
+        if self.alibi:
+            alibi = build_alibi_tensor(
+                attention_mask, self.num_heads, dtype=hidden_states.dtype
+            )
+        else:
+            alibi = None
+
+        causal_mask = self._prepare_attn_mask(
+            attention_mask,
+            input_shape=(batch_size, seq_length),
+            past_key_values_length=past_key_values_length,
+        )
+
+        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
+            if output_hidden_states:
+                all_hidden_states = all_hidden_states + (hidden_states,)  # type: ignore
+
+            if self.gradient_checkpointing and self.training:
+                if use_cache:
+                    logger.warning(
+                        "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."  # noqa: E501
+                    )
+                    use_cache = False
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(
+                            *inputs,
+                            use_cache=use_cache,
+                            output_attentions=output_attentions,
+                        )
+
+                    return custom_forward
+
+                outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(block),
+                    hidden_states,
+                    alibi,
+                    causal_mask,
+                    head_mask[i],  # type: ignore
+                )
+            else:
+                outputs = block(
+                    hidden_states,
+                    layer_past=layer_past,
+                    attention_mask=causal_mask,
+                    head_mask=head_mask[i],  # type: ignore
+                    use_cache=use_cache,
+                    output_attentions=output_attentions,
+                    alibi=alibi,
+                )
+
+            hidden_states = outputs[0]
+            if use_cache is True:
+                presents = presents + (outputs[1],)  # type: ignore
+
+            if output_attentions:
+                all_self_attentions = all_self_attentions + (  # type: ignore
+                    outputs[2 if use_cache else 1],
+                )
+
+        # Add last hidden state
+        hidden_states = self.ln_f(hidden_states)
+
+        if output_hidden_states:
+            all_hidden_states = all_hidden_states + (hidden_states,)  # type: ignore
+
+        if not return_dict:
+            return tuple(
+                v
+                for v in [
+                    hidden_states,
+                    presents,
+                    all_hidden_states,
+                    all_self_attentions,
+                ]
+                if v is not None
+            )
+
+        return BaseModelOutputWithPastAndCrossAttentions(
+            last_hidden_state=hidden_states,
+            past_key_values=presents,
+            hidden_states=all_hidden_states,
+            attentions=all_self_attentions,
+        )
+
+
+class RWForCausalLMwithCheckpointing(RWForCausalLM):
+    _keys_to_ignore_on_load_missing = [
+        r"h.*.self_attention.scale_mask_softmax.causal_mask",
+        r"lm_head.weight",
+    ]
+
+    def __init__(self, config: RWConfig):
+        super().__init__(config)
+        self.transformer = RWModel(config)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+
+        use_checkpointing = getattr(config, "use_checkpointing", False)
+        checkpoint_only_attention = getattr(config, "checkpoint_only_attention", False)
+        if use_checkpointing and checkpoint_only_attention:
+            self.transformer = RWModelWithCheckpointing(config)
+            print("use model with gradient checkpointing only attention")
+        if use_checkpointing:
+            self.gradient_checkpointing_enable()
+            print("use gradient checkpointing")
+
+        # Initialize weights and apply final processing
+        self.post_init()

@@ -1,5 +1,5 @@
 from transformers import AutoTokenizer, LlamaTokenizer, LlamaConfig, GPTJConfig
-from .falcon.model import RWForCausalLM
+from .falcon.model import RWForCausalLMwithCheckpointing
 from .falcon.configuration_RW import RWConfig
 from .llama.model import LLaMAArgs, LLaMA
 from .llama_hf.model import LlamaForCausalLMWithCheckpointing
@@ -11,7 +11,7 @@ TOKENIZERS = {
 }
 
 MODELS = {
-    "falcon": RWForCausalLM,  # type: ignore
+    "falcon": RWForCausalLMwithCheckpointing,  # type: ignore
     "llama_hf": LlamaForCausalLMWithCheckpointing,
     "gptj": GPTJForCausalLMWithCheckpointing,
     "llama": LLaMA,
