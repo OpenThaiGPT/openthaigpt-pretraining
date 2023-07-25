@@ -6,7 +6,11 @@ from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
     LLAMA_TOKENIZER_DIR,
     THAI_SP_MODEL_DIR,
 )
-from openthaigpt_pretraining_model.tokenizers.spm_trainer import EOS_TOKEN, UNK_TOKEN
+from openthaigpt_pretraining_model.tokenizers.spm_trainer import (
+    EOS_TOKEN,
+    UNK_TOKEN,
+    BOS_TOKEN,
+)
 
 from transformers import LlamaTokenizer
 import os
@@ -43,6 +47,7 @@ if __name__ == "__main__":
     tokenizer = LlamaTokenizer(vocab_file=args.output_path + "/spm_tokenizer.model")
 
     tokenizer.eos_token = EOS_TOKEN
+    tokenizer.bos_token = BOS_TOKEN
     tokenizer.unk_token = UNK_TOKEN
 
     tokenizer.save_pretrained(args.output_path)

@@ -9,9 +9,9 @@ from datasets import load_dataset, load_from_disk, Dataset
 PREPARE_DATASETS_KEY = "text_processed"
 DOC_ID = "id"
 DOC_TEXT = "text"
-EOS_TOKEN = "<eos>"
+EOS_TOKEN = "</s>"
+BOS_TOKEN = "<s>"
 UNK_TOKEN = "<unk>"
-USER_DEFINED_SYMBOLS = [EOS_TOKEN, UNK_TOKEN]
 
 SPM_MODE = "spm"
 BPE_MODE = "bpe"
@@ -141,13 +141,15 @@ def train_tokenizer(
         batched=True,
     )
 
+    os.makedirs(output_path, exist_ok=True)
+
     spm.SentencePieceTrainer.train(
         sentence_iterator=iter(
             DataSetColumnIterator(text_processed_dataset, PREPARE_DATASETS_KEY)
         ),
         model_prefix=output_path + "/spm_tokenizer",
         vocab_size=vocab_size,
-        user_defined_symbols=USER_DEFINED_SYMBOLS,
+        user_defined_symbols=[],
         num_threads=num_proc,
         train_extremely_large_corpus=large_corpus,
         model_type=mode,
@@ -156,6 +158,7 @@ def train_tokenizer(
     tokenizer = LlamaTokenizer(vocab_file=output_path + "/spm_tokenizer.model")
 
     tokenizer.eos_token = EOS_TOKEN
+    tokenizer.bos_token = BOS_TOKEN
     tokenizer.unk_token = UNK_TOKEN
 
     tokenizer.save_pretrained(output_path)
