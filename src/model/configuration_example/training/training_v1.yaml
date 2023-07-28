@@ -3,6 +3,7 @@ strategy: auto          # dp | ddp | ddp_spawn | xla | deepspeed | fsdp
 stage: 2
 offload_optimizer: false
 offload_parameters: false
+gradient_clipping: 1.
 num_gpus: 1
 precision: 32-true      # 32-true | 32 | 16-mixed | bf16-mixed | 64-true 
 num_nodes: 1
