@@ -254,12 +254,12 @@ class Trainer:
                     self.opt.step()
                     self.opt.zero_grad()
 
-                    if (i + 1) % self.eval_steps == 0:
-                        (val_loss, perplexity) = self.val_step()
-                        self.fabric.print(
-                            f"val_loss: {val_loss.item():.3f}, "
-                            f"perplexity: {perplexity:.3f})"
-                        )
+                if (i + 1) % self.eval_steps == 0:
+                    (val_loss, perplexity) = self.val_step()
+                    self.fabric.print(
+                        f"val_loss: {val_loss.item():.3f}, "
+                        f"perplexity: {perplexity:.3f})"
+                    )
 
                 if (i + 1) % self.save_steps == 0:
                     self.fabric.print(f"Saving weights : {self.save_paths}")
