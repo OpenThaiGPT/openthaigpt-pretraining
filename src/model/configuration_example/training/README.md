@@ -4,6 +4,7 @@
 - stage: stage of deepspeed
 - offload_optimizer: true when want to offload optimizer
 - offload_parameters: true when want to offload parameters
+- gradient_clipping: gradient clip of deepspeed strategy
 - num_gpus: number of gpus which each node use
 - precision: data type (32-true | 32 | 16-mixed | bf16-mixed | 64-true) 
 - num_nodes: number of node

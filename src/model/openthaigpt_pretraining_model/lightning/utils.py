@@ -51,6 +51,9 @@ class Trainer:
                 offload_optimizer=training_configuration.offload_optimizer,
                 offload_parameters=training_configuration.offload_parameters,
             )
+            strategy.config[
+                "gradient_clipping"
+            ] = training_configuration.gradient_clipping
         elif (
             training_configuration.offload_optimizer
             or training_configuration.offload_parameters
