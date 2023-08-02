@@ -158,4 +158,7 @@ def train_tokenizer(
     tokenizer.eos_token = EOS_TOKEN
     tokenizer.unk_token = UNK_TOKEN
 
+    # Add `\n` to tokenizer
+    tokenizer.add_tokens(["\n"], special_tokens=False)
+
     tokenizer.save_pretrained(output_path)
