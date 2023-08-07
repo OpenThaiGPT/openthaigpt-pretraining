@@ -54,7 +54,6 @@ def load_model(model_config, tokenizer=None, load_in_4bit=False, load_in_8bit=Fa
                 load_in_8bit=load_in_8bit,
                 load_in_4bit=load_in_4bit,
             )
-            # This means: fit the entire model on the GPU:0
             torch_dtype = torch.bfloat16
         else:
             quantization_config = None
