@@ -5,15 +5,18 @@ from .constants import (
     LORA_MODEL,
 )
 from peft import LoraConfig, get_peft_model
+from transformers import BitsAndBytesConfig
+
+import torch
 
 
-def load_model_and_tokenizer(model_config):
+def load_model_and_tokenizer(model_config, load_in_4bit=False, load_in_8bit=False):
     tokenizer = load_tokenizer(model_config.tokenizer)
-    model = load_model(model_config, tokenizer)
+    model = load_model(model_config, tokenizer, load_in_4bit, load_in_8bit)
     return tokenizer, model
 
 
-def load_model(model_config, tokenizer=None):
+def load_model(model_config, tokenizer=None, load_in_4bit=False, load_in_8bit=False):
     model_config_object = MODEL_CONFIGS.get(model_config.name, None)
     if model_config_object is None:
         raise NotImplementedError(f"No model name: {model_config.name}")
@@ -41,7 +44,28 @@ def load_model(model_config, tokenizer=None):
         config = model_config_object(
             **model_config.args,
         )
-        model = model_object.from_pretrained(model_pretrained, config=config)
+
+        if load_in_8bit and load_in_4bit:
+            raise ValueError(
+                "You can't load the model in 8 bits and 4 bits at the same time"
+            )
+        elif load_in_8bit or load_in_4bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_8bit=load_in_8bit,
+                load_in_4bit=load_in_4bit,
+            )
+            # This means: fit the entire model on the GPU:0
+            torch_dtype = torch.bfloat16
+        else:
+            quantization_config = None
+            torch_dtype = None
+
+        model = model_object.from_pretrained(
+            model_pretrained,
+            config=config,
+            quantization_config=quantization_config,
+            torch_dtype=torch_dtype,
+        )
         if tokenizer is not None and model.vocab_size != len(tokenizer):
             model.resize_token_embeddings(len(tokenizer))
 

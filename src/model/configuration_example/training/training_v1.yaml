@@ -24,3 +24,5 @@ decay_lr: true
 warmup_iters: 2000
 lr_decay_iters: 600000
 min_lr: 6e-5
+load_in_4bit: False
+load_in_8bit: False

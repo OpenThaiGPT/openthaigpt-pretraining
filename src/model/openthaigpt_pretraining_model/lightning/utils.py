@@ -75,6 +75,8 @@ class Trainer:
         with self.fabric.device:
             self.tokenizer, self.model = load_model_and_tokenizer(
                 configuration.model,
+                training_configuration.get("load_in_4bit", False),
+                training_configuration.get("load_in_8bit", False),
             )
 
         if configuration.get("lora", None) is not None:
