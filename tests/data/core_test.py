@@ -6,7 +6,7 @@ from testcases.core_testcases import (
     CLEAN_DATASET_TEST_CASES,
 )
 
-from openthaigpt_pretraining_data.core.preprocess import (
+from openthaigpt_pretraining_data.internet.perplexity.preprocess import (
     contains_document_removal_keywords,
     check_ratio_bad_substring,
     remove_partial_keywords,

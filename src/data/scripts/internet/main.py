@@ -2,14 +2,14 @@ import argparse
 from datasets import load_dataset, load_from_disk
 import datetime
 import jsonlines
-from openthaigpt_pretraining_data.mc4.preprocess import (
+from openthaigpt_pretraining_data.internet.mc4.preprocess import (
     clean_text as clean_mc4_text,
 )
-from openthaigpt_pretraining_data.oscar.preprocess import (
+from openthaigpt_pretraining_data.internet.oscar.preprocess import (
     clean_text as clean_oscar_text,
 )
 
-from openthaigpt_pretraining_data.core.perplexity import (
+from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
     classify_spam,
     sample_text_back,
 )
@@ -135,6 +135,7 @@ def process_chunk_data(chunk):
             probs,
             percentage=float(args.sampled_back_ratio),
         )
+
         sampled_back_idx_set = set(sampled_back_idx)
         sampled_back_idx = [
             spam_idx[i] for i in range(len(spam_idx)) if i in sampled_back_idx_set
