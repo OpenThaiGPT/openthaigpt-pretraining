@@ -16,7 +16,7 @@ For part 2-4, You can see each part (mc4, oscar, perplexity) in more details at 
 
 You can also process the internet data via running `main.py` 
 
-Before running. please download `core.zip` from this [link](https://drive.google.com/file/d/1OBbo21v_-esL31rxtNtsMHrA8T1JYqAd/view?usp=sharing) and extract it in `src/data/openthaigpt_pretraining_data/internet/perplexity` first
+Before running. please download `core.zip` from this [link](https://drive.google.com/file/d/1OBbo21v_-esL31rxtNtsMHrA8T1JYqAd/view?usp=sharing) and extract it in `src/data/openthaigpt_pretraining_data/internet/perplexity` first.It contains an n-gram language model weight and Decision Tree classifier weight.
 
 ### Running Example
 
