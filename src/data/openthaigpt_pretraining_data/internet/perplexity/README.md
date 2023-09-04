@@ -26,7 +26,8 @@ This code is not meant to be run directly. If you want to run with your custom l
 
 ## Note
 
-- This idea are originally from [Perplexed by Quality](https://arxiv.org/pdf/2212.10440.pdf)
+- The idea of using perplexity score are originally from [Perplexed by Quality](https://arxiv.org/pdf/2212.10440.pdf).
+- **_However, we decided to try another method on the score since the perplexity score and thresholding is not enough to classify bad data acoording to the observation._**
 - DecisionTree classifier was train on the sampled OSCAR2023.
 
 
