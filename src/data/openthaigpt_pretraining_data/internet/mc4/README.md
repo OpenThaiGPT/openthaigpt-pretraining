@@ -16,14 +16,16 @@ The regex patterns are compiled in `pattern.py` and import to use in `preprocess
 | Gamble keywords |2| 
 | Football team names |4| 
 | Ads keywords |4| 
-| Sale keywords |3| 
+| Sale keywords* |3| 
 | URL that usually related to sales keyword |1| 
-| Renting keywords |2| 
+| Renting keywords* |2| 
 | Json-like patterns |20| 
 | Programming code |10| 
 | Thai specific spam keywords (Ex. ครีมฟอกสี, ยาลดน้ำหนัก) |4| 
 | Ghost language (Ex. เธฅเธฐ) |4| 
 | Hex code |25| 
+
+*This patterns will be skipped if the text contains the appropriate sales/renting patterns.
 
 3. If the text is not removed by step 1, less severe patterns will be check and remove partially.
 
