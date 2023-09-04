@@ -171,9 +171,6 @@ def clean_with_remove_document(text: str) -> bool:
 
 
 def clean_text(text: str) -> str:
-    if clean_with_remove_document(text):
-        return ""
-
     text = PAGE_RE.sub(" ", text)
     text = EMBEDDED_SERVER_RE.sub(" ", text)
     text = U_RE.sub(" ", text)
