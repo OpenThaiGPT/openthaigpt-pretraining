@@ -26,7 +26,7 @@ This code is not meant to be run directly. If you want to run with your custom l
 
 ## Note
 
-- This idea are originally from [Perplexed by Quality](https://arxiv.org/pdf/2212.10440).pdf
+- This idea are originally from [Perplexed by Quality](https://arxiv.org/pdf/2212.10440.pdf)
 - DecisionTree classifier was train on the sampled OSCAR2023.
 
 
