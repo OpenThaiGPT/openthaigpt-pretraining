@@ -10,30 +10,33 @@ The `notebook` folder contains the experiment, observation and EDA notebooks for
 
 1. Check the garbage keywords in each text. If the text contains any of keywords, remove the text.
 
-    1.1 Keywords
-        - Pornography
-        - Gamble
-        - Spam movie website
-        - Spam like ads
-        - Some programming code
-        - Some webboard keywords
+| Keywords                  |
+|--------------------------|
+| Pornography              |
+| Gamble                   |
+| Spam movie website       |
+| Spam like ads            |
+| Some programming code    |
+| Some webboard keywords   |
 
 2. If the text is not removed by step 1, Check the less garbage keywords in each text. If the ratio of the keywords length and the text length are above the thresholds, remove the text
 
-    2.1 Keywords : Thresholds
-        - Thai month names : 0.015
-        - Some programming code related symbol : 0.075
-        - Space : 0.13
-        - Commar : 0.05
-        - Thai character : 0.5
+| Keywords                               | Thresholds |
+|----------------------------------------|------------|
+| Thai month names                        | 0.015      |
+| Some programming code related symbol   | 0.075      |
+| Space                                  | 0.13       |
+| Comma                                  | 0.05       |
+| Thai character                          | 0.5        |
 
 3. If the text is not removed by step 1 and 2, less severe patterns will be check and remove partially.
 
-    3.1 Patterns
-        - Webboard special characters («»)
-        - Webboard specific keywords
-        - Browser related keywords ("cookie setting")
-        - Other spam ("นโยบายความเป็นส่วนตัว", "หัวข้อ:")
+| Patterns                             |
+|-------------------------------------|
+| Webboard special characters («»)     |
+| Webboard specific keywords           |
+| Browser related keywords ("cookie setting") |
+| Other spam ("นโยบายความเป็นส่วนตัว", "หัวข้อ:") |
 
 ## Running
 
