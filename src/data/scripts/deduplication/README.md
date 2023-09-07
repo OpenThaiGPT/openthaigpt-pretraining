@@ -52,12 +52,25 @@ Note:
 
 `config/deduplicaiton.yaml`
 
-```
-More info on the file itself..
+```yaml
+train_dataset:
+  split: Choose Split to use from Huggingface Dataset ex. 'train'
+
+minhash:
+  save_path: Path to store minhash
+
+deduplication:
+  thresold: jaccard similarity and LSH thresold 0.9
+  minhash_path: Path to store minhash
+  save_path: Path to save deduplicated dataset (For further training usage)
+  save_path_duplicated: path to save duplicated dataset (for EDA)
+  batch_size: batch size for huggingface map function
+
+global_config:
+  num_process: Process need to use (128 on Lanta)
+  num_perm: Permutation number to use with MinHash (default 128)
 ```
 
 ## Default Parameters
 
-- DEFAULT_NUM_PERMUTATION = 128
-- N_GRAM = 128
-- deduplication thresold = 0.9
+- `N_GRAM` = 5
