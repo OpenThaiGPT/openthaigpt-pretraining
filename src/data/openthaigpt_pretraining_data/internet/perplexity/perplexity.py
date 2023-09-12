@@ -42,7 +42,9 @@ class SentencesLM:
         return round(self.pp(total_pp, total_length), 1)
 
 
-classifier_filename = "openthaigpt_pretraining_data/core/decision_tree.sav"
+classifier_filename = (
+    "openthaigpt_pretraining_data/internet/perplexity/decision_tree.sav"
+)
 classifier = pickle.load(open(classifier_filename, "rb"))
 
 lm = SentencesLM()

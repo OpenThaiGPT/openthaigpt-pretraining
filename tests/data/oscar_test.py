@@ -6,7 +6,7 @@ from testcases.oscar_testcases import (
     CLEAN_DATASET_TEST_CASES,
 )
 
-from openthaigpt_pretraining_data.oscar.preprocess import (
+from openthaigpt_pretraining_data.internet.oscar.preprocess import (
     contains_document_removal_keywords,
     check_ratio_bad_substring,
     remove_partial_keywords,
