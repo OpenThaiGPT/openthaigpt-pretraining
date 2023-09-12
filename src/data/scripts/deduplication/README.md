@@ -2,18 +2,42 @@
 
 ## Description
 
-This code help run deduplication pipeline for Huggingface dataset in this format
+The OpenThaiGPT Deduplication Pipeline is designed to remove duplicated entries from the Huggingface datasets. By using the techniques similar to this [paper](https://arxiv.org/abs/2107.06499), the pipeline uses the N-Gram MinHash approach in combination with LSH (Locality-Sensitive Hashing) to identify and eliminate duplicate content.
 
-## What this code does
+![deduplication_diagram](deduplication_diagram.png)
 
-1. Load Huggingface dataset from the path and tokenize all the text in `text` column with newmm tokenizer using `nlpo3``library and compute N-Gram MinHash similar to this [paper](https://arxiv.org/abs/2107.06499).
-2. Store MinHash result in Huggingface dataset on disk
-3. Load MinHash dataset and original dataset. Use store MinHash of all documents into LSH index.
-4. Query each documents against the LSH index and keep the neighbors that has similarity score more than thresold.
-5. For each document, calculate approximate jaccard distance with all of its neighbors. If the jaccard score is more than the thresold mark this document as duplicated with its neighbors.
-6. Save all marked duplicated documents in Huggingface dataset format.
-7. Perform removal of all marked duplicated documents from the original dataset.
-8. Save the deduplicated document in the new Huggingface dataset on disk.
+## Workflow
+
+1. Dataset Preparation:
+
+- Load the Huggingface dataset from the specified path.
+- Tokenize the content in the text column using the newmm tokenizer from the nlpo3 library.
+- Compute N-Gram MinHash for the tokenized text.
+  Store the MinHash results in a Huggingface dataset format on disk.
+
+2. LSH Indexing:
+
+- Load the computed MinHash dataset alongside the original dataset.
+- Index the MinHash of all documents using LSH.
+
+3. Neighbor Identification:
+
+- Query each pretraining document on against the LSH index.
+- Marking neighbors that have a similarity score exceeding the defined threshold as potentially duplicated.
+
+4. Duplicate Detection:
+
+- For each potentially duplicated document, compute the approximate Jaccard distance with its identified neighbors.
+- Mark documents with Jaccard scores surpassing the threshold as duplicates.
+
+5. Duplicate Removal:
+
+- Extract all identified duplicate documents from the original dataset.
+
+6. Saving the Deduplicated Dataset:
+
+- Store the deduplicated documents in a new Huggingface dataset on disk.
+- Save all identified duplicate documents in a separate Huggingface dataset format. This provides a record of duplicates for reference or potential restoration.
 
 ## Usage
 
