@@ -1,0 +1,5 @@
+name: warmup_and_decay_lr
+hyps:
+  warmup_steps: 2000
+  decay_steps: 600000
+  min_lr: 6e-5
