@@ -12,3 +12,4 @@ src/data/**/full_input*
 /outputs
 /etc/
 /image_sandbox
+.DS_Store
