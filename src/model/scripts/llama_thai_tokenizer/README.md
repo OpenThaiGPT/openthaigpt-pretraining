@@ -12,7 +12,7 @@ We plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-
 1. load LLaMA tokenizer by pass your model name to an argument
 
 ```bash
-python src/model/scripts/llama_thai_tokenizer/load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path <output_tokenizer_path>
+python load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path <output_tokenizer_path>
 ```
 
 argument
@@ -23,7 +23,7 @@ argument
 2. merge tokenizer `need to have Thai BPE tokenizer first` then add path of it be an argument of following script
 
 ```bash
-python scripts/llama_thai_tokenizer/merge_tokenizer.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path> --output_path <output_tokenizer_path>
+python merge_tokenizer.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path> --output_path <output_tokenizer_path>
 ```
 
 argument
