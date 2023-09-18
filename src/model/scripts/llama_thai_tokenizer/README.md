@@ -1,6 +1,6 @@
 # OpenThaiGPT Merged Tokenizer Pipeline
 
-we plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-model-llama-meta-ai/) as a base model for finetuning but LLaMa Tokenizer (BPE Tokenizer) have less Thai vocabulary, this pipeline intent to extent vocabulary of LlaMA tokenizer, using merge method following [Chinese-LLaMA-Alpaca](https://github.com/ymcui/Chinese-LLaMA-Alpaca/blob/main/README_EN.md)
+We plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-model-llama-meta-ai/) as a base model for finetuning but LLaMa Tokenizer (BPE Tokenizer) have less Thai vocabulary, this pipeline intend to extent vocabulary of LlaMA tokenizer, using merge method following [Chinese-LLaMA-Alpaca](https://github.com/ymcui/Chinese-LLaMA-Alpaca/blob/main/README_EN.md)
 
 ## Method
 
@@ -12,7 +12,7 @@ we plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-
 1. load LLaMA tokenizer by pass your model name to an argument
 
 ```bash
-python3 src/model/scripts/llama_thai_tokenizer/load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path path/to/save
+python src/model/scripts/llama_thai_tokenizer/load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path <output_tokenizer_path>
 ```
 
 argument
@@ -23,7 +23,7 @@ argument
 2. merge tokenizer `need to have Thai BPE tokenizer first` then add path of it be an argument of following script
 
 ```bash
-python3 scripts/llama_thai_tokenizer/merge_tokenizer.py --llama_path path/to/model --thai_sp_path path/to/thai_model --output_path path/to/save
+python scripts/llama_thai_tokenizer/merge_tokenizer.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path> --output_path <output_tokenizer_path>
 ```
 
 argument
