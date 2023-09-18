@@ -42,7 +42,6 @@ argument
 
 - llama_path: path to LLaMA tokenizer huggingface or local
 - thai_sp_path: path to Thai BPE tokenizer on local
-  )
 
 ### Results after merging
 
