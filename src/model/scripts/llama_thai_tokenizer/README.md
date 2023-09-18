@@ -17,8 +17,8 @@ python src/model/scripts/llama_thai_tokenizer/load_tokenizer.py --model_name met
 
 argument
 
-- model_name: name of LLaMA model that you use
-- output_path: path to save
+- model_name: name of LLaMA model (huggingface)
+- output_path: path to save tokenizer
 
 2. merge tokenizer `need to have Thai BPE tokenizer first` then add path of it be an argument of following script
 
@@ -28,9 +28,9 @@ python scripts/llama_thai_tokenizer/merge_tokenizer.py --llama_path <llama_model
 
 argument
 
-- llama_path: path to LLaMA tokenizer
-- thai_sp_path: path to Thai BPE tokenizer
-- output_path: path to save
+- llama_path: path to LLaMA tokenizer huggingface or local
+- thai_sp_path: path to Thai BPE tokenizer on local
+- output_path: path to save tokenizer
 
 ## To test merged tokenizer
 
