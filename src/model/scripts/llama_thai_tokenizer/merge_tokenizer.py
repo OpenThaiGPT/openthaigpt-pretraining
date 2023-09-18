@@ -25,10 +25,10 @@ if __name__ == "__main__":
         help="path to llama tokenizer",
     )
     parser.add_argument(
-        "--sp_path",
+        "--thai_sp_path",
         type=str,
         default=THAI_SP_MODEL_DIR,
-        help="path to tokenizer to merge",
+        help="path to Thai tokenizer",
     )
     parser.add_argument(
         "--output_path",
@@ -38,16 +38,16 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    tokenizer = merge(args.llama_path, args.sp_path, get_spm_tokenizer=True)
+    # call merge function
+    tokenizer = merge(args.llama_path, args.thai_sp_path, get_spm_tokenizer=True)
 
     os.makedirs(args.output_path, exist_ok=True)
     with open(args.output_path + "/spm_tokenizer.model", "wb") as f:
         f.write(tokenizer.SerializeToString())
     tokenizer = LlamaTokenizer(vocab_file=args.output_path + "/spm_tokenizer.model")
-
+    # change special tokens
     tokenizer.eos_token = EOS_TOKEN
     tokenizer.bos_token = BOS_TOKEN
     tokenizer.unk_token = UNK_TOKEN
-
+    # save model
     tokenizer.save_pretrained(args.output_path)
