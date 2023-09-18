@@ -35,7 +35,14 @@ argument
 ## To test merged tokenizer
 
 1.  run llama_thai_token_test.py and inference time checked
-    `python3 scripts/llama_thai_tokenizer/time_inference_check.py`
+
+```bash
+  python time_inference_check.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path>
+```
+
+- llama_path: path to LLaMA tokenizer huggingface or local
+- thai_sp_path: path to Thai BPE tokenizer on local
+  )
 
 ### Results after merging
 

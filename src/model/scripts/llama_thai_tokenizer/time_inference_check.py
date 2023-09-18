@@ -14,14 +14,14 @@ if __name__ == "__main__":
         help="path to llama tokenizer",
     )
     parser.add_argument(
-        "--output_path",
+        "--thai_sp_path",
         type=str,
         help="path to Thai tokenizer",
     )
 
     args = parser.parse_args()
     llama_tokenizer = LLaMaToken(args.llama_path)
-    merge_tokenizer = EngThaiLLaMaToken(args.llama_path, args.llama_path)
+    merge_tokenizer = EngThaiLLaMaToken(args.llama_path, args.thai_sp_path)
 
     text = "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
     start = time.time()
