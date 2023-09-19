@@ -9,6 +9,7 @@ from openthaigpt_pretraining_model.pl_trainer import causal_pretraining
 )
 def pretraining(cfg):
     causal_pretraining(
+        name=cfg.name,
         model_config=cfg.model,
         optimizer_config=cfg.optimizer,
         scheduler_config=cfg.scheduler,

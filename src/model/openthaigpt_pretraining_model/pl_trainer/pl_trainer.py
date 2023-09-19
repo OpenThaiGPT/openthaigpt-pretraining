@@ -104,6 +104,7 @@ class CausalModelPL(pl.LightningModule):
 
 
 def causal_pretraining(
+    name,
     model_config,
     optimizer_config,
     scheduler_config,
@@ -116,6 +117,7 @@ def causal_pretraining(
 ):
     """
     Args:
+        name: Name of experiments
         model_config: Model configuration
         optimizer_config: Optimizer configuration
         scheduler_config: Scheduler configuration
@@ -166,10 +168,10 @@ def causal_pretraining(
     loggers = []
     if logging_config.log_dir is not None:
         loggers.append(
-            TensorBoardLogger(logging_config.log_dir, name=model_config.model_name)
+            TensorBoardLogger(logging_config.log_dir, name=name)
         )
     if logging_config.use_wandb:
-        loggers.append(WandbLogger(name=model_config.model_name, offline=True))
+        loggers.append(WandbLogger(name=name, offline=True))
 
     lr_monitor = (
         LearningRateMonitor(logging_interval=LR_STEP_INTERVAL)
@@ -179,7 +181,7 @@ def causal_pretraining(
     checkpoint_step_callback = (
         ModelCheckpoint(
             dirpath=os.path.join(checkpointing_config.save_dir, "steps"),
-            filename=model_config.model_name + "-{epoch:03d}-{step:07d}",
+            filename=name + "-{epoch:03d}-{step:07d}",
             every_n_train_steps=checkpointing_config.save_steps,
             save_top_k=checkpointing_config.save_top_k_steps,
             monitor=VAL_LOSS_MONITOR,
@@ -190,7 +192,7 @@ def causal_pretraining(
     checkpoint_epoch_callback = (
         ModelCheckpoint(
             dirpath=os.path.join(checkpointing_config.save_dir, "epoch"),
-            filename=model_config.model_name + "-{epoch:03d}",
+            filename=name + "-{epoch:03d}",
         )
         if checkpointing_config.save_dir
         else None
@@ -224,6 +226,6 @@ def causal_pretraining(
     trainer.save_checkpoint(
         os.path.join(
             checkpointing_config.save_dir,
-            f"{model_config.model_name}-last.ckpt",
+            f"{name}-last.ckpt",
         )
     )

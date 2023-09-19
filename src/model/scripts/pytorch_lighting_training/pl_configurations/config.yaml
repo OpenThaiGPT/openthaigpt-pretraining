@@ -1,4 +1,5 @@
 defaults:
+  name: llama-hf-7b-from-pretrained
   - model: llama-hf-7b-from-pretrained
   - optimizer: adamw_optimizer
   - scheduler: warmup_and_decay_lr
