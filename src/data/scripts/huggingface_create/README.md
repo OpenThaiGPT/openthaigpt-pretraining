@@ -20,7 +20,7 @@ pip install datasets pandas tqdm
 You can run this script from the command line with the following command:
 
 ```bash
-python script.py --train_path path_to_train_data --eval_path path_to_eval_data --output_path output_dataset_directory
+python script.py --train_path <rain_data_directory> --eval_path <eval_data_directory> --output_path <output_dataset_directory>
 ```
 
 train_path: Path to the directory containing the training JSONL files.
