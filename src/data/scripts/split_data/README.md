@@ -4,7 +4,7 @@ This Python script is designed to split a large JSONL (JSON Lines) file into thr
 ## Usage
 In the SLURM script, modify the last line to specify the input JSONL file path and the desired test and validation set sizes:
 ```bash
-python split_jsonl.py /path/to/your/jsonl/file.jsonl --test_size 0.001 --validation_size 0.001
+python split_jsonl.py <file.jsonl> --test_size 0.001 --validation_size 0.001
 ```
 Replace <file.jsonl> with the path to your JSONL file.
 Adjust the --test_size and --validation_size options to set the desired proportions for the test and validation sets.
