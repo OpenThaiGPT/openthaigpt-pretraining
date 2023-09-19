@@ -6,7 +6,7 @@ In the SLURM script, modify the last line to specify the input JSONL file path a
 ```bash
 python split_jsonl.py /path/to/your/jsonl/file.jsonl --test_size 0.001 --validation_size 0.001
 ```
-Replace /path/to/your/jsonl/file.jsonl with the path to your JSONL file.
+Replace <file.jsonl> with the path to your JSONL file.
 Adjust the --test_size and --validation_size options to set the desired proportions for the test and validation sets.
 
 ## Output
