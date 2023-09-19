@@ -7,20 +7,20 @@ This script is intended to be used for creating custom datasets that can be util
 ## Dependencies
 Before using this script, make sure you have the following dependencies installed:
 
-datasets
-pandas
-tqdm
+datasets>=2.12.0
+pandas>=2.0.2
+tqdm>=4.65.0
 You can typically install these dependencies using pip:
 
 ```bash
-pip install datasets pandas tqdm
+pip install datasets>=2.12.0 pandas>=2.0.2 tqdm>=4.65.0
 ```
 
 ## How to Run
 You can run this script from the command line with the following command:
 
 ```bash
-python script.py --train_path path_to_train_data --eval_path path_to_eval_data --output_path output_dataset_directory
+python script.py --train_path <rain_data_directory> --eval_path <eval_data_directory> --output_path <output_dataset_directory>
 ```
 
 train_path: Path to the directory containing the training JSONL files.
@@ -37,4 +37,4 @@ The script converts the input JSONL data into a Hugging Face dataset format. The
 
 train: The training split.
 eval: The evaluation split.
-Each split is stored as a set of Parquet files and can be loaded and used with Hugging Face Datasets library.
+Each split is stored as a set of Arrow files and can be loaded and used with Hugging Face Datasets library.
