@@ -4,7 +4,7 @@ from testcases.mc4_testcases import (
     CLEAN_DATASET_TEST_CASES,
 )
 
-from openthaigpt_pretraining_data.mc4.preprocess import (
+from openthaigpt_pretraining_data.internet.mc4.preprocess import (
     clean_with_remove_document,
     clean_text,
     clean_dataset,
