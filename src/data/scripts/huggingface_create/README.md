@@ -7,13 +7,13 @@ This script is intended to be used for creating custom datasets that can be util
 ## Dependencies
 Before using this script, make sure you have the following dependencies installed:
 
-datasets>=2.12.0
-pandas>=2.0.2
-tqdm>=4.65.0
+datasets==2.12.0
+pandas==2.0.2
+tqdm==4.65.0
 You can typically install these dependencies using pip:
 
 ```bash
-pip install datasets>=2.12.0 pandas>=2.0.2 tqdm>=4.65.0
+pip install datasets==2.12.0 pandas==2.0.2 tqdm==4.65.0
 ```
 
 ## How to Run

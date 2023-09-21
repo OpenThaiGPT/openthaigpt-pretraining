@@ -5,11 +5,11 @@ This Python script merges JSONL (JSON Lines) files from a specified folder into 
 ## Dependencies
 Before using this script, make sure you have the following dependencies installed:
 
-jsonlines>=3.1.0
+jsonlines==3.1.0
 You can typically install these dependencies using pip:
 
 ```bash
-pip install jsonlines>=3.1.0
+pip install jsonlines==3.1.0
 ```
 
 ## Usage
