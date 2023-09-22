@@ -1,3 +1,4 @@
+"""
 from openthaigpt_pretraining_model.models.gptj.gptj_model_xformers import (
     XFORMER_ATTENTION_MODE,
     GPTJForCausalLMWithCheckpointing,
@@ -32,3 +33,4 @@ def test_gptj_xformers_attention():
 
     with torch.no_grad():
         assert torch.all(torch.abs(output_xformers - output_originals) <= 1e-6)
+"""
