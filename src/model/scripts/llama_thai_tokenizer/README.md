@@ -1,6 +1,6 @@
 # OpenThaiGPT Merged Tokenizer Pipeline
 
-We plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-model-llama-meta-ai/) as a base model for finetuning but LLaMa Tokenizer (BPE Tokenizer) have less Thai vocabulary, this pipeline intend to extent vocabulary of LlaMA tokenizer, using merge method following [Chinese-LLaMA-Alpaca](https://github.com/ymcui/Chinese-LLaMA-Alpaca/blob/main/README_EN.md)
+We plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-model-llama-meta-ai/) as a base model for finetuning but LLaMA Tokenizer (BPE Tokenizer) have less Thai vocabulary, this pipeline intend to extent vocabulary of LlaMA tokenizer, using merge method following [Chinese-LLaMA-Alpaca](https://github.com/ymcui/Chinese-LLaMA-Alpaca/blob/main/README_EN.md)
 
 ## Method
 
