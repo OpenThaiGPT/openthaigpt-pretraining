@@ -10,7 +10,7 @@ The OpenThaiGPT tokenizer training pipeline is a pipeline for training tokenizer
 
    - output_path (str): The path and prefix to use when saving the trained tokenizer.
    - vocab_size (int): The size of the vocabulary to use when training the tokenizer. Defaults to the number of available CPU cores.
-   - is_slurm (bool): Whether the code is running on a Slurm cluster. Defaults to False.
+   - streaming (bool): dataset streaming. Defaults to True.
    - load_dataset_path (str): The name of the Hugging Face dataset to load. Defaults to "oscar".
    - load_dataset_name (str): The name of the dataset split to use. Defaults to "unshuffled_deduplicated_th".
    - load_dataset_local_path (str): The path to a local directory containing the input data. If specified, the Hugging Face dataset is not used. Defaults to None.
