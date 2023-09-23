@@ -11,37 +11,43 @@ We plan to use [Pretrained LLaMA Model](https://ai.meta.com/blog/large-language-
 
 1. load LLaMA tokenizer by pass your model name to an argument
 
-```bash
-python load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path <output_tokenizer_path>
-```
+   ```bash
+   python load_tokenizer.py --model_name meta-llama/Llama-2-7b --output_path <output_tokenizer_path>
+   ```
 
-argument
+   argument
 
-- model_name: name of LLaMA model (huggingface)
-- output_path: path to save tokenizer
+   - model_name: name of LLaMA model (huggingface)
+   - output_path: path to save tokenizer
 
-2. merge tokenizer `need to have Thai BPE tokenizer first` then add path of it be an argument of following script
+2. prepare Thai BPE Tokenizer
 
-```bash
-python merge_tokenizer.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path> --output_path <output_tokenizer_path>
-```
+   - if you don't have your Thai BPE Tokenizer, you need to train following [spm_training/README.md](../spm_training/README.md)
 
-argument
+3. merge tokenizer by running following script
 
-- llama_path: path to LLaMA tokenizer huggingface or local
-- thai_sp_path: path to Thai BPE tokenizer on local
-- output_path: path to save tokenizer
+   - must have Thai BPE tokenizer, don't forget set <thai_sp_path> to path of Thai BPE Tokenizer
+
+   ```bash
+   python merge_tokenizer.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path> --output_path <output_tokenizer_path>
+   ```
+
+   argument
+
+   - llama_path: path to LLaMA tokenizer huggingface or local
+   - thai_sp_path: path to Thai BPE tokenizer on local
+   - output_path: path to save tokenizer
 
 ## To test merged tokenizer
 
 1.  run llama_thai_token_test.py and inference time checked
 
-```bash
-  python time_inference_check.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path>
-```
+    ```bash
+      python time_inference_check.py --llama_path <llama_model_path> --thai_sp_path <spm_model_path>
+    ```
 
-- llama_path: path to LLaMA tokenizer huggingface or local
-- thai_sp_path: path to Thai BPE tokenizer on local
+    - llama_path: path to LLaMA tokenizer huggingface or local
+    - thai_sp_path: path to Thai BPE tokenizer on local
 
 ### Results after merging
 
