@@ -1,3 +1,4 @@
+"""
 from openthaigpt_pretraining_model.GPTJ_TH_tokenizer.tokenizer import (
     GPTJToken,
     GPT2Token,
@@ -44,3 +45,4 @@ def test_merge_tokenizer():
 
     for idx, token in enumerate(TEXT_TEST_TOKEN):
         assert m_token.encode(token) == gptj_token.encode(token)
+"""

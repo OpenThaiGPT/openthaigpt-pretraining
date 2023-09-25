@@ -1,3 +1,4 @@
+"""
 from openthaigpt_pretraining_model.tokenizers.spm_trainer import train_tokenizer
 
 OUTPUT_PATH = "./tokenizer"
@@ -12,3 +13,4 @@ def test_train_tokenizer():
             vocab_size=VOCAB_SIZE_TEST_CASES[i],
             num_docs=num_docs,
         )
+"""

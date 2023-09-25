@@ -1,25 +1,35 @@
 import time
+import argparse
 from openthaigpt_pretraining_model.llama_thai_tokenizer.tokenizer import (
     LLaMaToken,
     EngThaiLLaMaToken,
 )
-from openthaigpt_pretraining_model.llama_thai_tokenizer.constants import (
-    LLAMA_TOKENIZER_DIR,
-    THAI_SP_MODEL_DIR,
-)
 
-llama_tokenizer = LLaMaToken(LLAMA_TOKENIZER_DIR)
-EngTh_llama_tokenizer = EngThaiLLaMaToken(LLAMA_TOKENIZER_DIR, THAI_SP_MODEL_DIR)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
 
-text = "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
-start = time.time()
-print(f"Tokenized by LLaMA tokenizer: {llama_tokenizer.tokenize(text)}")
-t1 = time.time() - start
+    parser.add_argument(
+        "--llama_path",
+        type=str,
+        help="path to llama tokenizer",
+    )
+    parser.add_argument(
+        "--thai_sp_path",
+        type=str,
+        help="path to Thai tokenizer",
+    )
 
-start2 = time.time()
-print(
-    f"Tokenized by English-Thai LLaMA tokenizer: {EngTh_llama_tokenizer.tokenize(text)}"
-)
-t2 = time.time() - start2
+    args = parser.parse_args()
+    llama_tokenizer = LLaMaToken(args.llama_path)
+    merge_tokenizer = EngThaiLLaMaToken(args.llama_path, args.thai_sp_path)
 
-print(f"EngOnly time: {t1}\nEngThai time: {t2}\ntime diff:{t1 - t2}")
+    text = "การใช้งานหลักของ LLaMA คือการวิจัยเกี่ยวกับรูปแบบภาษาที่ใหญ่"
+    start = time.time()
+    print(f"Tokenized by LLaMA tokenizer: {llama_tokenizer.tokenize(text)}")
+    t1 = time.time() - start
+
+    start2 = time.time()
+    print(f"Tokenized by English-Thai LLaMA tokenizer:{merge_tokenizer.tokenize(text)}")
+    t2 = time.time() - start2
+
+    print(f"EngOnly time: {t1}\nEngThai time: {t2}\ntime diff:{t1 - t2}")
