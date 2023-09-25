@@ -167,9 +167,7 @@ def causal_pretraining(
         )
     loggers = []
     if logging_config.log_dir is not None:
-        loggers.append(
-            TensorBoardLogger(logging_config.log_dir, name=name)
-        )
+        loggers.append(TensorBoardLogger(logging_config.log_dir, name=name))
     if logging_config.use_wandb:
         loggers.append(WandbLogger(name=name, offline=True))
 

@@ -1,4 +1,4 @@
-# Implement from https://github.com/mlfoundations/open_clip/blob/main/src/training/scheduler.py
+# Implement from https://github.com/mlfoundations/open_clip/blob/main/src/training/scheduler.py # noqa: E501
 import numpy as np
 import torch
 import math
@@ -6,8 +6,19 @@ import math
 INITIAL_LR = "initial_lr"
 
 
-def _warmup_lr(base_lr, warmup_length, step):
-    return base_lr * (step + 1) / warmup_length
+def _warmup_lr(
+    base_lr: float,
+    warmup_steps: int,
+    step: int,
+):
+    """
+    Description: Warmup learning rate scheduler function
+    Args:
+        base_lr: Base learning rate
+        warmup_steps: Warmup steps
+        step: Current step
+    """
+    return base_lr * (step + 1) / warmup_steps
 
 
 class ConstantLRScheduler(torch.optim.lr_scheduler._LRScheduler):
