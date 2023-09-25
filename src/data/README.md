@@ -20,3 +20,4 @@ The OpenThaiGPT Overview dataset pipeline is meticulously designed to fully prep
 6. Remove duplicate entries from Huggingface datasets through a deduplication process utilizing the N-Gram MinHash approach combined with Locality-Sensitive Hashing. This pipeline can be found at: `src/data/scripts/deduplication` to remove duplication entries.
 7. Implement Decontamination measures to prevent data leakage from the training dataset into the evaluation dataset, employing N-Gram MinHash and LSH techniques. This pipeline can be found at `src/data/scripts/decontamination`
 
+
