@@ -87,8 +87,8 @@ def train():
         use_fast=False,
     )
 
-    if tokenizer is not None and model.vocab_size != len(tokenizer):
-        model.resize_token_embeddings(len(tokenizer))
+    # if tokenizer is not None and model.vocab_size != len(tokenizer):
+    #     model.resize_token_embeddings(len(tokenizer))
 
     data_module = make_supervised_data_module(data_args=data_args)
     trainer = Trainer(
