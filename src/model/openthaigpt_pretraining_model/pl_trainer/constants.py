@@ -1,0 +1,5 @@
+TRAIN_LOSS_MONITOR = "train_loss"
+VAL_LOSS_MONITOR = "val_loss"
+TRAIN_PERPLEXITY_MONITOR = "train_perplexity"
+VAL_PERPLEXITY_MONITOR = "val_perplexity"
+LR_STEP_INTERVAL = "step"

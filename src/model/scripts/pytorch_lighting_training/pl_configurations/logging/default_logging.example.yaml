@@ -1,0 +1,3 @@
+log_dir: /path/to/log_dir
+use_wandb: false
+log_steps: 1
