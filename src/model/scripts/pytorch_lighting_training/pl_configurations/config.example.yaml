@@ -1,5 +1,4 @@
 defaults:
-  name: llama-hf-7b-from-pretrained
   - model: llama-hf-7b-from-pretrained
   - optimizer: adamw_optimizer
   - scheduler: warmup_and_decay_lr
@@ -8,3 +7,4 @@ defaults:
   - dataset: default_dataset
   - checkpointing: default_checkpointing
   - logging: default_logging
+name: llama-hf-7b-from-pretrained

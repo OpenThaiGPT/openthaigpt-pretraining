@@ -41,7 +41,7 @@ class CausalModelPL(pl.LightningModule):
         super().__init__()
         # Saving hyperparameters
         self.save_hyperparameters()
-        self.model, _ = load_model_and_tokenizer(model_config)
+        _, self.model = load_model_and_tokenizer(model_config)
         if lora_config is not None:
             self.model = load_lora(
                 self.model,
