@@ -12,7 +12,7 @@ The OpenThaiGPT Overview dataset pipeline is meticulously designed to fully prep
 
 ## Workflow
 
-1. Obtain Raw Data in various formats such as CSV, PDF, etc., and convert it into plain text format. In our projects, we have Thai government dataset and we can obtain the raw dataset by webscraping. The pipeline to scrape can be found [here](../src/data)
+1. Obtain Raw Data in various formats such as CSV, PDF, etc., and convert it into plain text format. In our projects, we have Thai government dataset and we can obtain the raw dataset by webscraping. The pipeline to scrape can be found [here](..data/scripts/crawl_thaigov)
 [https://github.com/OpenThaiGPT/openthaigpt-pretraining/tree/main/src/data/scripts/crawl_thaigov]
 2. Transform plain text data from each raw data source into the JSONL format.
     * Internet dataset would be found [here][https://github.com/OpenThaiGPT/openthaigpt-pretraining/tree/main/src/data/scripts/internet]
