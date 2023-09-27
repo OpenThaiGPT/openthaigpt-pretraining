@@ -96,7 +96,7 @@ def train():
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
-    trainer.train()
+    trainer.train(training_args.checkpoint)
     trainer.save_state()
     trainer.save_model(output_dir=training_args.output_dir)
 

@@ -61,7 +61,8 @@ accelerate launch --num_processes $(( 4 * $COUNT_NODE )) --num_machines $COUNT_N
     --warmup_ratio 0.03 \
     --deepspeed "./configs/llama_deepspeed.json" \
     --tf32 True \
-    --gradient_checkpointing True
+    --gradient_checkpointing True \
+    --checkpoint /project/lt200056-opgpth/boss/stanford_alpaca/output_deepspeed/checkpoint-60
 
     # --fsdp "full_shard auto_wrap" \
     # --gradient_checkpointing True

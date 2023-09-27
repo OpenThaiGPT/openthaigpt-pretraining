@@ -54,7 +54,8 @@ torchrun --nproc_per_node=4 --master_port=3000 train.py \
     --warmup_ratio 0.03 \
     --deepspeed "./configs/llama_deepspeed.json" \
     --tf32 True \
-    --gradient_checkpointing True
+    --gradient_checkpointing True \
+    --checkpoint /project/lt200056-opgpth/boss/stanford_alpaca/output_deepspeed/checkpoint-20
 
     # --deepspeed "./configs/default_offload_opt_param.json" \
 
