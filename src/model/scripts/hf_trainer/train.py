@@ -13,6 +13,7 @@ import os
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
     tokenizer_name_or_path: Optional[str] = field(default=None)
+    use_flash_attention_2: bool = field(default=False)
 
 
 @dataclass
@@ -28,6 +29,7 @@ class DataArguments:
 class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
     optim: str = field(default="adamw_torch")
+    checkpoint: Optional[str] = field(default=None)
     model_max_length: int = field(
         default=512,
         metadata={
