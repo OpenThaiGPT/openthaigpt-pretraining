@@ -35,7 +35,7 @@ export WANDB_MODE="offline"
 torchrun --nproc_per_node=4 --master_port=3000 train.py \
     --model_name_or_path /project/lt200056-opgpth/boss/stanford_alpaca/llama_2_7b_fixed_resized \
     --tokenizer_name_or_path /project/lt200056-opgpth/boss/stanford_alpaca/llama_2_7b_fixed_resized \
-    --data_path /scratch/lt200056-opgpth/hf_v5_token_llama_2_256 \
+    --data_path /scratch/lt200056-opgpth/hf_v5_token_llama_2_1024 \
     --train_split train \
     --eval_split eval \
     --bf16 True \
