@@ -42,6 +42,7 @@ echo SLURM_PROCID=$SLURM_PROCID
 accelerate launch --num_processes $(( 4 * $COUNT_NODE )) --num_machines $COUNT_NODE --multi_gpu --mixed_precision fp16 --machine_rank $SLURM_PROCID --main_process_ip $MASTER_ADDR --main_process_port $MASTER_PORT  train.py \
     --model_name_or_path /project/lt200056-opgpth/boss/stanford_alpaca/llama_2_7b_fixed_resized \
     --tokenizer_name_or_path /project/lt200056-opgpth/boss/stanford_alpaca/llama_2_7b_fixed_resized \
+    --use_flash_attention_2 True \
     --data_path /scratch/lt200056-opgpth/hf_v5_token_llama_2_1024 \
     --train_split train \
     --eval_split eval \
