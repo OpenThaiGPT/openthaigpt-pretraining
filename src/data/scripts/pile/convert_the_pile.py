@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("jsonl_compressed_directory")
     parser.add_argument("output_hf_directory")
     parser.add_argument("--validation_size", default=0.001, type=float)
+    parser.add_argument("--seed", default=42, type=int)
 
     args = parser.parse_args()
 
@@ -46,6 +47,6 @@ if __name__ == "__main__":
         data_generator,
         gen_kwargs={"jsonl_compressed_directory": args.jsonl_compressed_directory},
     )
-    split = dataset.train_test_split(test_size=args.validation_size)
+    split = dataset.train_test_split(test_size=args.validation_size, seed=args.seed)
     split["eval"] = split.pop("test")
     split.save_to_disk(args.output_hf_directory)
