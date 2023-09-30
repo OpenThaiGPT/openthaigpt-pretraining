@@ -37,6 +37,8 @@ torchrun --nproc_per_node=4 --master_port=3000 train.py \
     --tokenizer_name_or_path /project/lt200056-opgpth/boss/stanford_alpaca/llama_2_7b_fixed_resized \
     --use_flash_attention_2 True \
     --data_path /scratch/lt200056-opgpth/hf_v5_token_llama_2_1024 \
+    --data_weights 1. \
+    --data_seed 42 \
     --train_split train \
     --eval_split eval \
     --bf16 True \
