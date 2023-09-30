@@ -10,26 +10,10 @@ import json
 DATASET_NAME = "pile"
 NULL = "null"
 
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("train_jsonl_compressed_directory")
-    parser.add_argument("output_hf_directory")
-    parser.add_argument("--validation_size", default=0.001, type=float)
 
-    args = parser.parse_args()
-
-    data_list: Dict[str, List[Any]] = {
-        "text": [],
-        "source": [],
-        "source_id": [],
-        "create_date": [],
-        "update_date": [],
-        "meta": [],
-    }
-    for jsonl_file in tqdm.tqdm(os.listdir(args.train_jsonl_compressed_directory)):
-        jsonl_file_path = os.path.join(
-            args.train_jsonl_compressed_directory, jsonl_file
-        )
+def data_generator(jsonl_compressed_directory):
+    for jsonl_file in tqdm.tqdm(os.listdir(jsonl_compressed_directory)):
+        jsonl_file_path = os.path.join(jsonl_compressed_directory, jsonl_file)
         i = 0
         file_info = os.path.basename(jsonl_file).split(".")
         # check zst compress
@@ -39,15 +23,29 @@ if __name__ == "__main__":
         with zstd.open(open(jsonl_file_path, "rb"), "rt", encoding="utf-8") as file:
             for line in file:
                 data = json.loads(line)
-                data_list["text"].append(data["text"])
-                data_list["source"].append(DATASET_NAME)
-                data_list["source_id"].append(f"{file_name}_{i}")
-                data_list["create_date"].append(NULL)
-                data_list["update_date"].append(NULL)
-                data_list["meta"].append(data["meta"])
+                yield {
+                    "text": data["text"],
+                    "source": DATASET_NAME,
+                    "source_id": f"{file_name}_{i}",
+                    "create_date": NULL,
+                    "update_date": NULL,
+                    "meta": data["meta"],
+                }
                 i += 1
 
-    dataset = Dataset.from_dict(data_list)
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("jsonl_compressed_directory")
+    parser.add_argument("output_hf_directory")
+    parser.add_argument("--validation_size", default=0.001, type=float)
+
+    args = parser.parse_args()
+
+    dataset = Dataset.from_generator(
+        data_generator,
+        gen_kwargs={"jsonl_compressed_directory": args.jsonl_compressed_directory},
+    )
     split = dataset.train_test_split(test_size=args.validation_size)
     split["eval"] = split.pop("test")
     split.save_to_disk(args.output_hf_directory)
