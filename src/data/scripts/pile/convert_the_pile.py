@@ -8,6 +8,8 @@ import json
 
 DATASET_NAME = "pile"
 NULL = "null"
+TEXT_KEY = "text"
+META_KEY = "meta"
 
 
 def data_generator(jsonl_compressed_directory):
@@ -23,12 +25,12 @@ def data_generator(jsonl_compressed_directory):
             for line in file:
                 data = json.loads(line)
                 yield {
-                    "text": data["text"],
+                    "text": data[TEXT_KEY],
                     "source": DATASET_NAME,
                     "source_id": f"{file_name}_{i}",
                     "create_date": NULL,
                     "update_date": NULL,
-                    "meta": data["meta"],
+                    "meta": data[META_KEY],
                 }
                 i += 1
 
@@ -39,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("output_hf_directory")
     parser.add_argument("--validation_size", default=0.001, type=float)
     parser.add_argument("--seed", default=42, type=int)
+    parser.add_argument("--num_proc", default=4, type=int)
 
     args = parser.parse_args()
 
@@ -48,4 +51,4 @@ if __name__ == "__main__":
     )
     split = dataset.train_test_split(test_size=args.validation_size, seed=args.seed)
     split["eval"] = split.pop("test")
-    split.save_to_disk(args.output_hf_directory)
+    split.save_to_disk(args.output_hf_directory, num_proc=args.num_proc)
