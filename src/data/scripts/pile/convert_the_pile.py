@@ -2,6 +2,7 @@ from datasets import Dataset
 from argparse import ArgumentParser
 from typing import Dict, List, Any
 
+import zstandard as zstd
 import os
 import tqdm
 import json
@@ -11,7 +12,7 @@ NULL = "null"
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("train_jsonl_uncompressed_directory")
+    parser.add_argument("train_jsonl_compressed_directory")
     parser.add_argument("output_hf_directory")
     parser.add_argument("--validation_size", default=0.001, type=float)
 
@@ -25,13 +26,17 @@ if __name__ == "__main__":
         "update_date": [],
         "meta": [],
     }
-    for jsonl_file in tqdm.tqdm(os.listdir(args.train_jsonl_uncompressed_directory)):
+    for jsonl_file in tqdm.tqdm(os.listdir(args.train_jsonl_compressed_directory)):
         jsonl_file_path = os.path.join(
-            args.train_jsonl_uncompressed_directory, jsonl_file
+            args.train_jsonl_compressed_directory, jsonl_file
         )
-        with open(jsonl_file_path, "r", encoding="utf-8") as file:
-            i = 0
-            file_name = os.path.basename(jsonl_file).split(".")[0]
+        i = 0
+        file_info = os.path.basename(jsonl_file).split(".")
+        # check zst compress
+        if file_info[-1] != "zst":
+            continue
+        file_name = file_info[0]
+        with zstd.open(open(jsonl_file_path, "rb"), "rt", encoding="utf-8") as file:
             for line in file:
                 data = json.loads(line)
                 data_list["text"].append(data["text"])
