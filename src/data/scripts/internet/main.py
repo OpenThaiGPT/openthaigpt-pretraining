@@ -179,6 +179,7 @@ def read_jsonl_zst_files(dir_path):
         for filename in files:
             if filename.endswith(".jsonl.zst"):
                 file_path = os.path.join(root, filename)
+                folder_name = root.split("/")[-2]
                 try:
                     with zstd.open(open(file_path, "rb"), "rt", encoding="utf-8") as f:
                         id = 0  # Initialize ID for each file
@@ -186,10 +187,8 @@ def read_jsonl_zst_files(dir_path):
                             item = json.loads(row)
                             yield {
                                 "text": item["content"],
-                                "create_date": item["warc_headers"]["warc-date"],
-                                "source": "oscar_colossal_{}".format(
-                                    root.split("/")[-2]
-                                ),
+                                "created_date": item["warc_headers"]["warc-date"],
+                                "source": "oscar_colossal_{}".format(folder_name),
                                 "source_id": str(id),  # Use the ID within the file
                                 "meta": str(
                                     {
