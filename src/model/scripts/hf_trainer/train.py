@@ -1,12 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, List
 
 import torch
 import transformers
 from transformers import Trainer
 from datasets import load_from_disk
+from torch.utils.data import IterableDataset
+
 
 import os
+import random
 
 
 @dataclass
@@ -18,9 +21,10 @@ class ModelArguments:
 
 @dataclass
 class DataArguments:
-    data_path: Optional[str] = field(
-        default=None, metadata={"help": "Path to the tokenized data."}
+    data_path: List[str] = field(
+        default_factory=list, metadata={"help": "Path to the tokenized data."}
     )
+    data_weights: List[float] = field(default_factory=list)
     train_split: Optional[str] = field(default="train")
     eval_split: Optional[str] = field(default="eval")
 
@@ -50,15 +54,57 @@ class DataCollatorForSupervisedDataset(object):
         }
 
 
-def load_dataset(path, split):
-    path_to_split = os.path.join(path, split)
-    return load_from_disk(path_to_split)
+class CombinedDataset(IterableDataset):
+    def __init__(self, datasets, seed, weights=None):
+        self._seed = seed
+        self._datasets = datasets
+        self._weights = weights
+
+        n_datasets = len(datasets)
+
+        if weights is None:
+            self._weights = [1 / n_datasets] * n_datasets
+
+        self.total_len = 0
+        for dataset, weight in zip(self._datasets, self._weights):
+            self.total_len += int(len(dataset) * weight)
+
+    def __iter__(self):
+        return CombinedDatasetIterator(self._datasets, self._seed, self._weights)
+
+    def __len__(self):
+        return self.total_len
 
 
-def make_supervised_data_module(data_args: DataArguments) -> Dict:
+class CombinedDatasetIterator:
+    def __init__(self, datasets, seed, weights):
+        self._datasets = [iter(el) for el in datasets]
+        self._weights = weights
+        self._rng = random.Random(seed)
+
+    def __next__(self):
+        (dataset,) = self._rng.choices(self._datasets, weights=self._weights, k=1)
+
+        return next(dataset)
+
+
+def load_dataset(paths, weights, split, seed=42):
+    datasets = []
+    for path in paths:
+        path_to_split = os.path.join(path, split)
+        dataset = load_from_disk(path_to_split)
+        datasets.append(dataset)
+    return CombinedDataset(datasets, seed, weights)
+
+
+def make_supervised_data_module(data_args: DataArguments, seed=42) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = load_dataset(data_args.data_path, data_args.train_split)
-    eval_dataset = load_dataset(data_args.data_path, data_args.eval_split)
+    train_dataset = load_dataset(
+        data_args.data_path, data_args.data_weights, data_args.train_split, seed
+    )
+    eval_dataset = load_dataset(
+        data_args.data_path, data_args.data_weights, data_args.eval_split, seed
+    )
     data_collator = DataCollatorForSupervisedDataset()
     return {
         "train_dataset": train_dataset,
@@ -92,7 +138,9 @@ def train():
     # if tokenizer is not None and model.vocab_size != len(tokenizer):
     #     model.resize_token_embeddings(len(tokenizer))
 
-    data_module = make_supervised_data_module(data_args=data_args)
+    data_module = make_supervised_data_module(
+        data_args=data_args, seed=training_args.data_seed
+    )
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
