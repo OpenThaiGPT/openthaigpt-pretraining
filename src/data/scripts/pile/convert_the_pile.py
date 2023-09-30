@@ -10,6 +10,11 @@ DATASET_NAME = "pile"
 NULL = "null"
 TEXT_KEY = "text"
 META_KEY = "meta"
+SOURCE_KEY = "source"
+SOURCE_ID_KEY = "source_id"
+CREATED_DATE_KEY = "create_date"
+UPDATED_DATE_KEY = "update_date"
+EVAL_SET_NAME = "eval"
 
 
 def data_generator(jsonl_compressed_directory):
@@ -25,12 +30,12 @@ def data_generator(jsonl_compressed_directory):
             for line in file:
                 data = json.loads(line)
                 yield {
-                    "text": data[TEXT_KEY],
-                    "source": DATASET_NAME,
-                    "source_id": f"{file_name}_{i}",
-                    "create_date": NULL,
-                    "update_date": NULL,
-                    "meta": data[META_KEY],
+                    TEXT_KEY: data[TEXT_KEY],
+                    SOURCE_KEY: DATASET_NAME,
+                    SOURCE_ID_KEY: f"{file_name}_{i}",
+                    CREATED_DATE_KEY: NULL,
+                    UPDATED_DATE_KEY: NULL,
+                    META_KEY: data[META_KEY],
                 }
                 i += 1
 
@@ -50,5 +55,5 @@ if __name__ == "__main__":
         gen_kwargs={"jsonl_compressed_directory": args.jsonl_compressed_directory},
     )
     split = dataset.train_test_split(test_size=args.validation_size, seed=args.seed)
-    split["eval"] = split.pop("test")
+    split[EVAL_SET_NAME] = split.pop("test")
     split.save_to_disk(args.output_hf_directory, num_proc=args.num_proc)
