@@ -15,51 +15,48 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
 )
 import numpy as np
 import scipy
+import json
+import os
+import hydra
 
-parser = argparse.ArgumentParser()
+NUM_PROC = 128
+DATASET_TO_FILETYPE = {"mc4":"json"}
 
-parser.add_argument(
-    "--input_file",
-    help="""Name of an input file or directory (in case of oscar)
-                (Default: "scripts/mc4_th_validation.json")""",
-    default="scripts/mc4_th_validation.json",
-)
-parser.add_argument(
-    "--source",
-    help='mc4, cc100, oscar (Default: "mc4")',
-    default="mc4",
-)
-parser.add_argument(
-    "--num_proc",
-    help="number of processor, you will use (Default: 2)",
-    default=2,
-)
-parser.add_argument(
-    "--do_perplexity",
-    help="If True, preprocess using kenlm + tree. Else,only regex (Default: True)",
-    default=True,
-)
-parser.add_argument(
-    "--batch_size",
-    help="Chunk size of data (Data will be processed together) (Default: 1000)",
-    default=1000,
-)
-parser.add_argument(
-    "--output_file",
-    help='Name of an output file (Default: "scripts/output.jsonl")',
-    default="scripts/output.jsonl",
-)
-parser.add_argument(
-    "--sampled_back_ratio",
-    help="""Ratio of data classified as spam to sampled back to the dataset.
-    (Default: 0.6)""",
-    default=0.6,
-)
+do_perplexity = batch_size = sampled_back_ratio = None
+output_dir = scratch_location = None
+source = input_path = version = note = None
 
-args = parser.parse_args()
+@hydra.main(config_path=".")
+def load_config(cfg):
 
-do_perplexity = bool(args.do_perplexity)
+    global do_perplexity, batch_size, sampled_back_ratio
+    global output_dir, scratch_location, source, input_path, version, note
 
+    cfg = cfg.config
+
+    do_perplexity = cfg.processing_parameters.do_perplexity
+    batch_size = cfg.processing_parameters.batch_size
+    sampled_back_ratio = cfg.processing_parameters.sampled_back_ratio
+
+    output_dir = cfg.output.path
+    scratch_location = cfg.output.scratch_path if "scratch_path" in cfg.output else None
+
+    source = cfg.input_dataset.name
+    print(f"Processing {source} dataset")
+    input_path = cfg.input_dataset.path
+
+    if "version" in cfg.output:
+        version = cfg.output.version
+    else:
+        if os.path.exists(f"{output_dir}/info.json"):
+            info = json.load(f"{output_dir}/info.json")
+            version =  info["current_version"] + 1
+        else :
+            version = 1
+
+    note = cfg.note
+
+load_config()
 
 def clean_text(text):
     text = text.strip()
@@ -82,6 +79,7 @@ def clean_text(text):
 
 
 def process_chunk_data(chunk):
+
     n = len(chunk["text"])
     predictions = [-1] * n
     log_pp_scores = [0] * n
@@ -133,7 +131,7 @@ def process_chunk_data(chunk):
 
         sampled_back_idx = sample_text_back(
             probs,
-            percentage=float(args.sampled_back_ratio),
+            percentage=float(sampled_back_ratio),
         )
 
         sampled_back_idx_set = set(sampled_back_idx)
@@ -149,7 +147,7 @@ def process_chunk_data(chunk):
 
 def filter_field(data, source):
     data["source"] = source
-    meta_dict = {"filename": args.input_file.split("/")[-1]}
+    meta_dict = {"filename": input_path.split("/")[-1]}
     del data["log_pp_score"], data["prediction"]
 
     if source == "mc4":
@@ -160,7 +158,7 @@ def filter_field(data, source):
     elif source == "cc100":
         data["created_date"] = "2020-10-23T23:31:11.000Z"
 
-    elif source == "oscar":
+    elif "oscar" in source:
         data["created_date"] = "2023-06-08T14:30:28.000Z"
         data["source_id"] = data["id"]
         del data["id"]
@@ -170,33 +168,74 @@ def filter_field(data, source):
         data["updated_date"] = data["created_date"]
     return data
 
-
-NUM_PROC = int(args.num_proc)
-DATASET_TO_FILETYPE = {"mc4": "json"}
-
 if __name__ == "__main__":
-    with jsonlines.open(args.output_file, "w") as writer:
-        if args.source in DATASET_TO_FILETYPE.keys():
+
+    if not os.path.exists(f"{output_dir}/{version}/data/"):
+        os.makedirs(f"{output_dir}/{version}/data/")
+
+    if scratch_location:
+        if not os.path.exists(f"{scratch_location}/{version}/data/"):
+            os.makedirs(f"{scratch_location}/{version}/data/")
+        scratch_writer = jsonlines.open(f"{scratch_location}/{version}/data/data.jsonl", "w")
+        
+
+    with jsonlines.open(f"{output_dir}/{version}/data/data.jsonl", "w") as writer:
+        
+        print("Loading dataset")
+
+        if source in DATASET_TO_FILETYPE.keys():
             dataset = load_dataset(
-                DATASET_TO_FILETYPE[args.source],
-                data_files=args.input_file,
-                split="train",
+                DATASET_TO_FILETYPE[source],
+                data_files=input_path,
             )
+
+        else:
+            dataset = load_from_disk(input_path)
+        
+        print(dataset)
+        if "train" in dataset.column_names:
+            dataset = dataset["train"]
+        if "id" not in dataset.column_names and "source_id" not in dataset.column_names:
             dataset = dataset.add_column(
                 "source_id", [i for i in range(len(dataset))]  # noqa: C416
             )
-        else:
-            dataset = load_from_disk(args.input_file)
 
+        print("Loaded dataset")
+        
         dataset = dataset.map(
             process_chunk_data,
             num_proc=NUM_PROC,
             batched=True,
-            batch_size=int(args.batch_size),
+            batch_size=int(batch_size),
+            # keep_in_memory=True,
+            cache_file_name = f"hf_cache/{source}/processed.arrow" # Incase that I cannot write in public_datasets, so I write in this instead
         )
 
-        if "train" in dataset.column_names:
-            dataset = dataset["train"]
-
         for data in dataset:
-            writer.write(filter_field(data, args.source))
+            
+            filtered_data = filter_field(data, source)
+            writer.write(filtered_data)
+            if scratch_location:
+                scratch_writer.write(filtered_data)
+        
+        print("Finish processing")
+
+        info = {"source":source, "current_version":version}
+        json.dump(info, open(f"{output_dir}/info.json","w"))
+
+        metadata = {"dataset_name":source, 
+                "data_version":version,
+                "data_scratch_location":scratch_location,
+                "input_name":source,
+                "input_version":version,
+                "processing_parameters":{
+                    "do_perplexity" : do_perplexity,
+                    "batch_size" : batch_size,
+                    "sampled_back_ratio" : sampled_back_ratio,
+                },
+                "note" : note
+                }
+        json.dump(metadata, open(f"{output_dir}/{version}/metadata.json","w"))
+
+        print("Finish Writing the dataset")
+        

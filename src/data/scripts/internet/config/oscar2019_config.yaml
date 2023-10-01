@@ -1,0 +1,16 @@
+input_dataset:
+  name: oscar_19
+  version: 1
+  path: /project/lt200056-opgpth/public_datasets/oscar_19
+
+output:
+  path: /project/lt200056-opgpth/mond_tmp_datasets/jsonl/oscar_19/raw
+  scratch_path: /lustrefs/flash/scratch/lt200056-opgpth/temp_dataset/oscar_19
+  version: 1
+
+processing_parameters: 
+  do_perplexity: True
+  batch_size: 1000
+  sampled_back_ratio: 0.6
+
+note: 
