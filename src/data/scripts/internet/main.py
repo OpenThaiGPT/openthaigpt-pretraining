@@ -1,4 +1,4 @@
-from datasets import load_dataset, load_from_disk, concatenate_datasets, Dataset
+from datasets import load_dataset, load_from_disk, Dataset
 import datetime
 import jsonlines
 from openthaigpt_pretraining_data.internet.mc4.preprocess import (
@@ -20,7 +20,6 @@ import hydra
 import zstandard as zstd
 
 NUM_PROC = 128
-DATASET_TO_FILETYPE = {"mc4": "json"}
 
 do_perplexity = batch_size = sampled_back_ratio = None
 output_dir = scratch_location = version = None
@@ -44,7 +43,7 @@ def load_config(cfg):
 
     input_based_path = cfg.input_dataset.path
 
-    info = json.load(open(f"{input_path}/info.json", "r"))
+    info = json.load(open(f"{input_based_path}/info.json", "r"))
     input_version = info["current_version"]
     source = info["source"]
 
@@ -228,16 +227,14 @@ if __name__ == "__main__":
         print("Loading dataset")
 
         if source == "mc4":
-            train_dataset = load_dataset(
-                DATASET_TO_FILETYPE[source],
-                data_files=f"{input_path}/mc4_th_train.json",
+            dataset = load_dataset(
+                "json",
+                data_files=[
+                    f"{input_path}/mc4_th_train.json",
+                    f"{input_path}/mc4_th_validation.json",
+                ],
+                cache_dir=f"{input_path}/cache",
             )
-            val_dataset = load_dataset(
-                DATASET_TO_FILETYPE[source],
-                data_files=f"{input_path}/mc4_th_validation.json",
-            )
-
-            dataset = concatenate_datasets([train_dataset, val_dataset])
 
         elif source == "oscar_cl":
             dataset = Dataset.from_generator(lambda: read_jsonl_zst_files(input_path))
