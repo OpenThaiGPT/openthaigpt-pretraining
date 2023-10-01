@@ -9,7 +9,8 @@ from openthaigpt_pretraining_data.core.text_normalizer import normalize
 from typing import List
 import warnings
 
-warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 
 class SentencesLM:
     """Returns the score of each individual paragraph."""
@@ -18,10 +19,14 @@ class SentencesLM:
         lm_config = kenlm.Config()
         lm_config.load_method = 2
 
-        lm_model_filename = "../../openthaigpt_pretraining_data/internet/perplexity/th.arpa.bin"
+        lm_model_filename = (
+            "../../openthaigpt_pretraining_data/internet/perplexity/th.arpa.bin"
+        )
         self.lm = kenlm.Model(str(lm_model_filename), lm_config)
         self.sp = sentencepiece.SentencePieceProcessor()
-        self.sp.load("../../openthaigpt_pretraining_data/internet/perplexity/th.sp.model")
+        self.sp.load(
+            "../../openthaigpt_pretraining_data/internet/perplexity/th.sp.model"
+        )
 
     def pp(self, log_score: float, length: int) -> float:
         """Compute perplexity score"""

@@ -1,4 +1,3 @@
-import argparse
 from datasets import load_dataset, load_from_disk
 import datetime
 import jsonlines
@@ -20,11 +19,12 @@ import os
 import hydra
 
 NUM_PROC = 128
-DATASET_TO_FILETYPE = {"mc4":"json"}
+DATASET_TO_FILETYPE = {"mc4": "json"}
 
 do_perplexity = batch_size = sampled_back_ratio = None
 output_dir = scratch_location = None
 source = input_path = version = note = None
+
 
 @hydra.main(config_path=".")
 def load_config(cfg):
@@ -50,13 +50,15 @@ def load_config(cfg):
     else:
         if os.path.exists(f"{output_dir}/info.json"):
             info = json.load(f"{output_dir}/info.json")
-            version =  info["current_version"] + 1
-        else :
+            version = info["current_version"] + 1
+        else:
             version = 1
 
     note = cfg.note
 
+
 load_config()
+
 
 def clean_text(text):
     text = text.strip()
@@ -168,6 +170,7 @@ def filter_field(data, source):
         data["updated_date"] = data["created_date"]
     return data
 
+
 if __name__ == "__main__":
 
     if not os.path.exists(f"{output_dir}/{version}/data/"):
@@ -176,11 +179,12 @@ if __name__ == "__main__":
     if scratch_location:
         if not os.path.exists(f"{scratch_location}/{version}/data/"):
             os.makedirs(f"{scratch_location}/{version}/data/")
-        scratch_writer = jsonlines.open(f"{scratch_location}/{version}/data/data.jsonl", "w")
-        
+        scratch_writer = jsonlines.open(
+            f"{scratch_location}/{version}/data/data.jsonl", "w"
+        )
 
     with jsonlines.open(f"{output_dir}/{version}/data/data.jsonl", "w") as writer:
-        
+
         print("Loading dataset")
 
         if source in DATASET_TO_FILETYPE.keys():
@@ -191,7 +195,7 @@ if __name__ == "__main__":
 
         else:
             dataset = load_from_disk(input_path)
-        
+
         print(dataset)
         if "train" in dataset.column_names:
             dataset = dataset["train"]
@@ -201,41 +205,42 @@ if __name__ == "__main__":
             )
 
         print("Loaded dataset")
-        
+
         dataset = dataset.map(
             process_chunk_data,
             num_proc=NUM_PROC,
             batched=True,
-            batch_size=int(batch_size),
+            batch_size=batch_size,
             # keep_in_memory=True,
-            cache_file_name = f"hf_cache/{source}/processed.arrow" # Incase that I cannot write in public_datasets, so I write in this instead
+            # Incase that I cannot write in public_datasets, so I write in this instead
+            cache_file_name=f"hf_cache/{source}/processed.arrow",
         )
 
         for data in dataset:
-            
+
             filtered_data = filter_field(data, source)
             writer.write(filtered_data)
             if scratch_location:
                 scratch_writer.write(filtered_data)
-        
+
         print("Finish processing")
 
-        info = {"source":source, "current_version":version}
-        json.dump(info, open(f"{output_dir}/info.json","w"))
+        info = {"source": source, "current_version": version}
+        json.dump(info, open(f"{output_dir}/info.json", "w"))
 
-        metadata = {"dataset_name":source, 
-                "data_version":version,
-                "data_scratch_location":scratch_location,
-                "input_name":source,
-                "input_version":version,
-                "processing_parameters":{
-                    "do_perplexity" : do_perplexity,
-                    "batch_size" : batch_size,
-                    "sampled_back_ratio" : sampled_back_ratio,
-                },
-                "note" : note
-                }
-        json.dump(metadata, open(f"{output_dir}/{version}/metadata.json","w"))
+        metadata = {
+            "dataset_name": source,
+            "data_version": version,
+            "data_scratch_location": scratch_location,
+            "input_name": source,
+            "input_version": version,
+            "processing_parameters": {
+                "do_perplexity": do_perplexity,
+                "batch_size": batch_size,
+                "sampled_back_ratio": sampled_back_ratio,
+            },
+            "note": note,
+        }
+        json.dump(metadata, open(f"{output_dir}/{version}/metadata.json", "w"))
 
         print("Finish Writing the dataset")
-        
