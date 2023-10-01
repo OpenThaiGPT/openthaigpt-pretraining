@@ -1,7 +1,5 @@
 input_dataset:
-  name: oscar_19
-  version: 1
-  path: /project/lt200056-opgpth/public_datasets/oscar_19
+  path: /project/lt200056-opgpth/mond_tmp_datasets/raw_datasets/public/oscar_19
 
 output:
   path: /project/lt200056-opgpth/mond_tmp_datasets/jsonl/oscar_19/raw

@@ -1,4 +1,4 @@
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset, load_from_disk, concatenate_datasets
 import datetime
 import jsonlines
 from openthaigpt_pretraining_data.internet.mc4.preprocess import (
@@ -22,14 +22,14 @@ NUM_PROC = 128
 DATASET_TO_FILETYPE = {"mc4": "json"}
 
 do_perplexity = batch_size = sampled_back_ratio = None
-output_dir = scratch_location = None
-source = input_path = version = note = None
+output_dir = scratch_location = version = None
+source = input_path = input_version = note = None
 
 
 @hydra.main(config_path=".")
 def load_config(cfg):
 
-    global do_perplexity, batch_size, sampled_back_ratio
+    global do_perplexity, batch_size, sampled_back_ratio, input_version
     global output_dir, scratch_location, source, input_path, version, note
 
     cfg = cfg.config
@@ -41,15 +41,20 @@ def load_config(cfg):
     output_dir = cfg.output.path
     scratch_location = cfg.output.scratch_path if "scratch_path" in cfg.output else None
 
-    source = cfg.input_dataset.name
-    print(f"Processing {source} dataset")
-    input_path = cfg.input_dataset.path
+    input_based_path = cfg.input_dataset.path
 
+    info = json.load(open(f"{input_path}/info.json", "r"))
+    input_version = info["current_version"]
+    source = info["source"]
+
+    input_path = f"{input_based_path}/{input_version}/data"
+
+    print(f"Processing {source} dataset")
     if "version" in cfg.output:
         version = cfg.output.version
     else:
         if os.path.exists(f"{output_dir}/info.json"):
-            info = json.load(f"{output_dir}/info.json")
+            info = json.load(open(f"{output_dir}/info.json", "r"))
             version = info["current_version"] + 1
         else:
             version = 1
@@ -187,16 +192,23 @@ if __name__ == "__main__":
 
         print("Loading dataset")
 
-        if source in DATASET_TO_FILETYPE.keys():
-            dataset = load_dataset(
+        if source == "mc4":
+            train_dataset = load_dataset(
                 DATASET_TO_FILETYPE[source],
-                data_files=input_path,
+                data_files=f"{input_path}/mc4_train.json",
             )
+            val_dataset = load_dataset(
+                DATASET_TO_FILETYPE[source],
+                data_files=f"{input_path}/mc4_validation.json",
+            )
+
+            dataset = concatenate_datasets([train_dataset, val_dataset])
 
         else:
             dataset = load_from_disk(input_path)
 
         print(dataset)
+
         if "train" in dataset.column_names:
             dataset = dataset["train"]
         if "id" not in dataset.column_names and "source_id" not in dataset.column_names:
@@ -206,6 +218,9 @@ if __name__ == "__main__":
 
         print("Loaded dataset")
 
+        # if not os.path.exists(f"hf_cache/{source}/"):
+        #     os.makedirs(f"hf_cache/{source}/")
+
         dataset = dataset.map(
             process_chunk_data,
             num_proc=NUM_PROC,
@@ -213,7 +228,7 @@ if __name__ == "__main__":
             batch_size=batch_size,
             # keep_in_memory=True,
             # Incase that I cannot write in public_datasets, so I write in this instead
-            cache_file_name=f"hf_cache/{source}/processed.arrow",
+            # cache_file_name=f"hf_cache/{source}/processed.arrow",
         )
 
         for data in dataset:
@@ -233,7 +248,7 @@ if __name__ == "__main__":
             "data_version": version,
             "data_scratch_location": scratch_location,
             "input_name": source,
-            "input_version": version,
+            "input_version": input_version,
             "processing_parameters": {
                 "do_perplexity": do_perplexity,
                 "batch_size": batch_size,

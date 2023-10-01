@@ -1,7 +1,5 @@
 input_dataset:
-  name: cc100
-  version: 1
-  path: /project/lt200056-opgpth/public_datasets/cc100
+  path: /project/lt200056-opgpth/mond_tmp_datasets/raw_datasets/public/cc100
 
 output:
   path: /project/lt200056-opgpth/mond_tmp_datasets/jsonl/cc100/raw
