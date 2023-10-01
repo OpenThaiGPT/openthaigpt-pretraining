@@ -1,4 +1,4 @@
-from datasets import load_dataset, load_from_disk, concatenate_datasets
+from datasets import load_dataset, load_from_disk, concatenate_datasets, Dataset
 import datetime
 import jsonlines
 from openthaigpt_pretraining_data.internet.mc4.preprocess import (
@@ -17,6 +17,7 @@ import scipy
 import json
 import os
 import hydra
+import zstandard as zstd
 
 NUM_PROC = 128
 DATASET_TO_FILETYPE = {"mc4": "json"}
@@ -156,24 +157,58 @@ def filter_field(data, source):
     data["source"] = source
     meta_dict = {"filename": input_path.split("/")[-1]}
     del data["log_pp_score"], data["prediction"]
+    if source != "oscar_cl":
+        data["source"] = source
+        meta_dict = {"filename": input_path.split("/")[-1]}
+        if source == "mc4":
+            data["created_date"] = str(data["timestamp"])
+            meta_dict["url"] = data["url"]
+            del data["timestamp"], data["url"]
 
-    if source == "mc4":
-        data["created_date"] = str(data["timestamp"])
-        meta_dict["url"] = data["url"]
-        del data["timestamp"], data["url"]
+        elif source == "cc100":
+            data["created_date"] = "2020-10-23T23:31:11.000Z"
 
-    elif source == "cc100":
-        data["created_date"] = "2020-10-23T23:31:11.000Z"
-
-    elif "oscar" in source:
-        data["created_date"] = "2023-06-08T14:30:28.000Z"
-        data["source_id"] = data["id"]
-        del data["id"]
+        elif "oscar" in source:
+            data["created_date"] = "2023-06-08T14:30:28.000Z"
+            data["source_id"] = data["id"]
+            del data["id"]
 
     data["meta"] = str(meta_dict)
     if data["updated_date"] == "None":
         data["updated_date"] = data["created_date"]
     return data
+
+
+def read_jsonl_zst_files(dir_path):
+    for root, _, files in os.walk(dir_path):
+        for filename in files:
+            if filename.endswith(".jsonl.zst"):
+                file_path = os.path.join(root, filename)
+                folder_name = root.split("/")[-2]
+                try:
+                    with zstd.open(open(file_path, "rb"), "rt", encoding="utf-8") as f:
+                        id = 0  # Initialize ID for each file
+                        for row in f:
+                            item = json.loads(row)
+                            yield {
+                                "text": item["content"],
+                                "created_date": item["warc_headers"]["warc-date"],
+                                "source": "oscar_colossal_{}".format(folder_name),
+                                # Use the ID within the file
+                                "source_id": str(id),
+                                "meta": str(
+                                    {
+                                        "url": item["warc_headers"]["warc-target-uri"],
+                                        "quality_warnings": item["metadata"][
+                                            "quality_warnings"
+                                        ],
+                                    }
+                                ),
+                            }
+                            id += 1  # Increment ID within the file
+
+                except Exception as e:
+                    print(f"Error processing file {file_path}: {e}")
 
 
 if __name__ == "__main__":
@@ -195,14 +230,17 @@ if __name__ == "__main__":
         if source == "mc4":
             train_dataset = load_dataset(
                 DATASET_TO_FILETYPE[source],
-                data_files=f"{input_path}/mc4_train.json",
+                data_files=f"{input_path}/mc4_th_train.json",
             )
             val_dataset = load_dataset(
                 DATASET_TO_FILETYPE[source],
-                data_files=f"{input_path}/mc4_validation.json",
+                data_files=f"{input_path}/mc4_th_validation.json",
             )
 
             dataset = concatenate_datasets([train_dataset, val_dataset])
+
+        elif source == "oscar_cl":
+            dataset = Dataset.from_generator(lambda: read_jsonl_zst_files(input_path))
 
         else:
             dataset = load_from_disk(input_path)
@@ -217,9 +255,6 @@ if __name__ == "__main__":
             )
 
         print("Loaded dataset")
-
-        # if not os.path.exists(f"hf_cache/{source}/"):
-        #     os.makedirs(f"hf_cache/{source}/")
 
         dataset = dataset.map(
             process_chunk_data,
