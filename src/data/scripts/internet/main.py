@@ -1,5 +1,5 @@
 import argparse
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset, load_from_disk, Dataset
 import datetime
 import jsonlines
 from openthaigpt_pretraining_data.internet.mc4.preprocess import (
@@ -15,6 +15,9 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
 )
 import numpy as np
 import scipy
+import os
+import zstandard as zstd
+import json
 
 parser = argparse.ArgumentParser()
 
@@ -148,27 +151,58 @@ def process_chunk_data(chunk):
 
 
 def filter_field(data, source):
-    data["source"] = source
-    meta_dict = {"filename": args.input_file.split("/")[-1]}
     del data["log_pp_score"], data["prediction"]
+    if source != "oscar_cl":
+        data["source"] = source
+        meta_dict = {"filename": args.input_file.split("/")[-1]}
+        if source == "mc4":
+            data["created_date"] = str(data["timestamp"])
+            meta_dict["url"] = data["url"]
+            del data["timestamp"], data["url"]
 
-    if source == "mc4":
-        data["created_date"] = str(data["timestamp"])
-        meta_dict["url"] = data["url"]
-        del data["timestamp"], data["url"]
+        elif source == "cc100":
+            data["created_date"] = "2020-10-23T23:31:11.000Z"
 
-    elif source == "cc100":
-        data["created_date"] = "2020-10-23T23:31:11.000Z"
+        elif source == "oscar":
+            data["created_date"] = "2023-06-08T14:30:28.000Z"
+            data["source_id"] = data["id"]
+            del data["id"]
+        data["meta"] = str(meta_dict)
 
-    elif source == "oscar":
-        data["created_date"] = "2023-06-08T14:30:28.000Z"
-        data["source_id"] = data["id"]
-        del data["id"]
-
-    data["meta"] = str(meta_dict)
     if data["updated_date"] == "None":
         data["updated_date"] = data["created_date"]
     return data
+
+
+def read_jsonl_zst_files(dir_path):
+    for root, _, files in os.walk(dir_path):
+        for filename in files:
+            if filename.endswith(".jsonl.zst"):
+                file_path = os.path.join(root, filename)
+                folder_name = root.split("/")[-2]
+                try:
+                    with zstd.open(open(file_path, "rb"), "rt", encoding="utf-8") as f:
+                        id = 0  # Initialize ID for each file
+                        for row in f:
+                            item = json.loads(row)
+                            yield {
+                                "text": item["content"],
+                                "created_date": item["warc_headers"]["warc-date"],
+                                "source": "oscar_colossal_{}".format(folder_name),
+                                "source_id": str(id),  # Use the ID within the file
+                                "meta": str(
+                                    {
+                                        "url": item["warc_headers"]["warc-target-uri"],
+                                        "quality_warnings": item["metadata"][
+                                            "quality_warnings"
+                                        ],
+                                    }
+                                ),
+                            }
+                            id += 1  # Increment ID within the file
+
+                except Exception as e:
+                    print(f"Error processing file {file_path}: {e}")
 
 
 NUM_PROC = int(args.num_proc)
@@ -184,6 +218,10 @@ if __name__ == "__main__":
             )
             dataset = dataset.add_column(
                 "source_id", [i for i in range(len(dataset))]  # noqa: C416
+            )
+        elif args.source == "oscar_cl":
+            dataset = Dataset.from_generator(
+                lambda: read_jsonl_zst_files(args.input_file)
             )
         else:
             dataset = load_from_disk(args.input_file)
