@@ -1,0 +1,14 @@
+input_dataset:
+  path: /project/lt200056-opgpth/mond_tmp_datasets/raw_datasets/public/cc100
+
+output:
+  path: /project/lt200056-opgpth/mond_tmp_datasets/jsonl/cc100/raw
+  scratch_path: /lustrefs/flash/scratch/lt200056-opgpth/temp_dataset/cc100
+  version: 1
+
+processing_parameters: 
+  do_perplexity: True
+  batch_size: 1000
+  sampled_back_ratio: 0.6
+
+note: 
