@@ -65,9 +65,10 @@ class CombinedDataset(IterableDataset):
         if weights is None:
             self._weights = [1 / n_datasets] * n_datasets
 
-        self.total_len = 0
-        for dataset, weight in zip(self._datasets, self._weights):
-            self.total_len += int(len(dataset) * weight)
+        len_datasets = []
+        for dataset in self._datasets:
+            len_datasets.append(len(dataset))
+        self.total_len = int(min(len_datasets) * sum(self._weights))
 
     def __iter__(self):
         return CombinedDatasetIterator(self._datasets, self._seed, self._weights)
