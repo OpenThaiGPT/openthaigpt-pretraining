@@ -1,0 +1,5 @@
+slurm-*.out
+*.sh
+pl_configurations/checkpointing/*.yaml
+pl_configurations/dataset/*.yaml
+pl_configurations/logging/*.yaml

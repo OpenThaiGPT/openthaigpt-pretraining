@@ -1,0 +1,10 @@
+defaults:
+  - model: llama-hf-7b-from-pretrained
+  - optimizer: adamw_optimizer
+  - scheduler: warmup_and_decay_lr
+  - trainer: default_trainer
+  - deepspeed: stage_2
+  - dataset: default_dataset
+  - checkpointing: default_checkpointing
+  - logging: default_logging
+name: llama-hf-7b-from-pretrained

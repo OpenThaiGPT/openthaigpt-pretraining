@@ -1,0 +1,4 @@
+training_dataset: /path/to/train/data
+validation_dataset: /path/to/val/data
+num_workers: 16
+shuffle_seed: 42

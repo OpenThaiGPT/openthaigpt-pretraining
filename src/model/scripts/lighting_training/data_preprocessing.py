@@ -43,7 +43,10 @@ def main(cfg):
             split,
         )
 
-        dataset.save_to_disk(save_path)
+        dataset.save_to_disk(
+            save_path,
+            num_proc=data_process_configuration.num_proc,
+        )
 
 
 if __name__ == "__main__":
