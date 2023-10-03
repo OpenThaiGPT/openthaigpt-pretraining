@@ -65,6 +65,10 @@ def generate_query_record_thai(doc):
     return doc["passage_TH"]
 
 
+def generate_query_ted_th_en(doc):
+    return doc["translation"]["th"] + " " + doc["translation"]["en"]
+
+
 MAPPER = {
     "hellaswag_thai": generate_query_hellaswag,
     "xquad": generate_query_xquad,
@@ -76,4 +80,5 @@ MAPPER = {
     "lst20": generate_query_lst20,
     "lst20_test": generate_query_lst20,
     "record_thai": generate_query_record_thai,
+    "ted_talks_iwslt_th_en": generate_query_ted_th_en,
 }

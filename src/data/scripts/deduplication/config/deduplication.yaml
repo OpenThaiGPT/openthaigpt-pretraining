@@ -2,19 +2,19 @@ train_dataset:
   key: openthaigpt
   name: openthaigpt_pretraining_dataset
   available_on_hub: False
-  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset
+  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal
   split: train
   subset:
 
 minhash:
   newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
-  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_minhash_128
 
 deduplication:
   thresold: 0.9
-  minhash_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_minhash_128
-  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09
-  save_path_duplicated: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_duplicated_128_09
+  minhash_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_deduplicated_128_09
+  save_path_duplicated: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_duplicated_128_09
   batch_size: 10000
 
 global_config:

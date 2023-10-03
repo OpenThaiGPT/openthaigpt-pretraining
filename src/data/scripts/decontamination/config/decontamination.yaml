@@ -10,24 +10,25 @@ defaults:
     - thaisum
     - thaisum_test
     - xquad
-
+    - ted_talks_iwslt_th_en
+  
 train_dataset:
   key: openthaigpt
   name: openthaigpt_pretraining_dataset
   available_on_hub: False
-  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09
+  path_name: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_deduplicated_128_09
   split: train
   subset:
   col_name: text
 
 minhash:
   newmm_dict: ./src/data/openthaigpt_pretraining_data/core/words_th.txt
-  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_deduplicated_128_09_minhash_128
 
 decontaminate:
   thresold: 0.3
-  minhash_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_minhash_128
-  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V5_555_Dataset_deduplicated_128_09_decontaminated_128_03
+  minhash_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_deduplicated_128_09_minhash_128
+  save_path: /lustrefs/flash/scratch/lt200056-opgpth/HF_V6_Colassal_deduplicated_128_09_decontaminated_128_03
 
 global_config:
   num_process: 128

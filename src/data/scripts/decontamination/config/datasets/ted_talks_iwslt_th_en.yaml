@@ -1,0 +1,6 @@
+ted_talks_iwslt_th_en:
+  name: ted_talks_iwslt_th_en
+  available_on_hub: False
+  path_name: /project/lt200056-opgpth/lm-evaluation-harness/ted_talks_iwslt_th_en
+  split: test
+  subset: 
