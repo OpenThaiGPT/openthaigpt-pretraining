@@ -14,5 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "hydra-core"
+    "hydra-core",
+    "dvc >= 3.23.0, <4",
+    "dvc-gs >=2.22.1, <3"
 ]
