@@ -19,8 +19,7 @@ import os
 import hydra
 import zstandard as zstd
 
-NUM_PROC = 128
-
+num_proc = None
 do_perplexity = batch_size = sampled_back_ratio = None
 output_dir = scratch_location = version = None
 source = input_path = input_version = note = None
@@ -29,10 +28,12 @@ source = input_path = input_version = note = None
 @hydra.main(config_path=".")
 def load_config(cfg):
 
-    global do_perplexity, batch_size, sampled_back_ratio, input_version
+    global do_perplexity, batch_size, sampled_back_ratio, input_version, num_proc
     global output_dir, scratch_location, source, input_path, version, note
 
     cfg = cfg.config
+
+    num_proc = cfg.num_proc
 
     do_perplexity = cfg.processing_parameters.do_perplexity
     batch_size = cfg.processing_parameters.batch_size
@@ -255,7 +256,7 @@ if __name__ == "__main__":
 
         dataset = dataset.map(
             process_chunk_data,
-            num_proc=NUM_PROC,
+            num_proc=num_proc,
             batched=True,
             batch_size=batch_size,
             # keep_in_memory=True,

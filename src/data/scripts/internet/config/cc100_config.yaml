@@ -11,4 +11,5 @@ processing_parameters:
   batch_size: 1000
   sampled_back_ratio: 0.6
 
+num_proc: 128
 note: 
