@@ -12,6 +12,10 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
     classify_spam,
     sample_text_back,
 )
+from openthaigpt_pretraining_data.core.metadata import (
+    create_info_file,
+    create_metadata_file,
+)
 import numpy as np
 import scipy
 import json
@@ -20,16 +24,23 @@ import hydra
 import zstandard as zstd
 
 num_proc = None
-do_perplexity = batch_size = sampled_back_ratio = None
-output_dir = scratch_location = version = None
-source = input_path = input_version = note = None
+input_based_path = None
+do_perplexity = None
+batch_size = None
+sampled_back_ratio = None
+output_dir = None
+scratch_location = None
+version = None
+source = None
+input_version = None
+note = None
 
 
 @hydra.main(config_path=".")
 def load_config(cfg):
 
     global do_perplexity, batch_size, sampled_back_ratio, input_version, num_proc
-    global output_dir, scratch_location, source, input_path, version, note
+    global output_dir, scratch_location, source, input_based_path, version, note
 
     cfg = cfg.config
 
@@ -39,16 +50,14 @@ def load_config(cfg):
     batch_size = cfg.processing_parameters.batch_size
     sampled_back_ratio = cfg.processing_parameters.sampled_back_ratio
 
-    output_dir = cfg.output.path
+    output_dir = str(cfg.output.path)
     scratch_location = cfg.output.scratch_path if "scratch_path" in cfg.output else None
 
-    input_based_path = cfg.input_dataset.path
+    input_based_path = str(cfg.input_dataset.path)
 
     info = json.load(open(f"{input_based_path}/info.json", "r"))
     input_version = info["current_version"]
     source = info["source"]
-
-    input_path = f"{input_based_path}/{input_version}/data"
 
     print(f"Processing {source} dataset")
     if "version" in cfg.output:
@@ -155,11 +164,11 @@ def process_chunk_data(chunk):
 
 def filter_field(data, source):
     data["source"] = source
-    meta_dict = {"filename": input_path.split("/")[-1]}
     del data["log_pp_score"], data["prediction"]
     if source != "oscar_cl":
         data["source"] = source
-        meta_dict = {"filename": input_path.split("/")[-1]}
+        meta_dict = {"filename": f"{input_based_path}/{input_version}"}
+
         if source == "mc4":
             data["created_date"] = str(data["timestamp"])
             meta_dict["url"] = data["url"]
@@ -231,17 +240,19 @@ if __name__ == "__main__":
             dataset = load_dataset(
                 "json",
                 data_files=[
-                    f"{input_path}/mc4_th_train.json",
-                    f"{input_path}/mc4_th_validation.json",
+                    f"{input_based_path}/{input_version}/data/mc4_th_train.json",
+                    f"{input_based_path}/{input_version}/data/mc4_th_validation.json",
                 ],
-                cache_dir=f"{input_path}/cache",
+                cache_dir=f"{input_based_path}/{input_version}/data/cache",
             )
 
         elif source == "oscar_cl":
-            dataset = Dataset.from_generator(lambda: read_jsonl_zst_files(input_path))
+            dataset = Dataset.from_generator(
+                lambda: read_jsonl_zst_files(f"{input_based_path}/{input_version}/data")
+            )
 
         else:
-            dataset = load_from_disk(input_path)
+            dataset = load_from_disk(f"{input_based_path}/{input_version}/data")
 
         print(dataset)
 
@@ -274,11 +285,12 @@ if __name__ == "__main__":
         print("Finish processing")
 
         info = {"source": source, "current_version": version}
-        json.dump(info, open(f"{output_dir}/info.json", "w"))
+        create_info_file(info, str(output_dir))
 
         metadata = {
             "dataset_name": source,
             "data_version": version,
+            "dataset_location": output_dir,
             "data_scratch_location": scratch_location,
             "input_name": source,
             "input_version": input_version,
@@ -287,8 +299,9 @@ if __name__ == "__main__":
                 "batch_size": batch_size,
                 "sampled_back_ratio": sampled_back_ratio,
             },
+            "pipeline_name": "internet",
             "note": note,
         }
-        json.dump(metadata, open(f"{output_dir}/{version}/metadata.json", "w"))
+        create_metadata_file(metadata, str(input_based_path), str(output_dir))
 
         print("Finish Writing the dataset")
