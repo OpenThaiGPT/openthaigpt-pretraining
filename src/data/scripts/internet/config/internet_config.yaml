@@ -7,9 +7,9 @@ output:
   version: 1
 
 processing_parameters: 
+  num_proc: 128
   do_perplexity: True
   batch_size: 1000
   sampled_back_ratio: 0.6
 
-num_proc: 128
 note: 

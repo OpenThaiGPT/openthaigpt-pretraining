@@ -12,6 +12,7 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
     classify_spam,
     sample_text_back,
 )
+from openthaigpt_pretraining_data.core.processing_config import load_config
 from openthaigpt_pretraining_data.core.metadata import (
     create_info_file,
     create_metadata_file,
@@ -20,59 +21,31 @@ import numpy as np
 import scipy
 import json
 import os
-import hydra
 import zstandard as zstd
+import argparse
 
-num_proc = None
-input_based_path = None
-do_perplexity = None
-batch_size = None
-sampled_back_ratio = None
-output_dir = None
-scratch_location = None
-version = None
-source = None
-input_version = None
-note = None
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--config_filename",
+    help="Filename of yaml file to use in hydra (Default: 'config/internet_config.yaml')",  # noqa: E501
+    default="config/internet_config.yaml",
+)
+args = parser.parse_args()
+config_filename = str(args.config_filename)
 
+config_dict = load_config(config_filename)
 
-@hydra.main(config_path=".")
-def load_config(cfg):
-
-    global do_perplexity, batch_size, sampled_back_ratio, input_version, num_proc
-    global output_dir, scratch_location, source, input_based_path, version, note
-
-    cfg = cfg.config
-
-    num_proc = cfg.num_proc
-
-    do_perplexity = cfg.processing_parameters.do_perplexity
-    batch_size = cfg.processing_parameters.batch_size
-    sampled_back_ratio = cfg.processing_parameters.sampled_back_ratio
-
-    output_dir = str(cfg.output.path)
-    scratch_location = cfg.output.scratch_path if "scratch_path" in cfg.output else None
-
-    input_based_path = str(cfg.input_dataset.path)
-
-    info = json.load(open(f"{input_based_path}/info.json", "r"))
-    input_version = info["current_version"]
-    source = info["source"]
-
-    print(f"Processing {source} dataset")
-    if "version" in cfg.output:
-        version = cfg.output.version
-    else:
-        if os.path.exists(f"{output_dir}/info.json"):
-            info = json.load(open(f"{output_dir}/info.json", "r"))
-            version = info["current_version"] + 1
-        else:
-            version = 1
-
-    note = cfg.note
-
-
-load_config()
+input_based_path = config_dict["input_based_path"]
+num_proc = config_dict["processing_parameters"]["num_proc"]
+do_perplexity = config_dict["processing_parameters"]["do_perplexity"]
+batch_size = config_dict["processing_parameters"]["batch_size"]
+sampled_back_ratio = config_dict["processing_parameters"]["sampled_back_ratio"]
+output_dir = config_dict["output_dir"]
+scratch_location = config_dict["scratch_location"]
+version = config_dict["version"]
+source = config_dict["source"]
+input_version = config_dict["input_version"]
+note = config_dict["note"]
 
 
 def clean_text(text):
@@ -285,7 +258,7 @@ if __name__ == "__main__":
         print("Finish processing")
 
         info = {"source": source, "current_version": version}
-        create_info_file(info, str(output_dir))
+        create_info_file(info, output_dir)
 
         metadata = {
             "dataset_name": source,
