@@ -233,3 +233,133 @@ def most_similar_fuzzy(search_text, source_text):
                 match_line = i
 
     return {lines[match_line]: match_line}
+
+
+def pdf_2_text_markup(pdf_file, text_rule_file):
+    """
+    Description:
+        Convert pdf file to text with markup table.
+    Args:
+        pdf_file: string of pdf file path.
+        text_rule_file: string of file path to pdf_correction_rules.txt.
+    Returns:
+        full_text_markup: string.
+    """
+
+    raw_text = read_pdf_all_pages(pdf_file)
+    clean_text = clean_dup_esc_char(raw_text)
+    clean_text = clean_by_rules(clean_text, text_rule_file)
+
+    raw_json_table = get_clean_json_tables(pdf_file, text_rule_file)
+    if len(raw_json_table) == 0:
+        return clean_whitespace(clean_text)
+
+    clean_df = get_clean_df(raw_json_table)
+
+    csv_table = clean_df.to_csv(index=False)
+    result_ls = []
+    for csv_line in csv_table.strip().split("\n"):
+        if len(clean_whitespace(csv_line)) <= 1:
+            continue
+        result = most_similar_fuzzy(csv_line, clean_text)
+        result_ls.append(result)
+
+    match_line_ls = [int(list(dct.values())[0]) for dct in result_ls]
+
+    # Use min / max as start / end line of extraction
+    clean_text_lines = clean_text.split("\n")
+    clean_text_lines = [clean_whitespace(line) for line in clean_text_lines]
+    full_text_markup = (
+        "\n".join(clean_text_lines[: min(match_line_ls)])
+        + "\n"
+        + clean_df.to_markdown(index=False)
+        + "\n"
+        + "\n".join(clean_text_lines[max(match_line_ls) + 1 :])
+    )
+
+    return full_text_markup
+
+
+def clean_by_char_structure(str_text):
+    """
+    Description:
+        Clean string by vowel and tone mark structure.
+    Args:
+        str_text: input string.
+    Returns:
+        final_pdf: clean string.
+    """
+
+    str_text = str_text.replace(f"{chr(3661)}า", "ำ")
+    str_text = str_text.replace(f"{chr(3661) + chr(3656)}า", "่ำ")
+    str_text = str_text.replace(chr(139), chr(3656))
+    str_text = str_text.replace(chr(140), chr(3657))
+    str_text = str_text.replace(chr(141), chr(3658))
+    str_text = str_text.replace(chr(142), chr(3659))
+
+    split_text = str_text.split("\n")
+    final_pdf = []
+    for text in split_text:
+        result = ""
+        index_new = 0
+        while index_new < len(text):
+            current_char = text[index_new]
+
+            if (
+                index_new > 0
+                and index_new < len(text) - 2
+                and not current_char.isascii()
+            ):
+                next_char = text[index_new + 1]
+                next_next_char = text[index_new + 2]
+                if next_char in [" ", chr(141)] and next_next_char in [
+                    chr(3655),
+                    chr(3656),
+                    chr(3657),
+                    chr(3658),
+                    chr(3659),
+                    chr(3634),
+                    chr(3635),
+                    chr(3636),
+                    chr(3637),
+                    chr(3638),
+                    chr(3632),
+                    chr(3633),
+                    chr(3640),
+                    chr(3641),
+                ]:
+                    result += current_char + next_next_char
+                    index_new += 3
+                    continue
+
+            result += current_char
+            index_new += 1
+
+        result_new = ""
+        index_new = 0
+        while index_new < len(result):
+            current_char = result[index_new]
+
+            if (
+                index_new > 0
+                and index_new < len(result) - 2
+                and not current_char.isascii()
+            ):
+                next_char = result[index_new + 1]
+                if next_char in [" ", chr(141)] and current_char in [
+                    "แ",
+                    "เ",
+                    "ไ",
+                    "โ",
+                    "ใ",
+                ]:
+                    result_new += current_char
+                    index_new += 2
+                    continue
+
+            result_new += current_char
+            index_new += 1
+
+        final_pdf.append(result_new)
+
+    return "\n".join(final_pdf)
