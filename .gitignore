@@ -13,3 +13,5 @@ src/data/**/full_input*
 /etc/
 /image_sandbox
 **/.DS_Store
+src/data/scripts/merge_pdf/bcp/*
+src/data/openthaigpt_pretraining_data/merge_pdf/test_files*
