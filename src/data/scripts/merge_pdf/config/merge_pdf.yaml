@@ -1,0 +1,10 @@
+pdf_file:
+  key: openthaigpt
+  name: openthaigpt_pretraining_dataset
+  available_on_hub: False
+  path_name: src/data/scripts/merge_pdf/bcp.pdf
+  subset:
+
+text_rule_file:
+  engine: openthaigpt
+  path_name: src/data/scripts/merge_pdf/pdf_correction_rules_new.txt

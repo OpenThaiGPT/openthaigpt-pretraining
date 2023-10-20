@@ -277,7 +277,7 @@ def pdf_2_text_markup(pdf_file, text_rule_file):
         + "\n".join(clean_text_lines[max(match_line_ls) + 1 :])
     )
 
-    return full_text_markup
+    return clean_by_char_structure(full_text_markup)
 
 
 def clean_by_char_structure(str_text):
