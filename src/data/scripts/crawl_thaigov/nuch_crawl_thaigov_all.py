@@ -1,6 +1,9 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
+from tqdm.auto import tqdm
+
+import re
 
 
 def get_soup_by_url(url, if_verify=True):
@@ -42,7 +45,7 @@ def get_soup_dict(soup_in):
         cur_date_clean = cur_date.text.strip()[: cur_date.text.strip().find("\n")]
     else:
         cur_date_clean = None
-    cur_date_clean
+
     cur_h3 = cur_pbody.h3
     cur_title = cur_pbody.find("p", class_="font_level2 Circular color3")
     cur_detail = cur_pbody.find("div", class_="col-xs-12 padding-sm1 news-2 Circular")
@@ -59,6 +62,10 @@ def get_soup_dict(soup_in):
 
     return cur_content
 
+
+requests.packages.urllib3.disable_warnings(
+    requests.packages.urllib3.exceptions.InsecureRequestWarning
+)
 
 # Get list for crawling, extract only the site with news_format contents
 site_map = pd.read_csv("src/data/scripts/crawl_thaigov/Thaigov_crawl_lists.csv")
@@ -105,14 +112,20 @@ for list in crawl_list.href:
                 }
 
         # get number of max page for page looping
-        soup_page = soup[1].find_all("ul", class_="pagination color2")
+        soup_page = soup[1].find_all("ul", class_=re.compile("^pagination color"))
         soup_page_li = soup_page[0].find_all("li")
+        soup_page_li = sorted(
+            soup_page_li,
+            key=lambda x: int(x.a["data-ci-pagination-page"])
+            if "data-ci-pagination-page" in x.a.attrs
+            else 0,
+        )
         max_page = int(soup_page_li[-1].a["data-ci-pagination-page"])
 
         # Start looping next page
         url_get_page = url_news_main + "?per_page="
 
-        for i in range(1, max_page):
+        for i in tqdm(range(1, max_page), total=max_page - 1):
             url_page = url_get_page + str(
                 i * 10
             )  # req per_page is to load 10 contents on each page
