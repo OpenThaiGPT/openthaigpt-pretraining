@@ -257,24 +257,7 @@ if __name__ == "__main__":
 
         print("Finish processing")
 
-        info = {"source": source, "current_version": version}
-        create_info_file(info, output_dir)
-
-        metadata = {
-            "dataset_name": source,
-            "data_version": version,
-            "dataset_location": output_dir,
-            "data_scratch_location": scratch_location,
-            "input_name": source,
-            "input_version": input_version,
-            "processing_parameters": {
-                "do_perplexity": do_perplexity,
-                "batch_size": batch_size,
-                "sampled_back_ratio": sampled_back_ratio,
-            },
-            "pipeline_name": "internet",
-            "note": note,
-        }
-        create_metadata_file(metadata, str(input_based_path), str(output_dir))
+        create_info_file(config_dict)
+        create_metadata_file(config_dict, pipeline_name="internet")
 
         print("Finish Writing the dataset")
