@@ -1,13 +1,8 @@
-# import os
 import pandas as pd
 import PyPDF2
 import pdf_table2json.converter as converter
 from difflib import SequenceMatcher
 import re
-
-# import numpy as np
-# import statistics
-# import math
 
 
 def convert_correction_rules(filepath):
