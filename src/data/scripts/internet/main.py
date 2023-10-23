@@ -12,57 +12,40 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
     classify_spam,
     sample_text_back,
 )
+from openthaigpt_pretraining_data.core.processing_config import load_config
+from openthaigpt_pretraining_data.core.metadata import (
+    create_info_file,
+    create_metadata_file,
+)
 import numpy as np
 import scipy
 import json
 import os
-import hydra
 import zstandard as zstd
+import argparse
 
-NUM_PROC = 128
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--config_filename",
+    help="Filename of yaml file to use in hydra (Default: 'config/internet_config.yaml')",  # noqa: E501
+    default="config/internet_config.yaml",
+)
+args = parser.parse_args()
+config_filename = str(args.config_filename)
 
-do_perplexity = batch_size = sampled_back_ratio = None
-output_dir = scratch_location = version = None
-source = input_path = input_version = note = None
+config_dict = load_config(config_filename)
 
-
-@hydra.main(config_path=".")
-def load_config(cfg):
-
-    global do_perplexity, batch_size, sampled_back_ratio, input_version
-    global output_dir, scratch_location, source, input_path, version, note
-
-    cfg = cfg.config
-
-    do_perplexity = cfg.processing_parameters.do_perplexity
-    batch_size = cfg.processing_parameters.batch_size
-    sampled_back_ratio = cfg.processing_parameters.sampled_back_ratio
-
-    output_dir = cfg.output.path
-    scratch_location = cfg.output.scratch_path if "scratch_path" in cfg.output else None
-
-    input_based_path = cfg.input_dataset.path
-
-    info = json.load(open(f"{input_based_path}/info.json", "r"))
-    input_version = info["current_version"]
-    source = info["source"]
-
-    input_path = f"{input_based_path}/{input_version}/data"
-
-    print(f"Processing {source} dataset")
-    if "version" in cfg.output:
-        version = cfg.output.version
-    else:
-        if os.path.exists(f"{output_dir}/info.json"):
-            info = json.load(open(f"{output_dir}/info.json", "r"))
-            version = info["current_version"] + 1
-        else:
-            version = 1
-
-    note = cfg.note
-
-
-load_config()
+input_based_path = config_dict["input_based_path"]
+num_proc = config_dict["processing_parameters"]["num_proc"]
+do_perplexity = config_dict["processing_parameters"]["do_perplexity"]
+batch_size = config_dict["processing_parameters"]["batch_size"]
+sampled_back_ratio = config_dict["processing_parameters"]["sampled_back_ratio"]
+output_dir = config_dict["output_dir"]
+scratch_location = config_dict["scratch_location"]
+version = config_dict["version"]
+source = config_dict["source"]
+input_version = config_dict["input_version"]
+note = config_dict["note"]
 
 
 def clean_text(text):
@@ -154,11 +137,11 @@ def process_chunk_data(chunk):
 
 def filter_field(data, source):
     data["source"] = source
-    meta_dict = {"filename": input_path.split("/")[-1]}
     del data["log_pp_score"], data["prediction"]
     if source != "oscar_cl":
         data["source"] = source
-        meta_dict = {"filename": input_path.split("/")[-1]}
+        meta_dict = {"filename": f"{input_based_path}/{input_version}"}
+
         if source == "mc4":
             data["created_date"] = str(data["timestamp"])
             meta_dict["url"] = data["url"]
@@ -230,17 +213,19 @@ if __name__ == "__main__":
             dataset = load_dataset(
                 "json",
                 data_files=[
-                    f"{input_path}/mc4_th_train.json",
-                    f"{input_path}/mc4_th_validation.json",
+                    f"{input_based_path}/{input_version}/data/mc4_th_train.json",
+                    f"{input_based_path}/{input_version}/data/mc4_th_validation.json",
                 ],
-                cache_dir=f"{input_path}/cache",
+                cache_dir=f"{input_based_path}/{input_version}/data/cache",
             )
 
         elif source == "oscar_cl":
-            dataset = Dataset.from_generator(lambda: read_jsonl_zst_files(input_path))
+            dataset = Dataset.from_generator(
+                lambda: read_jsonl_zst_files(f"{input_based_path}/{input_version}/data")
+            )
 
         else:
-            dataset = load_from_disk(input_path)
+            dataset = load_from_disk(f"{input_based_path}/{input_version}/data")
 
         print(dataset)
 
@@ -255,7 +240,7 @@ if __name__ == "__main__":
 
         dataset = dataset.map(
             process_chunk_data,
-            num_proc=NUM_PROC,
+            num_proc=num_proc,
             batched=True,
             batch_size=batch_size,
             # keep_in_memory=True,
@@ -272,22 +257,7 @@ if __name__ == "__main__":
 
         print("Finish processing")
 
-        info = {"source": source, "current_version": version}
-        json.dump(info, open(f"{output_dir}/info.json", "w"))
-
-        metadata = {
-            "dataset_name": source,
-            "data_version": version,
-            "data_scratch_location": scratch_location,
-            "input_name": source,
-            "input_version": input_version,
-            "processing_parameters": {
-                "do_perplexity": do_perplexity,
-                "batch_size": batch_size,
-                "sampled_back_ratio": sampled_back_ratio,
-            },
-            "note": note,
-        }
-        json.dump(metadata, open(f"{output_dir}/{version}/metadata.json", "w"))
+        create_info_file(config_dict)
+        create_metadata_file(config_dict, pipeline_name="internet")
 
         print("Finish Writing the dataset")
