@@ -17,23 +17,36 @@ For part 2-5, You can see each part in more details at `src/data/openthaigpt_pre
 
 You can also process the internet data via running `main.py` 
 
-Before running. please download `core.zip` from this [link](https://drive.google.com/file/d/1OBbo21v_-esL31rxtNtsMHrA8T1JYqAd/view?usp=sharing) and extract it in `src/data/openthaigpt_pretraining_data/internet/perplexity` first.It contains an n-gram language model weight and Decision Tree classifier weight.
+Before running. please dvc pull `core.zip`. It contains an n-gram language model weight and Decision Tree classifier.
+
+### DVC Pull instruction
+
+First please request dvc pull credentials from this [link](https://docs.google.com/forms/d/e/1FAIpQLSeXrHMGpmRM9Wj4AVXT5WIl7w96wuhjPUnbU0jCs5Ujb0LL_w/viewform)
+
+After you received credentials, download your credentials file to local repository, and run 
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS= path/to/yourfile
+dvc push src/data/openthaigpt_pretraining_data/internet/perplexity/core.zip.dvc
+```
 
 ### Running Example
 ```bash
-python main.py +config=mc4_config
+cd src/data/scripts/internet 
+python main.py --config_filename=config/cc100_config.yaml
 ```
 This code will read the datasets, process, and save the output in jsonl format.
 
 ### Config
 
-This file will read config from subfolder `config`. Override the config with your preferred config when run.
+This file will read config from file in `config_filename` (Default is `config/internet_config.yaml`). Specify config_filename arguments with your preferred config or edit the default file when run.
 
 ##### Config fields
 
 The `input_dataset` and `output_dataset` and their subconfig follow the new data pipeline's format.
 
 `Processing parameters`
+- `num_proc` : Number of process to use in program.
 - `batch_size` : Size of data chunks to be process in a single step of loading.
 - `do_perplexity` : `True` or `False`. Indicates if we should do Step 3-4 in `What will the code do ?`
 - `sampled_back_ratio` : Float number in range 0-1. Indicates the ratio between the number bad data to be sampled back in step 4 and the number of all bad data. This is used only when `do_perplexity` set to `True`
