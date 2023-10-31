@@ -272,9 +272,9 @@ def write_best_corpus(FILE_PATH, enccypedia=False):
                     "text": word,
                     "source": FOLDER_PATH,
                     "source_id": index,
-                    "created_date": "2009-11-25",
-                    "updated_date": "2009-11-25",
-                    "meta": None,
+                    "created_date": DATASET_CREATE_DATE,
+                    "updated_date": DATASET_UPDATE_DATE,
+                    "meta": META_LABEL,
                 }
                 # Write the dictionary to the .jsonl file
                 writer.write(row_dict)
@@ -320,9 +320,9 @@ def write_lst_corpus(Folder_PATH):
                 "text": text_list[i],
                 "source": "LST",
                 "source_id": i,
-                "created_date": "2020-08-23",
-                "updated_date": "2020-08-23",
-                "meta": None,
+                "created_date": DATASET_CREATE_DATE,
+                "updated_date": DATASET_UPDATE_DATE,
+                "meta": META_LABEL,
             }
             # Write the dictionary to the .jsonl file
             writer.write(row_dict)
