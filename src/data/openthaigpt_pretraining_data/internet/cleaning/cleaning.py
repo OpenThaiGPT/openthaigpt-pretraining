@@ -3,28 +3,28 @@ import re  # type: ignore
 
 from .constants import (
     TEXT_DATASET_KEY,
-    NEWLINE_CHARACTOR,
+    NEWLINE_CHARACTER,
     COOKIE_KEYWORD,
-    SPECAIL_CHARACTOR_PATTERN,
-    SPECAIL_CHARACTOR_RATIO,
+    SPECAIL_CHARACTER_PATTERN,
+    SPECAIL_CHARACTER_RATIO,
     WHITE_SPACE_RATIO,
     MIN_LINE_RATIO,
-    MINIMUM_LENGHT,
-    MIN_WORD_LENGHT,
+    MINIMUM_LENGTH,
+    MIN_WORD_LENGTH,
     N_LINE,
 )
 
 
-def filter_short_texts(min_lenght: int = MINIMUM_LENGHT):
+def filter_short_texts(min_length: int = MINIMUM_LENGTH):
     """
     Description:
         Use map with huggingface dataset for filter short texts.
     Args:
-        - min_lenght: minimun lenght of text for filter.
+        - min_length: minimun lenght of text for filter.
     """
 
     def filter(sample):
-        return len(sample[TEXT_DATASET_KEY]) >= min_lenght
+        return len(sample[TEXT_DATASET_KEY]) >= min_length
 
     return filter
 
@@ -49,11 +49,11 @@ def filter_keywords(keywords: Union[str, List[str]] = COOKIE_KEYWORD):
 
 
 def clean_no_meaningful(
-    min_lenght: int = MIN_WORD_LENGHT,
+    min_length: int = MIN_WORD_LENGTH,
     min_line_ratio: float = MIN_LINE_RATIO,
     white_space_ratio: float = WHITE_SPACE_RATIO,
-    special_charactor_ratio: float = SPECAIL_CHARACTOR_RATIO,
-    special_charactor_pattern: str = SPECAIL_CHARACTOR_PATTERN,
+    special_character_ratio: float = SPECAIL_CHARACTER_RATIO,
+    special_character_pattern: str = SPECAIL_CHARACTER_PATTERN,
 ):
     """
     Description:
@@ -69,11 +69,11 @@ def clean_no_meaningful(
         - special_charactor_pattern: regex pattern for special charactor.
     """  # noqa
 
-    def get_ratio(text, total_lenght, pattern):
+    def get_ratio(text, total_length, pattern):
         """
         Calculate ratio between lenght text and lenght charactor in pattern.
         """
-        return len(re.findall(pattern, text)) / total_lenght
+        return len(re.findall(pattern, text)) / total_length
 
     def get_line_ratio(line, pattern):
         """
@@ -84,7 +84,7 @@ def clean_no_meaningful(
         if len("".join(sub_lines)) == 0:
             return 0.0
         for sub_line in sub_lines:
-            if len(sub_line) > min_lenght:
+            if len(sub_line) > min_length:
                 sub_result.append(sub_line)
         return len("".join(sub_result)) / len("".join(sub_lines))
 
@@ -97,8 +97,8 @@ def clean_no_meaningful(
             return {TEXT_DATASET_KEY: ""}
         # Check special charactor
         if (
-            get_ratio(text, total_lenght, special_charactor_pattern)
-            >= special_charactor_ratio
+            get_ratio(text, total_lenght, special_character_pattern)
+            >= special_character_ratio
         ):
             return {TEXT_DATASET_KEY: ""}
 
@@ -107,12 +107,12 @@ def clean_no_meaningful(
         result = []
         for line in lines:
             if (
-                get_line_ratio(line, SPECAIL_CHARACTOR_PATTERN) > min_line_ratio
+                get_line_ratio(line, special_character_pattern) > min_line_ratio
                 and get_line_ratio(line, " ") > min_line_ratio
             ):
                 result.append(line)
 
-        return {TEXT_DATASET_KEY: NEWLINE_CHARACTOR.join(result)}
+        return {TEXT_DATASET_KEY: NEWLINE_CHARACTER.join(result)}
 
     return cleaner
 
@@ -127,7 +127,7 @@ def dedup_n_lines(n_lines: int = N_LINE):
     hash_history = []
 
     def dedup(sample):
-        lines = sample[TEXT_DATASET_KEY].split(NEWLINE_CHARACTOR)
+        lines = sample[TEXT_DATASET_KEY].split(NEWLINE_CHARACTER)
 
         if len(lines) < n_lines:
             return {TEXT_DATASET_KEY: sample[TEXT_DATASET_KEY]}
@@ -142,6 +142,6 @@ def dedup_n_lines(n_lines: int = N_LINE):
                 for line in current_lines:
                     if line in return_document:
                         return_document.remove(line)
-        return {TEXT_DATASET_KEY: NEWLINE_CHARACTOR.join(return_document)}
+        return {TEXT_DATASET_KEY: NEWLINE_CHARACTER.join(return_document)}
 
     return dedup

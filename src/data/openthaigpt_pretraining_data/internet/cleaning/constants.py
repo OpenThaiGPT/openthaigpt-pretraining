@@ -1,5 +1,5 @@
 TEXT_DATASET_KEY = "text"
-NEWLINE_CHARACTOR = "\n"
+NEWLINE_CHARACTER = "\n"
 COOKIE_KEYWORD = [
     "ใช้งานคุกกี้",
     "ใช้คุกกี้",
@@ -11,10 +11,10 @@ COOKIE_KEYWORD = [
     "ยินยอมให้เราเก็บคุกกี้ทั้งหมด",
     "นโยบายเกี่ยวกับคุกกี้",
 ]
-SPECAIL_CHARACTOR_PATTERN = r"""[!@#$%^&*()_+={}\[\]:;"\'<>,.?/\|\\`~]"""
+SPECAIL_CHARACTER_PATTERN = r"""[!@#$%^&*()_+={}\[\]:;"\'<>,.?/\|\\`~]"""
 WHITE_SPACE_RATIO = 0.1
-SPECAIL_CHARACTOR_RATIO = 0.05
-MINIMUM_LENGHT = 128
+SPECAIL_CHARACTER_RATIO = 0.05
+MINIMUM_LENGTH = 128
 N_LINE = 3
-MIN_WORD_LENGHT = 30
+MIN_WORD_LENGTH = 30
 MIN_LINE_RATIO = 0.3
