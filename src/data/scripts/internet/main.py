@@ -12,12 +12,6 @@ from openthaigpt_pretraining_data.internet.perplexity.perplexity import (
     classify_spam,
     sample_text_back,
 )
-from openthaigpt_pretraining_data.internet.cleaning.cleaning import (
-    filter_short_texts,
-    filter_keywords,
-    clean_no_meaningful,
-    dedup_n_lines,
-)
 from openthaigpt_pretraining_data.core.processing_config import load_config
 from openthaigpt_pretraining_data.core.metadata import (
     create_info_file,
