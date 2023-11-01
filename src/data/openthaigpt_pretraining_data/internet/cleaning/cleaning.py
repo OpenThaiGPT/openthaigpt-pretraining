@@ -42,7 +42,7 @@ def filter_keywords(keywords: Union[str, List[str]] = COOKIE_KEYWORD):
         Use map with huggingface dataset for filter text with have keywords.
     Args:
         - keywords: string or list of string which is the keyword that you want to delete.
-    """
+    """  # noqa
     if isinstance(keywords, str):
         keywords = [keywords]
 
@@ -74,7 +74,7 @@ def clean_no_meaningful(
         - white_space_ratio: ratio between space charactor and total charactor that want to remove.
         - special_charactor_ratio: ratio between special charactor and total charactor that want to remove.
         - special_charactor_pattern: regex pattern for special charactor.
-    """
+    """  # noqa
 
     def get_ratio(text, total_lenght, pattern):
         """
@@ -143,7 +143,7 @@ def dedup_n_lines(n_lines: int = N_LINE):
         for i in range(len(lines) - 2):
             current_lines = lines[i : i + 3]
             hash_line = hash("\n".join(current_lines))
-            if not hash_line in hash_history:
+            if hash_line not in hash_history:
                 hash_history.append(hash_line)
             else:
                 for line in current_lines:
