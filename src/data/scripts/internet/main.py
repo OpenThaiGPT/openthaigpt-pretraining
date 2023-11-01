@@ -251,11 +251,6 @@ if __name__ == "__main__":
             # cache_file_name=f"hf_cache/{source}/processed.arrow",
         )
 
-        dataset = dataset.map(clean_no_meaningful())
-        dataset = dataset.map(dedup_n_lines())
-        dataset = dataset.filter(filter_short_texts())
-        dataset = dataset.filter(filter_keywords())
-
         for data in dataset:
             filtered_data = filter_field(data, source)
             writer.write(filtered_data)
