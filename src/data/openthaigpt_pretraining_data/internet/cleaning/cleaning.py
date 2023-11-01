@@ -1,5 +1,5 @@
-from typing import Union, List
-import re
+from typing import Union, List  # type: ignore
+import re  # type: ignore
 
 TEXT_DATASET_KEY = "text"
 COOKIE_KEYWORD = [
