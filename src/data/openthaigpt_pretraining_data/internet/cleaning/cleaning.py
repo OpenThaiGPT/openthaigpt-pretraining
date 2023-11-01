@@ -1,28 +1,21 @@
 from typing import Union, List  # type: ignore
 import re  # type: ignore
 
-TEXT_DATASET_KEY = "text"
-COOKIE_KEYWORD = [
-    "ใช้งานคุกกี้",
-    "ใช้คุกกี้",
-    "เว็บไซต์นี้ใช้คุกกี้",
-    "นโยบายคุกกี้",
-    "ตั้งค่าคุกกี้",
-    "เทคโนโลยีคุกกี้",
-    "คุกกี้บนเว็บไซต์",
-    "ยินยอมให้เราเก็บคุกกี้ทั้งหมด",
-    "นโยบายเกี่ยวกับคุกกี้",
-]
-SPECAIL_CHARACTOR_PATTERN = r"""[!@#$%^&*()_+={}\[\]:;"\'<>,.?/\|\\`~]"""
-WHITE_SPACE_RATIO = 0.1
-SPECAIL_CHARACTOR_RATIO = 0.05
-MINIMUM_LENGHT = 128
-N_LINE = 3
-MIN_WORD_LENGHT = 30
-MIN_LINE_RATIO = 0.3
+from .constants import (
+    TEXT_DATASET_KEY,
+    NEWLINE_CHARACTOR,
+    COOKIE_KEYWORD,
+    SPECAIL_CHARACTOR_PATTERN,
+    SPECAIL_CHARACTOR_RATIO,
+    WHITE_SPACE_RATIO,
+    MIN_LINE_RATIO,
+    MINIMUM_LENGHT,
+    MIN_WORD_LENGHT,
+    N_LINE,
+)
 
 
-def filter_short_texts(min_lenght: int = 256):
+def filter_short_texts(min_lenght: int = MINIMUM_LENGHT):
     """
     Description:
         Use map with huggingface dataset for filter short texts.
@@ -119,7 +112,7 @@ def clean_no_meaningful(
             ):
                 result.append(line)
 
-        return {TEXT_DATASET_KEY: "\n".join(result)}
+        return {TEXT_DATASET_KEY: NEWLINE_CHARACTOR.join(result)}
 
     return cleaner
 
@@ -134,10 +127,10 @@ def dedup_n_lines(n_lines: int = N_LINE):
     hash_history = []
 
     def dedup(sample):
-        lines = sample["text"].split("\n")
+        lines = sample[TEXT_DATASET_KEY].split(NEWLINE_CHARACTOR)
 
         if len(lines) < n_lines:
-            return {"text": sample["text"]}
+            return {TEXT_DATASET_KEY: sample[TEXT_DATASET_KEY]}
 
         return_document = lines.copy()
         for i in range(len(lines) - 2):
@@ -149,6 +142,6 @@ def dedup_n_lines(n_lines: int = N_LINE):
                 for line in current_lines:
                     if line in return_document:
                         return_document.remove(line)
-        return {"text": "\n".join(return_document)}
+        return {TEXT_DATASET_KEY: NEWLINE_CHARACTOR.join(return_document)}
 
     return dedup
