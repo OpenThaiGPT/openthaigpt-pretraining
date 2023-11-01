@@ -133,8 +133,8 @@ def dedup_n_lines(n_lines: int = N_LINE):
             return {TEXT_DATASET_KEY: sample[TEXT_DATASET_KEY]}
 
         return_document = lines.copy()
-        for i in range(len(lines) - 2):
-            current_lines = lines[i : i + 3]
+        for i in range(len(lines) - n_lines + 1):
+            current_lines = lines[i : i + n_lines]
             hash_line = hash("\n".join(current_lines))
             if hash_line not in hash_history:
                 hash_history.append(hash_line)
