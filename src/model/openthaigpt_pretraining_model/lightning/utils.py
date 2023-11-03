@@ -72,10 +72,11 @@ class Trainer:
         if self.fabric.global_rank == 0:
             self.wandb = wandb.init(project="Fabric")
 
-        with self.fabric.device:
-            self.tokenizer, self.model = load_model_and_tokenizer(
-                configuration.model,
-            )
+        self.tokenizer, self.model = load_model_and_tokenizer(
+            configuration.model,
+            training_configuration.get("load_in_4bit", False),
+            training_configuration.get("load_in_8bit", False),
+        )
 
         if configuration.get("lora", None) is not None:
             self.model = load_lora(
