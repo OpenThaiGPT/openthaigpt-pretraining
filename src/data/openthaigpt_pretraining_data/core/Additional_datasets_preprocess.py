@@ -286,7 +286,7 @@ def write_best_corpus(FILE_PATH, enccypedia=False):
                 }
                 # Write the dictionary to the .jsonl file
                 writer.write(row_dict)
-                
+
     return None
 
 
