@@ -5,9 +5,14 @@ from tqdm import tqdm
 import os
 import re
 
-# This code block defines several variables that will be used in the preprocessing of a dataset.
-# These variables include the dataset name, target and origin languages, json path, create and update dates, meta label, text column name, file path, and folder path.
-# These variables will be used in the subsequent code blocks to load the dataset, preprocess the text, and write the preprocessed text to a jsonline file.
+"""This code block defines several variables
+that will be used in the preprocessing of a dataset.
+These variables include the dataset name,
+target and origin languages, json path,
+create and update dates, meta label, text column name,
+file path, and folder path.
+These variables will be used in the subsequent code blocks to load the dataset,
+preprocess the text, and write the preprocessed text to a jsonline file."""
 
 DUMMY_DATASET_NAME = ""  # dataset name
 TARGET_LANGUAGE = ""  # target language
@@ -19,7 +24,7 @@ META_LABEL = ""  # meta label
 TEXT_COLUMN = ""  # text column name
 FILE_PATH = ""  # file path
 FOLDER_PATH = ""  # folder path
-NUM_OF_CHAR_THRESHOLD = int() # number of character threshold
+NUM_OF_CHAR_THRESHOLD = int()  # number of character threshold
 
 """Load dataset"""
 raw_dataset = load_dataset(DUMMY_DATASET_NAME)
@@ -47,10 +52,12 @@ def combine_pickle(folder_path):
     - FOLDER_PATH: str, the path to the folder containing the pickle files.
 
     Returns:
-    - combined_df: pandas dataframe, the combined pickle files as a single dataframe.
+    - combined_df: pandas dataframe,
+    the combined pickle files as a single dataframe.
     """
     folder_path = FOLDER_PATH
-    pickle_files = [file for file in os.listdir(folder_path) if file.endswith(".pkl")]
+    pickle_files = [file for file in os.listdir(folder_path)
+                    if file.endswith(".pkl")]
     pickle_df = []
 
     for file in pickle_files:
@@ -65,7 +72,8 @@ def combine_pickle(folder_path):
 
 def text_summarize_processing(header, detail, summary=None):
     """
-    Preprocesses text by summarizing it and concatenating the header, detail, and summary (if provided).
+    Preprocesses text by summarizing it and concatenating the header,
+    detail, and summary (if provided).
 
     Args:
     - header: str, the header of the text.
@@ -81,7 +89,7 @@ def text_summarize_processing(header, detail, summary=None):
         compond_text = f"หัวข้อ: {header} + '\n' + เนื้อหา: {detail}"
     else:
         compond_text = (
-            f"หัวข้อ: {header} + '\n' + เนื้อหา: {detail} + '\n' + สรุป: {summary}"
+            f"หัวข้อ:{header} + '\n' + เนื้อหา:{detail} +'\n' + สรุป:{summary}"
         )
 
     return compond_text
@@ -89,7 +97,8 @@ def text_summarize_processing(header, detail, summary=None):
 
 def translate_preprocessing(dataset, orgin_text, target_text):
     """
-    Preprocesses text by translating it and concatenating the original and translated text.
+    Preprocesses text by translating it
+    and concatenating the original and translated text.
 
     Args:
     - dataset: dict, the dataset containing the original and target text.
@@ -125,7 +134,7 @@ def drop_invalid_text_inlist(text_list):
 
 def drop_invalid_text_df(text_df):
     """
-    Removes any text in a pandas dataframe that is less than 50 characters long.
+    Removes any text in a pandas dataframe that is less than threshold.
 
     Args:
     - text_df: pandas dataframe, the dataframe to process.
@@ -133,7 +142,8 @@ def drop_invalid_text_df(text_df):
     Returns:
     - clean_text_df: pandas dataframe, the processed dataframe.
     """
-    clean_text_df = text_df[text_df[TEXT_COLUMN].str.len() > NUM_OF_CHAR_THRESHOLD]
+    clean_text_df = text_df[text_df[TEXT_COLUMN].str.len()
+                            > NUM_OF_CHAR_THRESHOLD]
     clean_text_df = clean_text_df.reset_index(drop=True, inplace=True)
 
     return clean_text_df
@@ -141,7 +151,8 @@ def drop_invalid_text_df(text_df):
 
 def combine_translate(text_list):
     """
-    Translates a list of text and concatenates the original and translated text.
+    Translates a list of text and
+    sconcatenates the original and translated text.
 
     Args:
     - text_list: list, the list of text to process.
@@ -189,10 +200,12 @@ def write_jsonline_with_index(text_list):
 
 def write_jsonline_with_df(text_df):
     """
-    Writes a pandas dataframe of text to a jsonl file with an index for each row.
+    Writes a pandas dataframe of text to a jsonl file
+    with an index for each row.
 
     Args:
-    - text_df: pandas dataframe, the dataframe of text to write to the jsonl file.
+    - text_df: pandas dataframe, the dataframe of text
+    to write to the jsonl file.
 
     Returns:
     - None
@@ -230,15 +243,20 @@ def write_best_corpus(FILE_PATH, enccypedia=False):
             with open(f"{FILE_PATH}" + index, "r") as file:
                 word = file.read()
 
-                if enccypedia == True:
+                if enccypedia is True:
                     rows = word.split("\n")
                     data_list = [row.split("\t") for row in rows]
                     dataframe = pd.DataFrame(
-                        data_list, columns=["text", "label", "label2", "label3"]
+                        data_list, columns=[
+                            "text",
+                            "label",
+                            "label2",
+                            "label3"]
                     )
                     text = dataframe["text"]
                     word = (
-                        "".join(["<_>" if item == "" else item for item in text])
+                        "".join(["<_>" if item == ""
+                                else item for item in text])
                         .replace("<_>", "\n")
                         .replace("_", " ")
                     )
@@ -247,7 +265,9 @@ def write_best_corpus(FILE_PATH, enccypedia=False):
                     pass
 
                 word = re.sub(r"[|]", "", word)
-                word = re.sub(r"^https?:\/\/.*[\r\n]*", "", word, flags=re.MULTILINE)
+                word = re.sub(
+                    r"^https?:\/\/.*[\r\n]*", "", word, flags=re.MULTILINE
+                    )
                 word = word.replace("</NE>", "")
                 word = word.replace("<NE>", "")
                 word = word.replace("<AB>", "")
@@ -275,12 +295,14 @@ def write_lst_corpus(Folder_PATH):
     Writes the LST corpus to a jsonl file.
 
     Args:
-    - Folder_PATH: str, the path to the folder containing the files to write to.
+    - Folder_PATH: str, the path to the folder containing
+    the files to write to.
 
     Returns:
     - None
     """
-    with jsonlines.open(f"{Folder_PATH}+{FILE_PATH}.jsonl", mode="w") as writer:
+    with jsonlines.open(f"{Folder_PATH}+{FILE_PATH}.jsonl",
+                        mode="w") as writer:
         text_list = []
 
         for i in os.listdir(f"{Folder_PATH}"):
