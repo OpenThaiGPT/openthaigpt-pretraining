@@ -9,7 +9,7 @@ import re
 # These variables include the dataset name, target and origin languages, json path, create and update dates, meta label, text column name, file path, and folder path.
 # These variables will be used in the subsequent code blocks to load the dataset, preprocess the text, and write the preprocessed text to a jsonline file.
 
-DATASET_NAME = ""  # dataset name
+DUMMY_DATASET_NAME = ""  # dataset name
 TARGET_LANGUAGE = ""  # target language
 ORIGIN_LANGUAGE = ""  # origin language
 JSONL_PATH = ""  # json path
@@ -19,22 +19,10 @@ META_LABEL = ""  # meta label
 TEXT_COLUMN = ""  # text column name
 FILE_PATH = ""  # file path
 FOLDER_PATH = ""  # folder path
+NUM_OF_CHAR_THRESHOLD = int() # number of character threshold
 
 """Load dataset"""
-
-
-def load_dataset(DATASET_NAME):
-    """
-    Load a dataset using the Hugging Face datasets library.
-
-    Args:
-    - DATASET_NAME: str, the name of the dataset to load.
-
-    Returns:
-    - raw_dataset: the loaded dataset.
-    """
-    raw_dataset = load_dataset(DATASET_NAME)
-    return raw_dataset
+raw_dataset = load_dataset(DUMMY_DATASET_NAME)
 
 
 def load_pickle(folder_path):
@@ -51,7 +39,7 @@ def load_pickle(folder_path):
     return pickle_df
 
 
-def combine_pickle(FOLDER_PATH):
+def combine_pickle(folder_path):
     """
     Combine multiple pickle files into a single pandas dataframe.
 
@@ -129,7 +117,7 @@ def drop_invalid_text_inlist(text_list):
     - text_list: list, the processed list of text.
     """
     for index in range(len(text_list)):
-        if len(text_list[index]) < 50:
+        if len(text_list[index]) < NUM_OF_CHAR_THRESHOLD:
             text_list.pop(index)
 
     return text_list
@@ -145,7 +133,7 @@ def drop_invalid_text_df(text_df):
     Returns:
     - clean_text_df: pandas dataframe, the processed dataframe.
     """
-    clean_text_df = text_df[text_df[TEXT_COLUMN].str.len() > 50]
+    clean_text_df = text_df[text_df[TEXT_COLUMN].str.len() > NUM_OF_CHAR_THRESHOLD]
     clean_text_df = clean_text_df.reset_index(drop=True, inplace=True)
 
     return clean_text_df
@@ -187,7 +175,7 @@ def write_jsonline_with_index(text_list):
             # Create a dictionary for the row
             row_dict = {
                 "text": text_list[index],
-                "source": DATASET_NAME,
+                "source": DUMMY_DATASET_NAME,
                 "source_id": index,
                 "created_date": DATASET_CREATE_DATE,
                 "updated_date": DATASET_UPDATE_DATE,
@@ -214,7 +202,7 @@ def write_jsonline_with_df(text_df):
             # Create a dictionary for the row
             row_dict = {
                 "text": row[index],
-                "source": DATASET_NAME,
+                "source": DUMMY_DATASET_NAME,
                 "source_id": index,
                 "created_date": DATASET_CREATE_DATE,
                 "updated_date": DATASET_UPDATE_DATE,
