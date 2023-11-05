@@ -17,8 +17,8 @@ with jsonlines.open('PRD.jsonl', 'w') as writer:
     for i in tqdm(range(len(data))):
         # Create a dictionary containing the text, source, source_id, created_date, updated_date, and meta data for the current training example
         train_dict = {'text': f'หัวข้อ: {data_name[i]}+\n+เนื้อหา: {data_text[i]}',
-                        'source': 'PRD', 'source_id': i, 'created_date': '2023-05-21', 
-                        'updated_date': '2023-05-21', 'meta':  None}
+                    'source': 'PRD', 'source_id': i, 'created_date': '2023-05-21',
+                    'updated_date': '2023-05-21', 'meta':  None}
         
         # Write the dictionary to the JSONL file
         writer.write(train_dict)
