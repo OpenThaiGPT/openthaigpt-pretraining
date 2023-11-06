@@ -38,6 +38,16 @@ def load_jsonl_to_list(file_path: str) -> list[dict]:
 
 
 def clean_data(text):
+    """
+    Description:
+        Clean the text by replacing <br> with newline, removing emoji,
+        HTML tags, and HTML entities,
+        and stripping leading and trailing whitespace.
+    Args:
+        text: Input string of text.
+    Returns:
+        text: Cleaned string of text.
+    """
     # Replace <br> with newline
     text = text.replace("<br>", "\n")
     # Replace tab+colon with tab
@@ -83,7 +93,8 @@ for i in tqdm(input):
             cid0 = cid0[0]
 
             # Start combining topic text
-            current_text += "กระทู้ {} เนื้อหา {} ".format(cid0[TITLE], cid0[DESC])
+            current_text += "กระทู้ {} เนื้อหา {} ".format
+            (cid0[TITLE], cid0[DESC])
             topic_date = cid0[UPDATED_TIME]
 
             # Remove cid0
@@ -93,7 +104,8 @@ for i in tqdm(input):
         # Loop to get comment
         latest_cid = 0
         for comment in topic_lists:
-            current_text += " ความคิดเห็นที่ {} {}".format(comment[CID], comment[DESC])
+            current_text += " ความคิดเห็นที่ {} {}".format
+            (comment[CID], comment[DESC])
             if int(comment[CID]) > latest_cid:
                 last_comment_date = comment[UPDATED_TIME]
                 latest_cid = int(comment[CID])

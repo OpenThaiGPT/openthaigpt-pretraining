@@ -1,6 +1,6 @@
-from pprint import pprint
 # from bs4 import BeautifulSoup
 from collections import Counter, defaultdict
+
 # from pythainlp.corpus import thai_stopwords
 import jsonlines
 import multiprocessing
@@ -10,6 +10,7 @@ import emoji
 import os
 import gzip
 from tqdm import tqdm
+
 
 SOURCE = "source"
 SOURCE_ID = "source_id"
@@ -21,10 +22,10 @@ CID = "cid"
 TITLE = "title"
 DESC = "desc"
 UPDATED_TIME = "updated_time"
-FOLDER_PATH = 'folder_path'
-WRITED_FILE_NAME = 'writed_file_name'
-META = 'meta'
-LABEL = ''
+FOLDER_PATH = "folder_path"
+WRITED_FILE_NAME = "writed_file_name"
+META = "meta"
+LABEL = ""
 
 
 def load_jsonl_to_list(file_path: str) -> list[dict]:
@@ -37,7 +38,7 @@ def load_jsonl_to_list(file_path: str) -> list[dict]:
         result: List of dict
     """
     result = []
-    with gzip.open(file_path,"r") as reader:
+    with gzip.open(file_path, "r") as reader:
         reader = jsonlines.Reader(reader)
         for obj in reader.iter(type=dict, skip_invalid=True):
             result.append(obj)
@@ -45,6 +46,14 @@ def load_jsonl_to_list(file_path: str) -> list[dict]:
 
 
 def clean_data(text):
+    """
+    Description:
+        Clean the text by removing HTML tags, decoding HTML entities, removing website, removing emoji, and replacing <br> with newline.
+    Args:
+        text: Input string of text.
+    Returns:
+        text: Cleaned string of text.
+    """
     # Replace <br> with newline
     text = text.replace("<br>", "\n")
     # Replace tab+colon with tab
@@ -59,46 +68,72 @@ def clean_data(text):
     text = re.sub(r"<.*?>", "", text)
     # Strip leading and trailing whitespace
     text = text.strip()
-    
+
     # Remove website
     text = re.sub(r"^https?:\/\/.*[\r\n]*", "", text, flags=re.MULTILINE)
     text = re.sub(r"^http?:\/\/.*[\r\n]*", "", text, flags=re.MULTILINE)
-    text = re.sub(r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE)
+    text = re.sub(
+        r"(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b", "", text, flags=re.MULTILINE
+    )
     text = re.sub(r"<a+[*]+' a>'?:\/\/.*[\r\n]*", "", text, flags=re.MULTILINE)
     text = re.sub(r"<a>?:\/\/.*[\r\n]*", "", text, flags=re.MULTILINE)
-    #remove [spoil]
+    # remove [spoil]
     text = text.replace("[Spoil] คลิกเพื่อดูข้อความที่ซ่อนไว้", "")
     check_point = 0
     minus_N = 10
-    while(check_point < len(text)-minus_N):
-        #Chekinf word "error" or "Error"
-        if((text[check_point]=='e' or text[check_point]=='E') and (check_point<len(text)-minus_N)):
-            
-            if(text[check_point+1]=='r' and text[check_point+2]=='r' and text[check_point+3]=='o' and text[check_point+4]=='r' and not(('ก' < text[check_point+5] < '๛') or ('ก' < text[check_point+6] < '๛') or ('ก' < text[check_point+7] < '๛') or ('ก' < text[check_point-1] < '๛') or ('ก' < text[check_point-2] < '๛')or ('ก' < text[check_point-3] < '๛'))):
-                    tempsup=''
-                    walk_count=0
-                    while(  not('ก' < text[check_point+walk_count] < '๛') and (check_point+walk_count<len(text)-minus_N) ):
-                        tempsup+=text[check_point+walk_count]
-                        walk_count+=1
-                    
-                    text = text.replace(tempsup,"")
-            
-        check_point+=1
+    while check_point < len(text) - minus_N:
+        # Chekinf word "error" or "Error"
+        if (text[check_point] == "e" or text[check_point] == "E") and (
+            check_point < len(text) - minus_N
+        ):
+            if (
+                text[check_point + 1] == "r"
+                and text[check_point + 2] == "r"
+                and text[check_point + 3] == "o"
+                and text[check_point + 4] == "r"
+                and not (
+                    ("ก" < text[check_point + 5] < "๛")
+                    or ("ก" < text[check_point + 6] < "๛")
+                    or ("ก" < text[check_point + 7] < "๛")
+                    or ("ก" < text[check_point - 1] < "๛")
+                    or ("ก" < text[check_point - 2] < "๛")
+                    or ("ก" < text[check_point - 3] < "๛")
+                )
+            ):
+                tempsup = ""
+                walk_count = 0
+                while not ("ก" < text[check_point + walk_count] < "๛") and (
+                    check_point + walk_count < len(text) - minus_N
+                ):
+                    tempsup += text[check_point + walk_count]
+                    walk_count += 1
+
+                text = text.replace(tempsup, "")
+
+        check_point += 1
 
     # Strip leading and trailing whitespace
     text = text.strip()
-    
+
     return text
 
 
 def process_input(i):
-    
+    """
+    Description:
+        Process the input file by combining topic text and comment text,
+        cleaning the text, and creating a dictionary of new format.
+    Args:
+        i: Input string of file name.
+    Returns:
+        list_new_format: List of dictionary of new format.
+    """
     list_new_format = []
     # Create list of topic id (tid_list)
-    input_list = load_jsonl_to_list(f'{FOLDER_PATH}'+i)
+    input_list = load_jsonl_to_list(f"{FOLDER_PATH}" + i)
     tid_list = [li[TID] for li in input_list]
     tid_counter = Counter(tid_list)
-    tid_list = list(tid_counter.keys()) 
+    tid_list = list(tid_counter.keys())
     tid_list.sort()
 
     dictionary = defaultdict(lambda: [])
@@ -110,16 +145,14 @@ def process_input(i):
     for topic in tid_list:
         current_text = ""
         # List all lines with the same tid
-        # topic_lists = [li for li in input_list if li[TID] == topic]
-        # topic_lists = [li for li in input_list if li[TID] == topic]
         topic_lists = dictionary[topic]
 
-        # Get cid0 
-        cid0 = [li for li in topic_lists if li[CID] == "0" ]
+        # Get cid0
+        cid0 = [li for li in topic_lists if li[CID] == "0"]
         # cid0 = cid0[0]
-        
-        topic_date = ''
-        last_comment_date = ''
+
+        topic_date = ""
+        last_comment_date = ""
 
         # Check if cid0 works correctly
         if len(cid0) < 1:
@@ -128,7 +161,7 @@ def process_input(i):
             if len(cid0) > 1:
                 print(topic + " contain cid0 more than 1")
             cid0 = cid0[0]
-            
+
             # Start combining topic text
             current_text += "หัวข้อ {} เนื้อหา {} ".format(cid0[TITLE], cid0[DESC])
             topic_date = cid0[UPDATED_TIME]
@@ -143,17 +176,17 @@ def process_input(i):
             last_comment_date = comment[UPDATED_TIME]
 
             # print(current_text)
-        
+
         # Create dict of new format
         data = {
-                SOURCE: 'pantip3G',
-                SOURCE_ID: topic,
-                TEXT: clean_data(current_text.strip()),
-                # TEXT: current_text.strip(),
-                CREATED_DATE: last_comment_date,
-                UPDATED_DATE: topic_date,
-                META: LABEL
-            }
+            SOURCE: "pantip3G",
+            SOURCE_ID: topic,
+            TEXT: clean_data(current_text.strip()),
+            # TEXT: current_text.strip(),
+            CREATED_DATE: last_comment_date,
+            UPDATED_DATE: topic_date,
+            META: LABEL,
+        }
         list_new_format.append(data)
         # print(clean_data(current_text))
         # print(data)
@@ -165,9 +198,11 @@ if __name__ == "__main__":
 
     with multiprocessing.Pool(128) as pool:
         input_data = input  # your list of inputs
-        results = list(tqdm(pool.imap(process_input, input_data), total=len(input_data)))
+        results = list(
+            tqdm(pool.imap(process_input, input_data), total=len(input_data))
+        )
 
     # Flatten list of results
     flat_results = [item for sublist in tqdm(results) for item in sublist]
-    with jsonlines.open(f'{WRITED_FILE_NAME}.jsonl', "w") as writer:
+    with jsonlines.open(f"{WRITED_FILE_NAME}.jsonl", "w") as writer:
         writer.write_all(flat_results)
