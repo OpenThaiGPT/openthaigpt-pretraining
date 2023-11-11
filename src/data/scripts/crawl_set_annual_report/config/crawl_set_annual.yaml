@@ -1,3 +1,8 @@
 crawl_data:
   csv_path: .\src\data\scripts\crawl_set_annual_report\listedCompanies_en_US.csv
   output_folder: .\set_annual
+
+convert_to_jsonl:
+  pdf_path: .\set_annual
+  text_rule_file: .\pdf_correction_rules_new.txt
+  output_path: .\output.jsonl
