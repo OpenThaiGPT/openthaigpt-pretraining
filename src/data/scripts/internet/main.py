@@ -1,5 +1,5 @@
 from datasets import load_dataset, load_from_disk, Dataset
-import datetime
+import datetime  # type: ignore
 import jsonlines
 from openthaigpt_pretraining_data.internet.mc4.preprocess import (
     clean_text as clean_mc4_text,
@@ -22,7 +22,7 @@ import scipy
 import json
 import os
 import zstandard as zstd
-import argparse
+import argparse  # type: ignore
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -69,7 +69,6 @@ def clean_text(text):
 
 
 def process_chunk_data(chunk):
-
     n = len(chunk["text"])
     predictions = [-1] * n
     log_pp_scores = [0] * n
@@ -194,7 +193,6 @@ def read_jsonl_zst_files(dir_path):
 
 
 if __name__ == "__main__":
-
     if not os.path.exists(f"{output_dir}/{version}/data/"):
         os.makedirs(f"{output_dir}/{version}/data/")
 
@@ -206,7 +204,6 @@ if __name__ == "__main__":
         )
 
     with jsonlines.open(f"{output_dir}/{version}/data/data.jsonl", "w") as writer:
-
         print("Loading dataset")
 
         if source == "mc4":
@@ -249,7 +246,6 @@ if __name__ == "__main__":
         )
 
         for data in dataset:
-
             filtered_data = filter_field(data, source)
             writer.write(filtered_data)
             if scratch_location:
