@@ -1,5 +1,6 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 import pandas as pd
 import requests
 import zipfile  # type: ignore
@@ -22,7 +23,7 @@ def main(cfg):
 
     driver = webdriver.Chrome()
 
-    for company in companys:
+    for company in tqdm(companys):
         url = BASE_URL.format(company)
         driver.get(url)
         html_code = driver.page_source
