@@ -1,9 +1,4 @@
-from openthaigpt_pretraining_data.merge_pdf import (
-    read_pdf_all_pages,
-    clean_dup_esc_char,
-    clean_by_rules,
-    clean_by_char_structure,
-)
+from openthaigpt_pretraining_data.merge_pdf import pdf_2_text_markup
 import jsonlines
 import glob  # type: ignore
 import tqdm
@@ -31,10 +26,7 @@ def main(cfg):
         for file_path in tqdm.tqdm(paths):
             split_file_name = file_path.split("\\")
 
-            raw_text = read_pdf_all_pages(file_path)
-            clean_text = clean_dup_esc_char(raw_text)
-            clean_text = clean_by_rules(clean_text, text_rule_file)
-            clean_text = clean_by_char_structure(clean_text)
+            clean_text = pdf_2_text_markup(file_path, text_rule_file)
 
             data = {
                 TEXT_KEY: clean_text,
