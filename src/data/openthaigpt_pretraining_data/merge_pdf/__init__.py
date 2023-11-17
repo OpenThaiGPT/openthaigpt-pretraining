@@ -18,7 +18,7 @@ def convert_correction_rules(filepath):
         replace_list: List of tuples (incorrect_format , correct_format).
     """
 
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
 
     replace_list = [
