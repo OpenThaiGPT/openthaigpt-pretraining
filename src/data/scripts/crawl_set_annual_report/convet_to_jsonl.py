@@ -24,7 +24,7 @@ def main(cfg):
 
     with jsonlines.open(output_path, "w") as writer:
         for file_path in tqdm.tqdm(paths):
-            split_file_name = file_path.split("\\")
+            split_file_name = file_path.replace("\\", "/").split("/")
 
             clean_text = pdf_2_text_markup(file_path, text_rule_file)
 
