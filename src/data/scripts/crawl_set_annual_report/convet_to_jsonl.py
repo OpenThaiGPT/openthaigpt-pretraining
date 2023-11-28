@@ -12,6 +12,8 @@ SOURCE_ID_KEY = "source_id"
 CREATED_DATE_KEY = "create_date"
 UPDATED_DATE_KEY = "update_date"
 
+SOURCE = "Set Annual Report"
+
 
 @hydra.main(version_base=None, config_path="./config", config_name="crawl_set_annual")
 def main(cfg):
@@ -30,8 +32,8 @@ def main(cfg):
 
             data = {
                 TEXT_KEY: clean_text,
-                SOURCE_KEY: split_file_name[-3],
-                SOURCE_ID_KEY: NULL,
+                SOURCE_KEY: SOURCE,
+                SOURCE_ID_KEY: split_file_name[-3],
                 CREATED_DATE_KEY: split_file_name[-2],
                 UPDATED_DATE_KEY: split_file_name[-2],
                 META_KEY: NULL,
