@@ -6,7 +6,7 @@
 - pdf_path: output folder from crawl_data
 - text_rule_file: rule for fix pdf can use from this path (.\src\data\scripts\merge_pdf\pdf_correction_rules_new.txt)
 
-## Run scrape SET annual report
+## Run scrape Admincourt
 ```bash
 python src\data\scripts\crawl_admincourt\scrape_admincourt.py
 ```
