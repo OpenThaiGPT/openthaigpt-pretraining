@@ -1,6 +1,6 @@
 ## Config
 ### polity:
-- output_path: path to output file of jsonl for polity date.
+- output_path: path to output file of jsonl for polity data.
 
 ## Run scrape Krisdika Polity
 ```bash
