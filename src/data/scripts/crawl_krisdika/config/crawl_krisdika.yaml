@@ -1,2 +1,5 @@
 polity:
   output_path: './krisdika_polity.jsonl'
+
+king:
+  output_path: './krisdika_king.jsonl'
