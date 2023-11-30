@@ -2,7 +2,7 @@
 ### polity:
 - output_path: path to output file of jsonl for polity date.
 ### King:
-- output_path: path to output file of jsonl for polity data.
+- output_path: path to output file of jsonl for king data.
 
 ## Run scrape Krisdika Polity
 ```bash
