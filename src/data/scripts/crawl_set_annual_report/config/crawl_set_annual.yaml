@@ -1,6 +1,7 @@
 crawl_data:
   csv_path: .\src\data\scripts\crawl_set_annual_report\listedCompanies_en_US.csv
   output_folder: .\set_annual
+  delay: 0.5
 
 convert_to_jsonl:
   pdf_path: .\set_annual

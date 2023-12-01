@@ -7,6 +7,7 @@ import zipfile  # type: ignore
 import io  # type: ignore
 import re  # type: ignore
 import hydra
+import time
 
 BASE_URL = "https://www.set.or.th/th/market/product/stock/quote/{}/company-profile/information"  # noqa: E501
 
@@ -50,6 +51,8 @@ def main(cfg):
                 mode="r",
             ) as zip_ref:
                 zip_ref.extractall(output_path)
+
+            time.sleep(config.delay)
 
 
 if __name__ == "__main__":
