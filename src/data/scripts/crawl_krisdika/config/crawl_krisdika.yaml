@@ -1,2 +1,3 @@
 polity:
   output_path: './krisdika_polity.jsonl'
+  delay: 0.5

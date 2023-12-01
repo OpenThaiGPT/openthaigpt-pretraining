@@ -3,6 +3,7 @@ from tqdm import tqdm
 import requests
 import jsonlines
 import hydra
+import time
 
 NULL = "null"
 TEXT_KEY = "text"
@@ -72,6 +73,8 @@ def main(cfg):
                     url_tag = sub_data[DATA_KEY][0][VALUE_KEY]
                     save_jsonl_data(url_tag, id, date, writer)
 
+                    time.sleep(config.delay)
+
             else:
                 id = data[ID_KEY]
 
@@ -84,6 +87,8 @@ def main(cfg):
 
                 url_tag = data[DATA_KEY][0][VALUE_KEY]
                 save_jsonl_data(url_tag, id, date, writer)
+
+                time.sleep(config.delay)
 
 
 if __name__ == "__main__":
