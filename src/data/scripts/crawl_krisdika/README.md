@@ -3,6 +3,7 @@
 - output_path: path to output file of jsonl for polity date.
 ### King:
 - output_path: path to output file of jsonl for king data.
+- delay: delay time for scrape data.
 
 ## Run scrape Krisdika Polity
 ```bash

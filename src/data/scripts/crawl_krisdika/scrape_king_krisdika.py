@@ -13,6 +13,7 @@ from selenium.webdriver.chrome.options import Options
 import warnings  # type: ignore
 import jsonlines
 import hydra
+import time
 
 warnings.filterwarnings("ignore")
 
@@ -139,6 +140,8 @@ def main(cfg):
             }
 
             writer.write(data)
+
+            time.sleep(config.delay)
 
 
 if __name__ == "__main__":

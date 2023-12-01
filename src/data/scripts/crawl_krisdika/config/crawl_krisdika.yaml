@@ -3,3 +3,4 @@ polity:
 
 king:
   output_path: './krisdika_king.jsonl'
+  delay: 0.5
