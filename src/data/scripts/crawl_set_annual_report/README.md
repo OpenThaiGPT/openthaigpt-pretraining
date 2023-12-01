@@ -1,11 +1,12 @@
 ## Config
 ### crawl_data:
-- csv_path: path to csv file Can load csv file from [This](https://drive.google.com/file/d/1OGrFQ6Cpp3-olLMiqwsNGpeQZfeMyNrc/view) 
-- output_folder: path to output folder
+- csv_path: path to csv file Can load csv file from [This](https://drive.google.com/file/d/1OGrFQ6Cpp3-olLMiqwsNGpeQZfeMyNrc/view).
+- output_folder: path to output folder.
+- delay: delay time for scrape data.
 
 ### convert_to_jsonl:
-- pdf_path: output folder from crawl_data
-- text_rule_file: rule for fix pdf can use from this path (.\src\data\scripts\merge_pdf\pdf_correction_rules_new.txt)
+- pdf_path: output folder from crawl_data.
+- text_rule_file: rule for fix pdf can use from this path (.\src\data\scripts\merge_pdf\pdf_correction_rules_new.txt).
 
 ## Run scrape SET annual report
 ```bash
