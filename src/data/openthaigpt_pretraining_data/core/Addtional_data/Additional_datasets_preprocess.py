@@ -14,7 +14,7 @@ file path, and folder path.
 These variables will be used in the subsequent code blocks to load the dataset,
 preprocess the text, and write the preprocessed text to a jsonline file."""
 
-DUMMY_DATASET_NAME = ""  # dataset name
+DATASET_NAME = ""  # dataset name
 TARGET_LANGUAGE = ""  # target language
 ORIGIN_LANGUAGE = ""  # origin language
 JSONL_PATH = ""  # json path
@@ -27,7 +27,7 @@ FOLDER_PATH = ""  # folder path
 NUM_OF_CHAR_THRESHOLD = int()  # number of character threshold
 
 """Load dataset"""
-raw_dataset = load_dataset(DUMMY_DATASET_NAME)
+raw_dataset = load_dataset(DATASET_NAME)
 
 
 def load_pickle(folder_path):
@@ -186,7 +186,7 @@ def write_jsonline_with_index(text_list):
             # Create a dictionary for the row
             row_dict = {
                 "text": text_list[index],
-                "source": DUMMY_DATASET_NAME,
+                "source": DATASET_NAME,
                 "source_id": index,
                 "created_date": DATASET_CREATE_DATE,
                 "updated_date": DATASET_UPDATE_DATE,
@@ -215,7 +215,7 @@ def write_jsonline_with_df(text_df):
             # Create a dictionary for the row
             row_dict = {
                 "text": row[index],
-                "source": DUMMY_DATASET_NAME,
+                "source": DATASET_NAME,
                 "source_id": index,
                 "created_date": DATASET_CREATE_DATE,
                 "updated_date": DATASET_UPDATE_DATE,
