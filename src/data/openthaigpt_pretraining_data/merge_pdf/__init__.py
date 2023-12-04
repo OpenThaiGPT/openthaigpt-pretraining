@@ -3,6 +3,7 @@ import PyPDF2
 import pdf_table2json.converter as converter
 from difflib import SequenceMatcher
 import re
+import copy
 
 
 def convert_correction_rules(filepath):
@@ -150,9 +151,11 @@ def add_blank_fill(ls, max):
         ls: list with length of max.
     """
 
-    while len(ls) < max:
-        ls.append("")
-    return ls
+    _ls = copy.copy(ls)
+
+    while len(_ls) < max:
+        _ls.append("")
+    return _ls
 
 
 def get_clean_df(dict_ls):
@@ -185,7 +188,7 @@ def get_clean_df(dict_ls):
         else:
             if len(dct.keys()) == 1:
                 clean_df.loc[len(clean_df.index)] = add_blank_fill(
-                    list(dct.values())[0], max_key_cnt
+                    list(dct.values()), max_key_cnt
                 )
             elif dct.keys() != prev_key:
                 clean_df.loc[len(clean_df.index)] = add_blank_fill(
