@@ -28,7 +28,12 @@ DATA_KEY = "data"
 
 @hydra.main(version_base=None, config_path="./config", config_name="crawl_krisdika")
 def main(cfg):
-    driver = webdriver.Chrome()
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(chrome_options)
 
     with open(cfg.requests_body, "r") as f:
         requests_body = json.load(f)
