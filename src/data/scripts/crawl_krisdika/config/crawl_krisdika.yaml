@@ -1,0 +1,4 @@
+requests_body: src/data/scripts/crawl_krisdika/enactment_req_body.json
+url: https://www.ocs.go.th/ocs-api/public/browse/searchByYear
+output_path: ./krisdika.jsonl
+delay: 0.1
