@@ -50,10 +50,13 @@ def main(cfg):
             doc_url = DOC_URL_FORMAT.format(source_id)
             driver.get(doc_url)
 
-            time.sleep(cfg.delay)
+            while True:
+                soup = BeautifulSoup(driver.page_source)
+                raw_text = soup.find("div", {"class": "offset-1 col-10 mb-5 a4"})
+                if raw_text is not None:
+                    break
+                time.sleep(cfg.delay)
 
-            soup = BeautifulSoup(driver.page_source)
-            raw_text = soup.find("div", {"class": "offset-1 col-10 mb-5 a4"})
             raw_text = raw_text.find_all("p")
 
             all_text = []
@@ -72,6 +75,8 @@ def main(cfg):
             }
 
             writer.write(data)
+
+            time.sleep(cfg.delay)
 
 
 if __name__ == "__main__":
