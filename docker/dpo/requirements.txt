@@ -1,0 +1,2 @@
+flash-attn==2.4.3.post1
+wandb==0.16.2
