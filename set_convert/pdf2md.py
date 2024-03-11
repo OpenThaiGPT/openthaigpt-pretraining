@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-import tabula
+import tabula  # type: ignore
 
 
 def _append_dataframe(dfs):
@@ -11,7 +11,7 @@ def _append_dataframe(dfs):
 
 def read_pdf_table_only(input_filename: str, output_filename: str) -> bool:
     try:
-        tables = tabula.read_pdf(input_filename, pages='all')
+        tables = tabula.read_pdf(input_filename, pages="all")
         concat = _append_dataframe(tables)
         concat.to_csv(output_filename)
     except Exception as ex:
@@ -27,9 +27,9 @@ def read_pdf_table_only(input_filename: str, output_filename: str) -> bool:
 
 
 def _example_code():
-    pdf_path = './pdf'
-    md_path = './md'
+    pdf_path = "./pdf"
+    md_path = "./md"
     for file_name in os.listdir(pdf_path):
         input_file = os.path.join(pdf_path, file_name)
-        output_file = os.path.join(md_path, os.path.splitext(file_name)[0] + '.md')
+        output_file = os.path.join(md_path, os.path.splitext(file_name)[0] + ".md")
         read_pdf_table_only(input_file, output_file)
