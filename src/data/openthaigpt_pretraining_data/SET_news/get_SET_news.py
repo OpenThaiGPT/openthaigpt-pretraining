@@ -44,8 +44,8 @@ def process_pdfs(df_pdf, existing_ids):
         for pdf_file in keep_path_id:
             try:
                 reader = PdfReader(pdf_file)
-                pageObj = reader.pages[0]
-                lines = pageObj.extract_text().strip()
+                pageobj = reader.pages[0]
+                lines = pageobj.extract_text().strip()
 
                 current_entry = {
                     "text": clean_text(lines),
