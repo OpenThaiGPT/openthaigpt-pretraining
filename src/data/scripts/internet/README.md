@@ -17,7 +17,7 @@ For part 2-5, You can see each part in more details at `src/data/openthaigpt_pre
 
 You can also process the internet data via running `main.py` 
 
-Before running. please dvc pull `core.zip`. It contains an n-gram language model weight and Decision Tree classifier.
+Before running. please dvc pull `core.zip` and extract it. It contains an n-gram language model weight and Decision Tree classifier.
 
 ### DVC Pull instruction
 
@@ -27,7 +27,8 @@ After you received credentials, download your credentials file to local reposito
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS= path/to/yourfile
-dvc push src/data/openthaigpt_pretraining_data/internet/perplexity/core.zip.dvc
+dvc pull src/data/openthaigpt_pretraining_data/internet/perplexity/core.zip.dvc
+unzip src/data/openthaigpt_pretraining_data/internet/perplexity/core.zip -d src/data/openthaigpt_pretraining_data/internet/perplexity
 ```
 
 ### Running Example
