@@ -25,3 +25,5 @@
 - warmup_iters: number of warmup iteration
 - lr_decay_iters: number iteration to activate learning rate scheduler
 - min_lr: minimun of learning rate
+- load_in_4bit: load in quantization 4 bit for qlora
+- load_in_8bit: load in quantization 8 bit for qlora
